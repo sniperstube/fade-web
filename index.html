@@ -380,7 +380,7 @@ const COACH=[
  {sel:'.hero',sc:'feed',t:'Your #1 fade, live',b:'This is the highest-grade setup on the board right now. The price and % update live &#8212; watch it move.'},
  {sel:'.gmeter',sc:'feed',t:'Graded A to F',b:'Every setup gets a letter grade. A is a table-pounder: an extreme move, at a real level, on volume. Trade the A grades.'},
  {sel:'.setup',sc:'feed',t:'Entry, target, stop',b:'Entry is now, the target is the level it snaps back to, and the mental stop is where the thesis is wrong. Never fade without one.'},
- {sel:'.pair',sc:'feed',t:'Ask the AI anything',b:'Tap Pattern or Narrative and Fade AI elaborates on that read in real time, in my voice.'},
+ {sel:'.pair',sc:'feed',t:'Ask the AI anything',b:'Tap Pattern or Narrative and Fade AI breaks it down in plain, simple English &#8212; like a patient analyst.'},
  {sel:'.fabwrap',sc:'feed',t:'Fade AI is your coach',b:'The orb reads the live board and breaks down any setup on demand. Members only.'},
  {sel:'.rowcard',sc:'markets',t:'The whole board',b:'Browse every graded setup in Markets with prices flashing live. Trade the A grades, skip the rest.'},
  {sel:null,sc:'feed',t:'Ready to fade?',b:'Create your free account to take trades, build your record, and unlock Fade AI. Free $10,000 paper &#8212; you are early.'}
@@ -723,12 +723,12 @@ function gateScreen(icon,title,body){ return `<div class="screen">${topbar()}
       <div class="authlink" style="margin-top:12px">Already a member? <b onclick="AUTHMODE='login';go('profile')">Sign in</b></div>
     </div></div>`; }
 function ai(){
-  if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and breaks down any setup in my voice. Create your free account to unlock it &#8212; it is free.');
+  if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and explains any setup in plain, simple English. Create your free account to unlock it &#8212; it is free.');
   if(!S.chat.length){
-    S.chat=[{role:'assistant',content:"I'm Fade AI. I teach one method \u2014 fade the extreme, at real levels, on volume. Ask me anything, or tap a starter below."}];
+    S.chat=[{role:'assistant',content:"I'm Fade AI, your analyst. In plain English: when a stock or coin moves way too fast, it often snaps back \u2014 like a stretched rubber band. I explain every setup simply, step by step. Ask me anything, or tap a starter below."}];
     if(!API){ S.chat.push(
       {role:'user',content:'What is fading?'},
-      {role:'assistant',content:"Fading means taking the counter-move when a large-cap overshoots hard into a real level on volume \u2014 betting the extreme snaps back toward the mean, not chasing it. The level is a catalyst-candle level: the high or low of a high-volume event candle (FOMC, CPI, earnings gap, a flush), weekly over daily over 4H. You're eating the crumbs institutions leave when they de-risk a crowded trade. Fade the extreme."}); }
+      {role:'assistant',content:"Fading is betting on a snap-back. When a big stock or coin drops (or jumps) way too fast, it often bounces back toward where it started \u2014 like a stretched rubber band letting go. To 'fade' it means to bet on that bounce instead of chasing the move. We only do it in two conditions: at a 'level' (a price the asset reacted strongly to before, so traders watch it again), and when trading volume is high (a sign big players are active). So the whole idea is simple: a big move, at a real level, on high volume \u2014 bet on the snap-back."}); }
   }
   const bubbles=S.chat.map(m=> m.role==='assistant'
     ? `<div class="msg ai"><div class="tag">Fade AI</div><div class="bub">${esc(m.content)}</div></div>`
@@ -856,12 +856,12 @@ async function sendChat(text){
   S.thinking=false; saveCurrentChat(); render(); scrollChat();
 }
 function scriptedReply(t){ t=(t||'').toLowerCase();
-  if(t.includes('mental stop')) return "A Mental Stop is your thesis-invalidation line \u2014 the price or close where the setup is simply wrong and you're out. It's 'mental' on purpose: a discipline line you hold, not a resting order in the book. Never take a setup without one.";
-  if(t.includes('method')||t.includes('strategy')||t.includes('teach')) return "One method: fade the extreme. When a large-cap overshoots hard into a real catalyst-candle level on volume, take the counter-move back toward the mean. Every setup gets a letter grade A to F (A best). Three portfolios: day-fade, swing, long-term. Entry NOW, an add ladder, a target at the level, a mental stop. Large-caps only. Never fade new highs.";
-  if(t.includes('graded')||t.includes('grading')||t.includes('rubric')||(t.includes('grade')&&(t.includes('work')||t.includes('mean')||t.includes('how')))) return "Every setup gets a letter grade, A to F. A = table-pounder: extreme move, at a real level, on volume \u2014 everything lined up. B = strong, one factor soft. C = playable, half the picture, size down. D = weak, the story barely backs it. F = no setup, don't touch it. The worse the grade, the harder I talk you out of it. Trade the A's, skip the rest.";
-  if(t.includes('why fade')||t.includes('chase')) return "Because chasing pays the crowd's price. Institutions de-risk crowded trades and leave crumbs \u2014 a violent overshoot into a real level. Fade the panic, not the trend: rubber band stretched to a snap.";
-  if(t.includes('today')||t.includes('#1')||t.includes('board')||t.includes('grade')) return "Open the Feed \u2014 today's #1 is always live at the top, graded, with entry / target / stop drawn. In the deployed app I read the live board and explain any grade on the spot.";
-  return "Good one \u2014 I answer anything about the method and the live board once the app is connected to the server. Meanwhile: fade the extreme, at real levels, on volume. Tap a starter to see the method.";
+  if(t.includes('mental stop')) return "A mental stop is the price where you admit the idea was wrong and step aside. Think of it as a line in the sand: if the price crosses it, the setup failed and you stop. It is 'mental' because you watch for it and act, rather than leaving an automatic order. The rule is simple: never take a trade without knowing your stop first.";
+  if(t.includes('method')||t.includes('strategy')||t.includes('teach')) return "Here is the whole idea in one line: when a big stock or coin moves way too fast, it often snaps back. We bet on that snap-back. Two things must be true first: the price is at a 'level' (a spot it reacted to before), and volume is high (big players are active). Each setup gets a simple grade, A to F, where A is the strongest. You get an entry, a target (where it might snap back to), and a stop (where you were wrong).";
+  if(t.includes('graded')||t.includes('grading')||t.includes('rubric')||(t.includes('grade')&&(t.includes('work')||t.includes('mean')||t.includes('how')))) return "Grades are just a report card for how good a setup is, A to F. A means everything lined up: a big move, at a real level, on high volume. B is strong with one weak spot. C is okay, half the picture. D is weak. F means there is no real setup, so skip it. Simple rule: focus on the A's, ignore the rest.";
+  if(t.includes('why fade')||t.includes('chase')) return "Because chasing a fast move usually means buying at the worst price, right before it snaps back. Picture a rubber band stretched too far: it does not keep stretching, it snaps back. Fading means waiting for that stretch and betting on the snap-back instead of chasing.";
+  if(t.includes('today')||t.includes('#1')||t.includes('board')||t.includes('grade')) return "Open the Feed. The #1 setup sits right at the top, already graded, with the entry, target, and stop drawn for you. Once the app is connected to the server, I read the live board and explain any grade in plain English on the spot.";
+  return "Happy to help. I explain the method and the live board in plain, simple terms once the app is connected to the server. The short version: when something moves too far too fast, it often snaps back, and we look to bet on that snap-back at the right spot. Tap a starter to learn more.";
 }
 
 /* ---------- nav ---------- */
