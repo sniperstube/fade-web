@@ -272,6 +272,17 @@ body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit
 /* share card (viral / marketing) */
 .shwrap{position:fixed;inset:0;background:rgba(0,0,0,.84);backdrop-filter:blur(7px);z-index:80;display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:14px;overflow-y:auto}
 .shwrap.show{display:flex}
+.tourwrap{position:fixed;inset:0;background:rgba(4,4,9,.92);backdrop-filter:blur(9px);z-index:95;display:flex;align-items:center;justify-content:center;padding:24px}
+.tourcard{background:var(--void);border:1px solid var(--line);border-radius:24px;max-width:400px;width:100%;padding:32px 26px 26px;text-align:center;animation:sheet .28s ease}
+.tour-i{font-size:46px;line-height:1;margin-bottom:14px}
+.tour-t{font-size:23px;font-weight:800;letter-spacing:-.5px;margin-bottom:11px}
+.tour-b{color:var(--ashl);font-size:15px;line-height:1.6;margin-bottom:22px}
+.tdots{display:flex;gap:7px;justify-content:center;margin-bottom:22px}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:all .2s}
+.tdot.on{background:var(--ai);width:22px;border-radius:4px}
+.tour-cta{display:flex;flex-direction:column;gap:10px}
+.tour-go{background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;cursor:pointer;font-family:inherit}
+.tour-skip{background:none;border:none;color:var(--ash);font-size:13px;cursor:pointer;font-family:inherit;padding:5px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:85;display:none;align-items:flex-end;justify-content:center}
 .modal.show{display:flex}
 .modalcard{background:var(--void);color:var(--txt);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:460px;padding:18px 17px calc(22px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow-y:auto;animation:sheet .22s ease}
@@ -345,7 +356,31 @@ function logoURL(a){ if(!a||!a.symbol)return'';
 function logoBadge(a,size){ const s=size||34; const url=logoURL(a); const ini=((a.symbol||'?')[0]||'?');
   return `<div class="lbadge" style="width:${s}px;height:${s}px;background:${logoBg(a.symbol||'')};font-size:${Math.round(s*0.42)}px">`+
     `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onload="this.classList.add('on')" onerror="this.remove()" alt="">`:'')+`</div>`; }
-let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:''};
+let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:'',tour:null};
+// First-run walkthrough shown right after signup.
+const TOUR=[
+ {i:'&#9889;',t:'Welcome, __U__',b:'You just claimed your handle and $10,000 in paper. No real money, ever &#8212; this is where you learn to fade.'},
+ {i:'&#127919;',t:'One method: fade the extreme',b:'When a large-cap overshoots hard into a real level on volume, we take the counter-move back toward the mean. Every setup is graded A (table-pounder) down to F (no setup).'},
+ {i:'&#128293;',t:'Your feed leads with the #1',b:'The feed always shows the highest-grade setup live right now &#8212; entry, target and a mental stop, all drawn. Tap Fade Long or Short to take it on paper.'},
+ {i:'&#128200;',t:'Markets and grades',b:'Browse every graded setup in Markets, prices flashing live. Trade the A grades, skip the rest &#8212; the grade tells you how much confluence is really there.'},
+ {i:'&#129302;',t:'Fade AI, in my voice',b:'Tap the orb anytime. Fade AI reads the live board and breaks down any setup &#8212; the grade, the level, the volume. Education, never financial advice.'},
+ {i:'&#128640;',t:'You are set',b:'Start with the #1 on your feed. Fade the extreme, at real levels, on volume. Time to eat.'}
+];
+function uName(){ return '@'+(S.user?S.user.username:'you'); }
+function tourHTML(){ const n=S.tour; const s=TOUR[n]; if(!s)return'';
+  const last=n===TOUR.length-1;
+  const dots=TOUR.map((_,k)=>`<span class="tdot${k===n?' on':''}"></span>`).join('');
+  return `<div class="tourwrap"><div class="tourcard">
+    <div class="tour-i">${s.i}</div>
+    <div class="tour-t">${s.t.replace('__U__',uName())}</div>
+    <div class="tour-b">${s.b.replace('__U__',uName())}</div>
+    <div class="tdots">${dots}</div>
+    <div class="tour-cta"><button class="tour-go" onclick="tourNext()">${last?'Start trading &#8594;':'Next'}</button>
+      ${last?'':'<button class="tour-skip" onclick="tourEnd()">Skip walkthrough</button>'}</div>
+  </div></div>`; }
+function startTour(){ S.tour=0; S.screen='feed'; render(); }
+function tourNext(){ if(S.tour<TOUR.length-1){ S.tour++; render(); } else tourEnd(); }
+function tourEnd(){ S.tour=null; try{localStorage.setItem('fade_tour_done','1');}catch(e){} go('feed'); }
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
 function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
 let AUTHMODE='signup', CONTACT='email', DRAFT={user:'',contact:''};
@@ -884,11 +919,11 @@ async function doSignup(){
   if(API){
     try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone})});
       const d=await r.json(); if(!d.ok){ autherr(d.error||'Could not create account'); return; }
-      DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); go('profile'); toast('Welcome, @'+d.user.username);
+      DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); toast('Welcome, @'+d.user.username); startTour();
     }catch(e){ autherr('Network error \u2014 try again'); }
   } else {
     const v=validateLocal(username,email,phone); if(v){ autherr(v); return; }
-    DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); go('profile'); toast('Welcome, @'+username+' (preview)');
+    DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); toast('Welcome, @'+username+' (preview)'); startTour();
   }
 }
 async function doLogin(){
@@ -946,7 +981,7 @@ function shareNative(){ const url='https://fade.markets'; if(navigator.share){ n
 function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fade.markets'); toast('Caption copied \u2014 screenshot the card & post'); }catch(e){ toast('Screenshot the card to share'); } }
 
 function render(){ const scr={feed,markets,detail,wallet,social,ai,profile}[S.screen]||feed;
-  document.getElementById('app').innerHTML = scr() + nav(); }
+  document.getElementById('app').innerHTML = scr() + nav() + (S.tour!=null?tourHTML():''); }
 
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
 // baked snapshot with live data from the backend. Grades still computed server-side.
