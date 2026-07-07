@@ -84,7 +84,9 @@ body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit
 .munch .pac{width:15px;height:15px;border-radius:50%;background:conic-gradient(var(--yellow) 0 54deg,transparent 54deg 126deg,var(--yellow) 126deg)}
 .munch .cndl{width:3px;height:11px;background:var(--red);border-radius:1px}
 .tbar-r{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ash)}
-.live{font-family:'Space Mono';font-size:11px;color:var(--green);font-weight:700}
+.live{font-family:'Space Mono';font-size:11px;color:var(--green);font-weight:700;animation:livepulse 2.4s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.live{animation:none}}
 .h1{font-size:22px;font-weight:700;letter-spacing:-.5px}
 .sub{font-family:'Space Mono';font-size:11px;color:var(--ash);margin-top:2px}
 /* scope */
@@ -930,15 +932,32 @@ function render(){ const scr={feed,markets,detail,wallet,social,ai,profile}[S.sc
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
 // baked snapshot with live data from the backend. Grades still computed server-side.
 const API=(window.FADE_API||'').replace(/\/+$/,'');
+let LIVE_AT=0;   // last time live data landed (for the "updated" indicator)
 async function hydrate(){ if(!API) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
-    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; render(); } }catch(e){} }
+    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); render(); } }catch(e){} }
+// Live refresh loop: re-pull the graded board so prices, grades, targets and stops
+// track the backend in real time. Skips while a sheet/chat is open or you're typing,
+// and preserves scroll so the update is seamless. Prices/grades all stay server-side.
+async function livePoll(){ if(!API||document.hidden) return;
+  try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
+    if(!b||!b.items) return;
+    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now();
+    const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
+    const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.screen==='ai'||S.screen==='profile';
+    const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+    if(!busy&&!typing&&(S.screen==='feed'||S.screen==='markets'||S.screen==='detail')){
+      const y=window.scrollY||0; render(); window.scrollTo(0,y);
+    }
+  }catch(e){}
+}
 async function loadChart(sym){ if(!API) return; const it=quote(sym); if(!it||it.candles) return;
   try{ const r=await fetch(API+'/api/chart/'+sym); const d=await r.json();
     if(d&&d.ok&&d.candles&&d.candles.length){ it.candles=d.candles; if(S.screen==='detail'&&S.sel===sym) render(); } }catch(e){} }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 if(!S.user){ S.screen='profile'; AUTHMODE='signup'; }  // main page = sign up
 render(); hydrate(); if(S.hlAddr) loadHL();
+if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 </script>
 <style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
