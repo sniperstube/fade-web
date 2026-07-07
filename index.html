@@ -447,6 +447,8 @@ function fade(sym){
   if(a.signal==='skip'||a.signal==='no_breach'){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
   const long=isLong(a), notional=1000, qty=notional/a.price;
   const p=paper();
+  if(p.cash<notional){ toast('Not enough paper cash \u2014 close a position to free up funds.'); return; }
+  p.cash-=notional;   // deduct the amount you put into the trade
   p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:sym,name:a.name,side:long?'long':'short',
     entry:a.price,qty,target:a.setup.target,stop:a.setup.mental_stop,grade:a.grade,status:'open'});
   save(p);
@@ -466,7 +468,7 @@ function simulate(){
     const exit=win?x.target:x.stop;
     const pnl=(x.side==='long'?(exit-x.entry):(x.entry-exit))*x.qty;
     x.status='closed'; x.exit=exit; x.pnl=pnl; x.result=pnl>0?'win':'loss';
-    p.cash+=pnl; });
+    p.cash+=(x.qty*x.entry)+pnl; });   // return the position's cost + result to cash
   save(p); toast('Simulated '+opened.length+' trade(s) to target/stop  (preview)'); render();
 }
 function resetPaper(){ localStorage.removeItem('fade_paper'); S.faded={}; toast('Paper account reset to $10,000'); render(); }
@@ -477,7 +479,10 @@ function stats(){
   const wins=closed.filter(x=>x.result==='win').length;
   const unreal=opens.reduce((s,x)=>{ const q=quote(x.symbol); const cur=q?q.price:x.entry;
     return s+(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; },0);
-  return {cash:p.cash,equity:p.cash+unreal,unreal,realized:closed.reduce((s,x)=>s+x.pnl,0),
+  // Open positions hold their cost (deducted from cash) + their unrealized P&L.
+  const openVal=opens.reduce((s,x)=>{ const q=quote(x.symbol); const cur=q?q.price:x.entry;
+    const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; return s+(x.qty*x.entry)+pnl; },0);
+  return {cash:p.cash,equity:p.cash+openVal,unreal,realized:closed.reduce((s,x)=>s+x.pnl,0),
     wins,losses:closed.length-wins,graded:closed.length,
     winrate:closed.length?Math.round(1000*wins/closed.length)/10:null,opens,closed};
 }
@@ -528,13 +533,16 @@ function sigTag(a){ if(a.signal==='fade_long')return['LONG',GREEN];
 
 /* ---------- FEED ---------- */
 function inScope(i){ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.scope==='crypto')return i.asset_class==='crypto'; return true; }
+// Only setups you can actually act on: a real breach with a long/short fade signal.
+// No-play items (no breach, or a skip like price-discovery) are never displayed.
+function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
 function topFor(){ let a=BOARD.items.filter(i=>i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')&&inScope(i)&&!S.faded[i.symbol]);
   a.sort((x,y)=>(x.grade-y.grade)||Math.abs(y.change_pct||0)-Math.abs(x.change_pct||0)); return a[0]||null; }
 function feed(){
   const t=topFor(); if(!t) return `<div class="screen">${topbar()}<div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><div class="empty">You've actioned every setup in this scope.<br><br><button class="no" style="padding:10px 16px;border-radius:10px;cursor:pointer" onclick="S.faded={};render()">\u21bb Show all again</button></div></div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
-  const nexts=BOARD.items.filter(i=>i.breached&&inScope(i)&&!S.faded[i.symbol]&&i.symbol!==t.symbol).slice(0,3).map(i=>{
+  const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&i.symbol!==t.symbol).slice(0,3).map(i=>{
     const cc=GRADE[i.grade]; return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,34)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||i.pattern||'')}</div></div>
@@ -564,18 +572,18 @@ function feed(){
 
 /* ---------- MARKETS ---------- */
 function markets(){
-  let items=BOARD.items.filter(i=>{ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.scope==='crypto')return i.asset_class==='crypto'; return true; });
+  let items=BOARD.items.filter(i=>playable(i)&&inScope(i));   // only actionable setups
   items=items.slice().sort((a,b)=>(a.grade-b.grade)||Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0));
   const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i);
     return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,36)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')}</div></div>
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div><div class="rc-sig" style="color:${sgc}">${sg}</div></div>${gradeChip(i)}</div>`; }).join('');
-  const nb=items.length;
+  const nb=items.length, scanned=BOARD.items.length;
   return `<div class="screen">${topbar()}
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
-    <div class="sub" style="margin:0 2px 11px">Markets &#183; ${nb} scanned &#183; graded A (best) &#8594; F</div>
-    ${rows}</div>`;
+    <div class="sub" style="margin:0 2px 11px">Markets &#183; ${nb} live setup${nb===1?'':'s'} &#183; ${scanned} scanned</div>
+    ${nb?rows:'<div class="empty">No playable setups in this scope right now &#183; nothing is stretched enough to fade. Check back soon.</div>'}</div>`;
 }
 
 /* ---------- DETAIL ---------- */
@@ -663,10 +671,10 @@ function wallet(){
 }
 function closePos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty;
-  x.status='closed'; x.exit=cur; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
+  x.status='closed'; x.exit=cur; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=(x.qty*x.entry)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
 // --- Position modal: open a position to see + modify it (add to it, close it) ---
 function openModal(html){ document.getElementById('modalbody').innerHTML=html; document.getElementById('modal').classList.add('show'); }
-function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); }
+function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); MODALPOS=null; }
 function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return '';
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const open=x.status==='open';
   const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl; const pc=pnl>=0?GREEN:RED;
@@ -680,6 +688,7 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
       <div><div class="pxbig-k">&#9679; LIVE PRICE</div><div class="pxbig-p">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div>
       <div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)}">${sign(chg)}</div></div>
     <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="addToPos('${x.id}')">Fade in another $1,000 ${long?'&#8599;':'&#8600;'}</button>`:''}
+    ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:6px 0 6px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">${x.qty.toFixed(4)} &#183; $${money(notional)}</span></div>
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
@@ -687,13 +696,18 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
     ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
     <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askSetup('${x.symbol}')">Ask Fade AI about ${x.symbol}</button>
     <button class="mbtn" style="background:none;color:var(--ash)" onclick="closeModal()">Done</button>`; }
-function openPos(id){ openModal(posModal(id)); }
+let MODALPOS=null;
+function openPos(id){ MODALPOS=id; const p=paper(); const x=p.positions.find(y=>y.id===id);
+  if(x&&typeof loadChart==='function') loadChart(x.symbol);   // pull candles for the live chart
+  openModal(posModal(id)); }
 function addToPos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
   // Discipline guard: after 3 adds, warn before letting them keep averaging in.
   if((x.adds||0)>=3){
     if(!confirm(x.symbol+': you have already added '+x.adds+' times. Repeatedly averaging down is how accounts blow up — this should be a rare, deliberate move, not a habit. Add $1,000 more anyway?')) return;
   }
+  if(p.cash<1000){ toast('Not enough paper cash to add — close a position to free up funds.'); return; }
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const addQty=1000/cur; const nq=x.qty+addQty;
+  p.cash-=1000;   // adding puts another $1,000 into the trade
   x.entry=(x.entry*x.qty+cur*addQty)/nq; x.qty=nq; x.adds=(x.adds||0)+1; save(p);
   toast('Added to '+x.symbol+' @ '+money(cur)+' — avg now '+money(x.entry));
   if(document.getElementById('modal').classList.contains('show')) openModal(posModal(id)); else render(); }
@@ -1119,7 +1133,7 @@ function tick(){ if(document.hidden) return;
     const pnl=(side==='long'?(a.disp-entry):(entry-a.disp))*qty;
     n.textContent=(pnl>=0?'+':'')+pnl.toFixed(2); n.style.color=pnl>=0?GREEN:RED;
   }
-  if(S.screen==='detail') updateChartNow();   // live chart NOW-line
+  updateChartNow();   // live chart NOW-line (detail screen OR the open-position sheet)
 }
 async function hydrate(){ if(!API) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
@@ -1143,7 +1157,12 @@ async function livePoll(){ if(!API||document.hidden) return;
 }
 async function loadChart(sym){ if(!API) return; const it=quote(sym); if(!it||it.candles) return;
   try{ const r=await fetch(API+'/api/chart/'+sym); const d=await r.json();
-    if(d&&d.ok&&d.candles&&d.candles.length){ it.candles=d.candles; if(S.screen==='detail'&&S.sel===sym) render(); } }catch(e){} }
+    if(d&&d.ok&&d.candles&&d.candles.length){ it.candles=d.candles;
+      if(S.screen==='detail'&&S.sel===sym) render();
+      // refresh the position sheet's chart when its candles arrive
+      const m=document.getElementById('modal');
+      if(MODALPOS&&m&&m.classList.contains('show')){ const px=paper().positions.find(y=>y.id===MODALPOS); if(px&&px.symbol===sym) openModal(posModal(MODALPOS)); }
+    } }catch(e){} }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
