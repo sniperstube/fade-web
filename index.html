@@ -1,21 +1,12 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fade — fade the extreme</title>
-<meta name="description" content="Graded trading signals + Fade AI. Fade extreme moves at real levels, on volume. Start with $10,000 paper.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="/og.png">
-<meta name="theme-color" content="#0a0a0f">
-<meta property="og:type" content="website"><meta property="og:site_name" content="fade.markets">
-<meta property="og:url" content="https://fade.markets"><meta property="og:title" content="Fade — fade the extreme">
-<meta property="og:description" content="Graded signals + Fade AI · start with $10,000 paper."><meta property="og:image" content="https://fade.markets/og.png">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fade — fade the extreme</title><meta name="description" content="The one trade worth taking. Graded trading signals + Fade AI. Start with $10,000 paper.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="/og.png"><meta name="theme-color" content="#0a0a0f">
+<meta property="og:type" content="website"><meta property="og:site_name" content="fade.markets"><meta property="og:url" content="https://fade.markets">
+<meta property="og:title" content="Fade — fade the extreme"><meta property="og:description" content="The one trade worth taking. Graded signals + Fade AI."><meta property="og:image" content="https://fade.markets/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — fade the extreme">
-<meta name="twitter:description" content="Graded signals + Fade AI · start with $10,000 paper."><meta name="twitter:image" content="https://fade.markets/og.png">
-</head>
-<body>
-<script>window.FADE_API="https://fade-app.onrender.com";</script>
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — fade the extreme"><meta name="twitter:description" content="The one trade worth taking. Graded signals + Fade AI."><meta name="twitter:image" content="https://fade.markets/og.png">
+</head><body><script>window.FADE_API="https://fade-app.onrender.com";</script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -317,7 +308,7 @@ function gLet(g,plus){ let l=LETTER[g]||'?'; if(plus&&g==1)l='A+'; return l; }
 const GREEN='#39ff14', RED='#ff3b30', BLUE='#2e7bff', CYAN='#00e5ff', ASH='#8a8f98';
 const WINPROB={1:.85,2:.75,3:.6,4:.5,5:.4};
 const HANDLE='@you';
-let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false};
+let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null};
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
 function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
 let AUTHMODE='signup', CONTACT='email', DRAFT={user:'',contact:''};
@@ -592,30 +583,46 @@ function ai(){
   </div>`;
 }
 function setAiTab(t){ S.aitab=t; render(); if(t==='ask')scrollChat(); }
-function toggleSched(el){ el.classList.toggle('on'); el.classList.toggle('off'); }
+// --- on-device persistence ---
+function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function fmtAgo(ts){ const s=(Date.now()-ts)/1000; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+// --- Chats: real history saved per conversation ---
+function saveCurrentChat(){ const fu=S.chat.find(m=>m.role==='user'); if(!fu)return;
+  const chats=lsGet('fade_chats',[]); if(!S.chatId)S.chatId='c'+Date.now();
+  const rec={id:S.chatId,title:fu.content.slice(0,64),msgs:S.chat,ts:Date.now()};
+  const i=chats.findIndex(c=>c.id===S.chatId); if(i>=0)chats[i]=rec; else chats.unshift(rec);
+  lsSet('fade_chats',chats.slice(0,30)); }
+function newChat(){ S.chat=[]; S.chatId=null; S.aitab='ask'; render(); }
+function openChat(id){ const c=lsGet('fade_chats',[]).find(x=>x.id===id); if(c){ S.chat=c.msgs; S.chatId=c.id; } S.aitab='ask'; render(); scrollChat(); }
 function aiChats(){
-  const cur=S.chat.find(m=>m.role==='user');
-  const rows=[['&#128172;',cur?esc(cur.content):'New conversation','active now'],
-    ['&#128172;','How are setups graded?','today'],
-    ['&#128172;','Is NVDA a fade right now?','yesterday'],
-    ['&#128172;','Explain the add ladder','2 days ago']];
-  return `<div class="aihub"><div class="hubh">Recent chats</div>`+
-    rows.map(([i,t,s])=>`<div class="hcard" onclick="setAiTab('ask')"><div class="hi">${i}</div><div class="hb"><div class="ht">${t}</div><div class="hs">${s}</div></div></div>`).join('')+
-    `<div class="hubnote">Your Fade AI history saves to your account and syncs across devices once the app is live on the server.</div></div>`;
+  const chats=lsGet('fade_chats',[]);
+  const rows=chats.length?chats.map(c=>`<div class="hcard" onclick="openChat('${c.id}')"><div class="hi">&#128172;</div><div class="hb"><div class="ht">${esc(c.title)}</div><div class="hs">${fmtAgo(c.ts)}</div></div></div>`).join('')
+    :'<div class="hubnote">No chats yet &#183; ask Fade AI anything and it saves here.</div>';
+  return `<div class="aihub"><button class="newbtn" style="margin:0 0 12px" onclick="newChat()">+ New chat</button><div class="hubh">Recent chats</div>`+rows+
+    `<div class="hubnote">Saved on this device now &#183; syncs to your account when signed in.</div></div>`;
 }
+// --- Projects ---
+function newProject(){ const n=prompt('Name this project (e.g. Semis fades)'); if(!n||!n.trim())return;
+  const ps=lsGet('fade_projects',[]); ps.unshift({id:'p'+Date.now(),name:n.trim().slice(0,40),items:[]}); lsSet('fade_projects',ps); render(); toast('Project created'); }
+function delProject(id,e){ e.stopPropagation(); lsSet('fade_projects',lsGet('fade_projects',[]).filter(p=>p.id!==id)); render(); }
 function aiProjects(){
-  const rows=[['&#9889;','Semis fades','6 setups tracked'],['&#127754;','Crypto flushes','4 setups'],['&#11088;','My watchlist','8 tickers']];
-  return `<div class="aihub"><div class="hubh">Your projects</div>`+
-    rows.map(([i,t,s])=>`<div class="hcard"><div class="hi">${i}</div><div class="hb"><div class="ht">${t}</div><div class="hs">${s}</div></div></div>`).join('')+
-    `<button class="newbtn" onclick="toast('New project — saves once the app is live')">+ New project</button>`+
-    `<div class="hubnote">Group setups, notes, and Fade AI threads into a project. Saved to your account.</div></div>`;
+  const ps=lsGet('fade_projects',[]);
+  const rows=ps.length?ps.map(p=>`<div class="hcard"><div class="hi">&#9889;</div><div class="hb"><div class="ht">${esc(p.name)}</div><div class="hs">${(p.items||[]).length} saved</div></div><div class="tgl off" style="background:none;width:auto" onclick="delProject('${p.id}',event)"><span style="color:var(--dim);font-size:16px">&#215;</span></div></div>`).join('')
+    :'<div class="hubnote">No projects yet &#183; group setups and notes into one.</div>';
+  return `<div class="aihub"><div class="hubh">Your projects</div>`+rows+
+    `<button class="newbtn" onclick="newProject()">+ New project</button>`+
+    `<div class="hubnote">Saved on this device &#183; group setups, notes and threads.</div></div>`;
 }
+// --- Scheduled ---
+function getSched(){ let s=lsGet('fade_sched',null); if(!s){ s=[{id:'s1',title:'Pre-market fade brief',sched:'8:30 AM ET &#183; weekdays',on:true},{id:'s2',title:'Today&#39;s #1 alert',sched:'when an A setup prints',on:true},{id:'s3',title:'Weekly leaderboard recap',sched:'Sun 6:00 PM ET',on:false}]; lsSet('fade_sched',s);} return s; }
+function toggleSchedId(id){ const s=getSched(); const it=s.find(x=>x.id===id); if(it){ it.on=!it.on; lsSet('fade_sched',s); render(); toast(it.on?'Briefing on':'Briefing off'); } }
+function newBriefing(){ const t=prompt('Briefing name'); if(!t||!t.trim())return; const s=getSched(); s.push({id:'s'+Date.now(),title:t.trim().slice(0,40),sched:'daily',on:true}); lsSet('fade_sched',s); render(); }
 function aiScheduled(){
-  const rows=[['Pre-market fade brief','8:30 AM ET &#183; weekdays',true],['Today&#39;s #1 alert','when an A setup prints',true],['Weekly leaderboard recap','Sun 6:00 PM ET',false]];
-  return `<div class="aihub"><div class="hubh">Scheduled briefings</div>`+
-    rows.map(([t,s,on])=>`<div class="hcard" style="cursor:default"><div class="hb"><div class="ht">${t}</div><div class="hs">${s}</div></div><div class="tgl ${on?'on':'off'}" onclick="toggleSched(this)"></div></div>`).join('')+
-    `<button class="newbtn" onclick="toast('New briefing — fires once notifications are live')">+ New briefing</button>`+
-    `<div class="hubnote">Fade AI can send you a briefing on a schedule, or the moment a setup fires. Push goes live after deploy.</div></div>`;
+  const rows=getSched().map(it=>`<div class="hcard" style="cursor:default"><div class="hb"><div class="ht">${it.title}</div><div class="hs">${it.sched}</div></div><div class="tgl ${it.on?'on':'off'}" onclick="toggleSchedId('${it.id}')"></div></div>`).join('');
+  return `<div class="aihub"><div class="hubh">Scheduled briefings</div>`+rows+
+    `<button class="newbtn" onclick="newBriefing()">+ New briefing</button>`+
+    `<div class="hubnote">Preferences save on this device &#183; delivery (push/email) turns on with the notification pipeline.</div></div>`;
 }
 function scrollChat(){ setTimeout(()=>{ const b=document.getElementById('chatbody'); if(b)b.scrollTop=b.scrollHeight; },30); }
 function sendFromInput(){ const el=document.getElementById('chatin'); if(!el)return; const t=el.value.trim(); if(t)sendChat(t); }
@@ -626,7 +633,7 @@ async function sendChat(text){
       const d=await r.json(); S.chat.push({role:'assistant',content:d.ok?d.reply:(d.error||'Fade AI is unavailable right now.')}); }
     catch(e){ S.chat.push({role:'assistant',content:"Can't reach Fade AI right now."}); }
   } else { S.chat.push({role:'assistant',content:scriptedReply(text)}); }
-  S.thinking=false; render(); scrollChat();
+  S.thinking=false; saveCurrentChat(); render(); scrollChat();
 }
 function scriptedReply(t){ t=(t||'').toLowerCase();
   if(t.includes('mental stop')) return "A Mental Stop is your thesis-invalidation line \u2014 the price or close where the setup is simply wrong and you're out. It's 'mental' on purpose: a discipline line you hold, not a resting order in the book. Never take a setup without one.";
