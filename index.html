@@ -5,24 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fade — fade the extreme</title>
 <meta name="description" content="Graded trading signals + Fade AI. Fade extreme moves at real levels, on volume. Start with $10,000 paper.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="/og.png">
 <meta name="theme-color" content="#0a0a0f">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="fade.markets">
-<meta property="og:url" content="https://fade.markets">
-<meta property="og:title" content="Fade — fade the extreme">
-<meta property="og:description" content="Graded signals + Fade AI · start with $10,000 paper.">
-<meta property="og:image" content="https://fade.markets/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fade — fade the extreme">
-<meta name="twitter:description" content="Graded signals + Fade AI · start with $10,000 paper.">
-<meta name="twitter:image" content="https://fade.markets/og.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="fade.markets">
+<meta property="og:url" content="https://fade.markets"><meta property="og:title" content="Fade — fade the extreme">
+<meta property="og:description" content="Graded signals + Fade AI · start with $10,000 paper."><meta property="og:image" content="https://fade.markets/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — fade the extreme">
+<meta name="twitter:description" content="Graded signals + Fade AI · start with $10,000 paper."><meta name="twitter:image" content="https://fade.markets/og.png">
 </head>
 <body>
-<script>/* backend URL when live; empty = snapshot mode */ window.FADE_API="https://fade-app.onrender.com";</script>
+<script>window.FADE_API="https://fade-app.onrender.com";</script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -426,8 +419,8 @@ function feed(){
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
-      <div class="row"><div class="sym">${t.symbol}<small>${t.name} &#183; at a real level</small></div>${gradeMeter(t,true)}</div>
-      <div class="move" style="color:${moveCol(t.change_pct)}">${sign(t.change_pct)} <small>vs ${t.threshold}% &#183; last $${money(t.price)}</small></div>
+      <div class="row"><div class="sym">${t.symbol}<small>${t.name} &#183; $${money(t.price)}</small></div>${gradeMeter(t,true)}</div>
+      <div class="move" style="color:${moveCol(t.change_pct)}">${sign(t.change_pct)} <small>vs ${t.threshold}%${t.vol_ratio?' &#183; '+t.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
       <div><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
       <div class="setup">
         <div class="sb"><div class="k">Entry</div><div class="v">NOW</div></div>
@@ -438,8 +431,8 @@ function feed(){
         <button class="no" onclick="event.stopPropagation();skip('${t.symbol}')">Skip</button></div>
     </div>
     <div class="pair">
-      <div class="mini"><div class="k">Pattern</div><div class="v">${t.pattern}</div><span class="badge" style="background:${rgba(CYAN,.14)};color:${CYAN}">technical read</span></div>
-      <div class="mini"><div class="k">Narrative</div><div class="v">${t.narrative}</div><span class="badge" style="background:${rgba(BLUE,.14)};color:${BLUE}">live read</span></div></div>
+      <div class="mini" style="cursor:pointer" onclick="go('detail','${t.symbol}')"><div class="k">Pattern &#8599;</div><div class="v">${t.pattern}</div><span class="badge" style="background:${rgba(CYAN,.14)};color:${CYAN}">technical read</span></div>
+      <div class="mini" style="cursor:pointer" onclick="go('detail','${t.symbol}')"><div class="k">Narrative &#8599;</div><div class="v">${t.narrative}</div><span class="badge" style="background:${rgba(BLUE,.14)};color:${BLUE}">live read</span></div></div>
     <div class="lbl">Next up &#183; more breaches</div>${nexts||'<div class="empty">No other breaches.</div>'}
     <div class="disc">Real graded snapshot &#183; grades computed server-side &#183; education, not advice</div>
   </div>`;
@@ -498,8 +491,8 @@ function detail(){
   const actionable=a.signal==='fade_long'||a.signal==='fade_short';
   return `<div class="screen">
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
-    <div class="row" style="margin-bottom:14px"><div class="sym" style="font-size:32px">${a.symbol}<small>${a.name}${a.rank?' &#183; #'+a.rank:''}</small></div>${gradeMeter(a,true)}</div>
-    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0">${sign(a.change_pct)} <small>vs ${a.threshold}% &#183; last $${money(a.price)}</small></div>
+    <div class="row" style="margin-bottom:14px"><div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; $${money(a.price)}${a.rank?' &#183; #'+a.rank:''}</small></div>${gradeMeter(a,true)}</div>
+    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0">${sign(a.change_pct)} <small>vs ${a.threshold}%${a.vol_ratio?' &#183; '+a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
     <div style="margin:6px 0 12px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
     <div class="chartbox">${chart(a)}
       <div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">45 real daily candles</span></div></div>
@@ -790,7 +783,7 @@ function shareSetup(sym){ const a=quote(sym)||BOARD.top; if(!a)return; const c=G
     ${scLogo('&#9889; Today&#39;s Fade')}
     <div class="sc-hero"><div class="sc-sym">${a.symbol}<small>${esc(a.name||'')}${a.rank?' &#183; #'+a.rank:''}</small></div>
       ${gradeMeter(a,true)}</div>
-    <div class="sc-move" style="color:${moveCol(a.change_pct)}">${sign(a.change_pct)} <small style="font-size:12px;color:var(--ash)">vs ${a.threshold}% &#183; last $${money(a.price)}</small></div>
+    <div class="sc-move" style="color:${moveCol(a.change_pct)}">${sign(a.change_pct)} <small style="font-size:12px;color:var(--ash)">vs ${a.threshold}%${a.vol_ratio?' &#183; '+a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
     <div><span class="sc-chip" style="background:${rgba(sgc,.16)};color:${sgc}">${sg}</span></div>
     <div class="sc-setup"><div class="sc-sb"><div class="k">Entry</div><div class="v">NOW</div></div>
       <div class="sc-sb"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
