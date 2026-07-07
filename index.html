@@ -359,7 +359,6 @@ function gLet(g,plus){ let l=LETTER[g]||'?'; if(plus&&g==1)l='A+'; return l; }
 const GREEN='#39ff14', RED='#ff3b30', BLUE='#2e7bff', CYAN='#00e5ff', ASH='#8a8f98';
 const WINPROB={1:.92,2:.85,3:.77,4:.68,5:.62};  // demo skews to winning more than losing
 const HANDLE='@you';
-const BETA_CODE='SNIPERS';   // temporary invite-only beta gate (share with beta users)
 // Company / coin logos, symbol-based so no per-name lookup or database round-trip is
 // ever needed. Stocks -> Parqet's logo CDN; crypto -> the atomic-labs icon set pinned
 // on jsDelivr (a globally-cached CDN). Every badge paints a colored monogram first,
@@ -384,19 +383,26 @@ const COACH=[
  {sel:'.pair',sc:'feed',t:'Ask the AI anything',b:'Tap Pattern or Narrative and Fade AI elaborates on that read in real time, in my voice.'},
  {sel:'.fabwrap',sc:'feed',t:'Fade AI is your coach',b:'The orb reads the live board and breaks down any setup on demand. Members only.'},
  {sel:'.rowcard',sc:'markets',t:'The whole board',b:'Browse every graded setup in Markets with prices flashing live. Trade the A grades, skip the rest.'},
- {sel:null,sc:'feed',t:'Ready to fade?',b:'Create your free account to take trades, build your record, and unlock Fade AI. Invite-only beta &#8212; you are early.'}
+ {sel:null,sc:'feed',t:'Ready to fade?',b:'Create your free account to take trades, build your record, and unlock Fade AI. Free $10,000 paper &#8212; you are early.'}
 ];
 let COACHI=0;
 function coachStart(){ COACHI=0; S.coach=true; coachShow(); }
 function coachShow(){ const step=COACH[COACHI]; if(step.sc&&S.screen!==step.sc)S.screen=step.sc; render();
   setTimeout(coachPlace,50); }   // setTimeout (not rAF) so it fires even if the tab is backgrounded
 function coachPlace(){ const step=COACH[COACHI]; const spot=document.getElementById('coachspot'); if(!spot)return;
+  const tip=document.getElementById('coachtip');
   const tgt=step.sel?document.querySelector(step.sel):null;
+  let atTop=false;   // where the popup sits, so it never covers the highlighted element
   if(tgt){ try{tgt.scrollIntoView({block:'center'});}catch(e){}
     const r=tgt.getBoundingClientRect(); const pad=6;
     spot.style.display='block'; spot.style.top=(r.top-pad)+'px'; spot.style.left=(r.left-pad)+'px';
     spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+    // if the highlighted element is in the lower half (e.g. the AI orb in the nav),
+    // put the popup at the TOP so it doesn't cover what it's pointing at.
+    atTop = r.top > window.innerHeight*0.52;
   } else { spot.style.display='none'; }
+  if(atTop){ tip.style.top='calc(16px + env(safe-area-inset-top,0px))'; tip.style.bottom='auto'; }
+  else { tip.style.top='auto'; tip.style.bottom='calc(20px + env(safe-area-inset-bottom,0px))'; }
   document.getElementById('ct-step').textContent='Step '+(COACHI+1)+' of '+COACH.length;
   document.getElementById('ct-t').innerHTML=step.t;
   document.getElementById('ct-b').innerHTML=step.b;
@@ -507,9 +513,9 @@ function gradeBadge(a,big){ const c=GRADE[a.grade]; const sz=big?'grade':'gg';
   return `<div class="${sz} letter flat" style="color:${c}">
     <span class="n">${gLabel(a)}</span></div>`; }
 
-function sigTag(a){ if(a.signal==='fade_long')return['FADE LONG',GREEN];
-  if(a.signal==='fade_short')return['FADE SHORT',RED];
-  if(a.signal==='skip')return['NO FADE',ASH]; return['NO BREACH',ASH]; }
+function sigTag(a){ if(a.signal==='fade_long')return['LONG',GREEN];
+  if(a.signal==='fade_short')return['SHORT',RED];
+  if(a.signal==='skip')return['NO PLAY',ASH]; return['NO BREACH',ASH]; }
 
 /* ---------- FEED ---------- */
 function inScope(i){ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.scope==='crypto')return i.asset_class==='crypto'; return true; }
@@ -536,7 +542,7 @@ function feed(){
         <div class="sb"><div class="k">Add</div><div class="v">${money(add0)}</div></div>
         <div class="sb"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
         <div class="sb"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
-      <div class="cta"><button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="event.stopPropagation();fade('${t.symbol}')">${long?'Fade Long &#8599;':'Fade Short &#8600;'}</button>
+      <div class="cta"><button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="event.stopPropagation();fade('${t.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>
         <button class="no" onclick="event.stopPropagation();skip('${t.symbol}')">Skip</button></div>
     </div>
     <div class="pair">
@@ -603,7 +609,7 @@ function detail(){
     <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
     <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>vs ${a.threshold}%${a.vol_ratio?' &#183; <span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
     <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
-    ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="fade('${a.symbol}')">${long?'Fade Long &#8599;':'Fade Short &#8600;'} &#183; NOW</button>`:''}
+    ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="fade('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; NOW</button>`:''}
     <div class="chartbox">${chart(a)}
       <div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">45 real daily candles</span></div></div>
     <div class="terms">
@@ -613,7 +619,7 @@ function detail(){
       <div class="tm"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
     ${a.pattern_text?`<div class="why"><h3>Pattern <span class="chip" style="background:${rgba(CYAN,.14)};color:${CYAN}">${a.pattern}</span></h3><p>${a.pattern_text}</p></div>`:''}
     ${a.narrative_text?`<div class="why"><h3>Narrative <span class="chip" style="background:${rgba(BLUE,.14)};color:${BLUE}">${a.narrative}</span></h3><p>${a.narrative_text}</p></div>`:''}
-    <div class="cta">${actionable?`<button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="fade('${a.symbol}')">${long?'Fade Long &#8599;':'Fade Short &#8600;'}</button>`:`<button class="no" style="flex:1">No fade \u2014 ${sg}</button>`}
+    <div class="cta">${actionable?`<button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="fade('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>`:`<button class="no" style="flex:1">No fade \u2014 ${sg}</button>`}
       <button class="no" onclick="go('markets')">Back</button></div>
     <button class="btn-wide" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;margin-top:10px;font-weight:800" onclick="askSetup('${a.symbol}')"><span class="munch" style="width:16px;height:16px;vertical-align:-2px;display:inline-block;margin-right:7px"><span class="pac"></span></span>Ask Fade AI about this setup</button>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4);margin-top:8px" onclick="shareSetup('${a.symbol}')">&#8593; Share this setup</button></div>`;
@@ -640,7 +646,7 @@ function wallet(){
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
     <button class="btn-wide" style="background:${BLUE};color:#0a0a0f" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.7">(preview)</span></button>
     <div class="lbl">Open positions</div>
-    ${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open fades. Tap a setup &#8594; Fade Long/Short.</div>'}
+    ${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}
     <div class="lbl">History</div>
     ${s.closed.length?s.closed.slice().reverse().map(x=>posRow(x,false)).join(''):'<div class="empty">No closed trades yet.</div>'}
     <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="resetPaper()">Reset paper account</button>
@@ -717,7 +723,7 @@ function gateScreen(icon,title,body){ return `<div class="screen">${topbar()}
       <div class="authlink" style="margin-top:12px">Already a member? <b onclick="AUTHMODE='login';go('profile')">Sign in</b></div>
     </div></div>`; }
 function ai(){
-  if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and breaks down any setup in my voice. Create your free account to unlock it &#8212; invite-only beta right now.');
+  if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and breaks down any setup in my voice. Create your free account to unlock it &#8212; it is free.');
   if(!S.chat.length){
     S.chat=[{role:'assistant',content:"I'm Fade AI. I teach one method \u2014 fade the extreme, at real levels, on volume. Ask me anything, or tap a starter below."}];
     if(!API){ S.chat.push(
@@ -938,13 +944,12 @@ function authScreen(){
     <div class="auth">
       <div class="pava" style="margin:6px auto 14px">&#10022;</div>
       <h2>${signup?'Create your account':'Welcome back'}</h2>
-      <div class="sub2">${signup?'<span class="chip" style="background:'+rgba('#ff6a00',.16)+';color:var(--ai)">INVITE-ONLY BETA</span><br style="line-height:2.4">Claim a username. Start with $10,000 paper.':'Sign in to your paper account.'}</div>
+      <div class="sub2">${signup?'<span class="chip" style="background:'+rgba('#ff6a00',.16)+';color:var(--ai)">BETA</span><br style="line-height:2.4">Claim a username. Start with $10,000 paper.':'Sign in to your paper account.'}</div>
       <div class="autherr" id="autherr"></div>
       ${signup?`
         <div class="fld"><label>Username</label><input id="a_user" value="${DRAFT.user}" oninput="DRAFT.user=this.value" placeholder="pick a handle" autocapitalize="off" maxlength="20"></div>
         <div class="seg"><button class="${CONTACT==='email'?'on':''}" onclick="setContact('email')">Email</button><button class="${CONTACT==='phone'?'on':''}" onclick="setContact('phone')">Phone</button></div>
         <div class="fld"><input id="a_contact" value="${DRAFT.contact}" oninput="DRAFT.contact=this.value" placeholder="${CONTACT==='email'?'you@email.com':'+1 555 123 4567'}" type="${CONTACT==='email'?'email':'tel'}" autocapitalize="off"></div>
-        <div class="fld"><label>Invite code</label><input id="a_invite" placeholder="beta invite code" autocapitalize="characters"></div>
         <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px" onclick="doSignup()">Create account &#8594;</button>
         <div class="authlink">Already have one? <b onclick="setAuth('login')">Sign in</b></div>
       `:`
@@ -971,8 +976,6 @@ async function doSignup(){
   const contact=((document.getElementById('a_contact')||{}).value||'').trim();
   const email=CONTACT==='email'?contact:'', phone=CONTACT==='phone'?contact:'';
   autherr('');
-  const invite=((document.getElementById('a_invite')||{}).value||'').trim().toUpperCase();
-  if(invite!==BETA_CODE){ autherr('Invalid invite code — fade.markets is invite-only beta right now.'); return; }
   if(API){
     try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone})});
       const d=await r.json(); if(!d.ok){ autherr(d.error||'Could not create account'); return; }
