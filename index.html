@@ -502,16 +502,25 @@ function gLabel(a){ return gLet(a.grade,false); }
 // The A-F scale strip with the current tier lit - this is what reads as a "system".
 function gradeScale(g){ return `<div class="gscale">`+[1,2,3,4,5].map(k=>
   `<span class="${k===g?'on':''}" style="${k===g?'background:'+GRADE[k]:''}">${LETTER[k]}</span>`).join('')+`</div>`; }
-// Grade meter: GRADE label + the letter. Featured cards (hero/detail/share) show
-// A+ for a grade-1 setup - the rare perfect top setup. (Full rubric lives in Fade AI.)
-function gradeMeter(a,big){ return `<div class="gmeter${big?' big':''}"><div class="glab">GRADE</div>`+
-  `<div class="glet" style="color:${GRADE[a.grade]}">${gLet(a.grade,true)}</div></div>`; }
+// The single best trade RIGHT NOW (the #1) always presents in the A-band, scaled by
+// how good it actually is: really good (real A/B) -> A+, decent (real C) -> A, and
+// the weakest "best available" (real D) -> A-. It is never shown below A-, because
+// it is the top pick of the moment. TOPSYM (set each render) is that #1's symbol,
+// so the same setup shows the same A-band grade everywhere it appears (no flip).
+let TOPSYM=null;
+function isTop(a){ return !!(a&&a.symbol&&a.symbol===TOPSYM); }
+function topLabel(g){ if(g==null)return 'A'; if(g<=2)return 'A+'; if(g===3)return 'A'; return 'A-'; }
+// Grade meter: GRADE label + the letter. The #1 shows its A-band grade in green.
+function gradeMeter(a,big){ const top=isTop(a); const l=top?topLabel(a.grade):gLet(a.grade,true); const c=top?GREEN:GRADE[a.grade];
+  return `<div class="gmeter${big?' big':''}"><div class="glab">GRADE</div>`+
+  `<div class="glet" style="color:${c}">${l}</div></div>`; }
 // Compact chip for list rows: GRADE label + precise letter.
-function gradeChip(a){ return `<div class="gchip"><span class="cl">GRADE</span>`+
-  `<span class="cv" style="color:${GRADE[a.grade]}">${gLabel(a)}</span></div>`; }
-function gradeBadge(a,big){ const c=GRADE[a.grade]; const sz=big?'grade':'gg';
+function gradeChip(a){ const top=isTop(a); const l=top?topLabel(a.grade):gLabel(a); const c=top?GREEN:GRADE[a.grade];
+  return `<div class="gchip"><span class="cl">GRADE</span>`+
+  `<span class="cv" style="color:${c}">${l}</span></div>`; }
+function gradeBadge(a,big){ const top=isTop(a); const c=top?GREEN:GRADE[a.grade]; const sz=big?'grade':'gg'; const l=top?topLabel(a.grade):gLabel(a);
   return `<div class="${sz} letter flat" style="color:${c}">
-    <span class="n">${gLabel(a)}</span></div>`; }
+    <span class="n">${l}</span></div>`; }
 
 function sigTag(a){ if(a.signal==='fade_long')return['LONG',GREEN];
   if(a.signal==='fade_short')return['SHORT',RED];
@@ -1040,7 +1049,8 @@ function closeShare(){ document.getElementById('shwrap').classList.remove('show'
 function shareNative(){ const url='https://fade.markets'; if(navigator.share){ navigator.share({title:'fade.markets',text:SHARECAP,url:url}).catch(()=>{}); } else { copyCap(); } }
 function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fade.markets'); toast('Caption copied \u2014 screenshot the card & post'); }catch(e){ toast('Screenshot the card to share'); } }
 
-function render(){ const scr={feed,markets,detail,wallet,social,ai,profile}[S.screen]||feed;
+function render(){ try{ TOPSYM=(topFor()||{}).symbol||null; }catch(e){ TOPSYM=null; }
+  const scr={feed,markets,detail,wallet,social,ai,profile}[S.screen]||feed;
   document.getElementById('app').innerHTML = scr() + nav(); }
 
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
