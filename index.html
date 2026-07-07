@@ -282,17 +282,16 @@ input,textarea,select{font-size:16px}
 /* share card (viral / marketing) */
 .shwrap{position:fixed;inset:0;background:rgba(0,0,0,.84);backdrop-filter:blur(7px);z-index:80;display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:14px;overflow-y:auto}
 .shwrap.show{display:flex}
-.tourwrap{position:fixed;inset:0;background:rgba(4,4,9,.92);backdrop-filter:blur(9px);z-index:95;display:flex;align-items:center;justify-content:center;padding:24px}
-.tourcard{background:var(--void);border:1px solid var(--line);border-radius:24px;max-width:400px;width:100%;padding:32px 26px 26px;text-align:center;animation:sheet .28s ease}
-.tour-i{font-size:46px;line-height:1;margin-bottom:14px}
-.tour-t{font-size:23px;font-weight:800;letter-spacing:-.5px;margin-bottom:11px}
-.tour-b{color:var(--ashl);font-size:15px;line-height:1.6;margin-bottom:22px}
-.tdots{display:flex;gap:7px;justify-content:center;margin-bottom:22px}
-.tdot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:all .2s}
-.tdot.on{background:var(--ai);width:22px;border-radius:4px}
-.tour-cta{display:flex;flex-direction:column;gap:10px}
-.tour-go{background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;cursor:pointer;font-family:inherit}
-.tour-skip{background:none;border:none;color:var(--ash);font-size:13px;cursor:pointer;font-family:inherit;padding:5px}
+.coachwrap{position:fixed;inset:0;z-index:96;display:none}
+.coachwrap.show{display:block}
+.coachspot{position:fixed;border-radius:15px;box-shadow:0 0 0 9999px rgba(4,4,9,.76);border:2px solid var(--ai);transition:top .28s ease,left .28s ease,width .28s ease,height .28s ease;pointer-events:none}
+.coachtip{position:fixed;left:14px;right:14px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--void);border:1px solid var(--line);border-radius:18px;padding:17px 18px 15px;max-width:412px;margin:0 auto;animation:sheet .25s ease}
+.ct-step{color:var(--ai);font-size:10.5px;font-weight:700;letter-spacing:1px;margin-bottom:7px}
+.ct-t{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:7px}
+.ct-b{color:var(--ashl);font-size:14px;line-height:1.5;margin-bottom:15px}
+.ct-cta{display:flex;gap:12px;align-items:center}
+.ct-next{flex:1;background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit}
+.ct-skip{background:none;border:none;color:var(--ash);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:85;display:none;align-items:flex-end;justify-content:center}
 .modal.show{display:flex}
 .modalcard{background:var(--void);color:var(--txt);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:460px;padding:18px 17px calc(22px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow-y:auto;animation:sheet .22s ease}
@@ -300,6 +299,10 @@ input,textarea,select{font-size:16px}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
 .mrow .k{color:var(--ash);font-size:13px} .mrow .v{font-weight:700;font-size:14px}
 .mbtn{width:100%;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:10px;font-family:inherit}
+.pxbig{display:flex;align-items:center;justify-content:space-between;background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:4px 0 9px}
+.pxbig-k{color:var(--green);font-size:9.5px;letter-spacing:1.2px;font-weight:700;margin-bottom:3px}
+.pxbig-p{font-family:'Space Mono';font-size:29px;font-weight:700;color:var(--txt);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.pxbig-c{font-family:'Space Mono';font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .sc-hint{font-family:'Space Mono';font-size:11px;color:var(--ashl);text-align:center;max-width:340px}
 .sc-hint b{color:var(--blue)}
 .shcard{width:330px;max-width:92vw;border-radius:26px;overflow:hidden;position:relative;color:var(--txt);background:radial-gradient(520px 380px at 80% -8%,rgba(46,123,255,.22),transparent 60%),linear-gradient(165deg,#181119,#0a0a0f);border:1px solid var(--line);box-shadow:0 26px 74px rgba(0,0,0,.7)}
@@ -333,6 +336,9 @@ input,textarea,select{font-size:16px}
 
 <div id="app"></div>
 <div class="rotate" id="rotate"><div class="ri">&#128241;</div><div class="rt">Rotate to portrait</div><div class="rs">fade.markets runs in portrait only</div></div>
+<div class="coachwrap" id="coachwrap"><div class="coachspot" id="coachspot"></div>
+  <div class="coachtip" id="coachtip"><div class="ct-step" id="ct-step"></div><div class="ct-t" id="ct-t"></div><div class="ct-b" id="ct-b"></div>
+    <div class="ct-cta"><button class="ct-next" id="ct-next" onclick="coachNext()">Next</button><button class="ct-skip" id="ct-skip" onclick="coachEnd(false)">Skip</button></div></div></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="modalcard" id="modalbody"></div></div>
 <div class="shwrap" id="shwrap">
@@ -368,32 +374,43 @@ function logoURL(a){ if(!a||!a.symbol)return'';
 function logoBadge(a,size){ const s=size||34; const url=logoURL(a); const ini=((a.symbol||'?')[0]||'?');
   return `<div class="lbadge" style="width:${s}px;height:${s}px;background:${logoBg(a.symbol||'')};font-size:${Math.round(s*0.42)}px">`+
     `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onload="this.classList.add('on')" onerror="this.remove()" alt="">`:'')+`</div>`; }
-let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:'',tour:null,lb:[]};
-// First-run walkthrough shown right after signup.
-const TOUR=[
- {i:'&#9889;',t:'Welcome, __U__',b:'You just claimed your handle and $10,000 in paper. No real money, ever &#8212; this is where you learn to fade.'},
- {i:'&#127919;',t:'One method: fade the extreme',b:'When a large-cap overshoots hard into a real level on volume, we take the counter-move back toward the mean. Every setup is graded A (table-pounder) down to F (no setup).'},
- {i:'&#128293;',t:'Your feed leads with the #1',b:'The feed always shows the highest-grade setup live right now &#8212; entry, target and a mental stop, all drawn. Tap Fade Long or Short to take it on paper.'},
- {i:'&#128200;',t:'Markets and grades',sc:'markets',b:'Browse every graded setup in Markets, prices flashing live. Trade the A grades, skip the rest &#8212; the grade tells you how much confluence is really there.'},
- {i:'&#129302;',t:'Fade AI, in my voice',b:'Tap the orb anytime. Fade AI reads the live board and breaks down any setup &#8212; the grade, the level, the volume. Education, never financial advice.'},
- {i:'&#128640;',t:'You are set',b:'Start with the #1 on your feed. Fade the extreme, at real levels, on volume. Time to eat.'}
+let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:'',coach:false,lb:[]};
+// Coachmark walkthrough: spotlight real elements in the real app with popups. Guests
+// can look but can't take trades or use the AI (those prompt signup).
+const COACH=[
+ {sel:'.hero',sc:'feed',t:'Your #1 fade, live',b:'This is the highest-grade setup on the board right now. The price and % update live &#8212; watch it move.'},
+ {sel:'.gmeter',sc:'feed',t:'Graded A to F',b:'Every setup gets a letter grade. A is a table-pounder: an extreme move, at a real level, on volume. Trade the A grades.'},
+ {sel:'.setup',sc:'feed',t:'Entry, target, stop',b:'Entry is now, the target is the level it snaps back to, and the mental stop is where the thesis is wrong. Never fade without one.'},
+ {sel:'.pair',sc:'feed',t:'Ask the AI anything',b:'Tap Pattern or Narrative and Fade AI elaborates on that read in real time, in my voice.'},
+ {sel:'.fabwrap',sc:'feed',t:'Fade AI is your coach',b:'The orb reads the live board and breaks down any setup on demand. Members only.'},
+ {sel:'.rowcard',sc:'markets',t:'The whole board',b:'Browse every graded setup in Markets with prices flashing live. Trade the A grades, skip the rest.'},
+ {sel:null,sc:'feed',t:'Ready to fade?',b:'Create your free account to take trades, build your record, and unlock Fade AI. Invite-only beta &#8212; you are early.'}
 ];
-function uName(){ return '@'+(S.user?S.user.username:'you'); }
-function tourHTML(){ const n=S.tour; const s=TOUR[n]; if(!s)return'';
-  const last=n===TOUR.length-1;
-  const dots=TOUR.map((_,k)=>`<span class="tdot${k===n?' on':''}"></span>`).join('');
-  return `<div class="tourwrap"><div class="tourcard">
-    <div class="tour-i">${s.i}</div>
-    <div class="tour-t">${s.t.replace('__U__',uName())}</div>
-    <div class="tour-b">${s.b.replace('__U__',uName())}</div>
-    <div class="tdots">${dots}</div>
-    <div class="tour-cta"><button class="tour-go" onclick="tourNext()">${last?(S.user?'Start trading &#8594;':'Create free account &#8594;'):'Next'}</button>
-      ${last?'':`<button class="tour-skip" onclick="tourEnd()">${S.user?'Skip walkthrough':'Skip &#183; sign up'}</button>`}</div>
-  </div></div>`; }
-function startTour(){ S.tour=0; S.screen=(TOUR[0].sc||'feed'); render(); }
-function tourNext(){ if(S.tour<TOUR.length-1){ S.tour++; S.screen=(TOUR[S.tour].sc||'feed'); render(); } else tourEnd(); }
-function tourEnd(){ S.tour=null; try{localStorage.setItem('fade_tour_done','1');}catch(e){}
-  if(!S.user){ AUTHMODE='signup'; go('profile'); } else go('feed'); }
+let COACHI=0;
+function coachStart(){ COACHI=0; S.coach=true; coachShow(); }
+function coachShow(){ const step=COACH[COACHI]; if(step.sc&&S.screen!==step.sc)S.screen=step.sc; render();
+  setTimeout(coachPlace,50); }   // setTimeout (not rAF) so it fires even if the tab is backgrounded
+function coachPlace(){ const step=COACH[COACHI]; const spot=document.getElementById('coachspot'); if(!spot)return;
+  const tgt=step.sel?document.querySelector(step.sel):null;
+  if(tgt){ try{tgt.scrollIntoView({block:'center'});}catch(e){}
+    const r=tgt.getBoundingClientRect(); const pad=6;
+    spot.style.display='block'; spot.style.top=(r.top-pad)+'px'; spot.style.left=(r.left-pad)+'px';
+    spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+  } else { spot.style.display='none'; }
+  document.getElementById('ct-step').textContent='Step '+(COACHI+1)+' of '+COACH.length;
+  document.getElementById('ct-t').innerHTML=step.t;
+  document.getElementById('ct-b').innerHTML=step.b;
+  const last=COACHI===COACH.length-1;
+  document.getElementById('ct-next').innerHTML=last?(S.user?'Start trading &#8594;':'Create free account &#8594;'):'Next &#8594;';
+  document.getElementById('ct-skip').style.display=last?'none':'';
+  document.getElementById('coachwrap').classList.add('show'); }
+function coachNext(){ if(COACHI>=COACH.length-1) coachEnd(true); else { COACHI++; coachShow(); } }
+function coachEnd(viaFinish){ S.coach=false; try{localStorage.setItem('fade_tour_done','1');}catch(e){}
+  const w=document.getElementById('coachwrap'); if(w)w.classList.remove('show');
+  const sp=document.getElementById('coachspot'); if(sp)sp.style.display='none';
+  if(!S.user&&viaFinish){ AUTHMODE='signup'; go('profile'); } else go('feed'); }
+// compatibility: signup/boot call startTour
+function startTour(){ coachStart(); }
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
 function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
 let AUTHMODE='signup', CONTACT='email', DRAFT={user:'',contact:''};
@@ -585,7 +602,8 @@ function detail(){
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
     <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
     <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>vs ${a.threshold}%${a.vol_ratio?' &#183; <span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
-    <div style="margin:6px 0 12px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
+    <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
+    ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="fade('${a.symbol}')">${long?'Fade Long &#8599;':'Fade Short &#8600;'} &#183; NOW</button>`:''}
     <div class="chartbox">${chart(a)}
       <div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">45 real daily candles</span></div></div>
     <div class="terms">
@@ -637,18 +655,21 @@ function closeModal(){ const m=document.getElementById('modal'); if(m)m.classLis
 function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return '';
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const open=x.status==='open';
   const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl; const pc=pnl>=0?GREEN:RED;
-  const notional=x.qty*x.entry;
-  return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">${logoBadge(x,46)}
-      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small></div>
+  const notional=x.qty*x.entry; const chg=(q&&q.change_pct!=null)?q.change_pct:0;
+  const long=x.side==='long';
+  return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${logoBadge(x,46)}
+      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small></div>
       <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; grade ${gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
       <div style="text-align:right"><div ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${open?'unrealized':(x.result||'').toUpperCase()}</div></div></div>
-    <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}</span></div>
-    <div class="mrow"><span class="k">${open?'Current price':'Exit'}</span><span class="v">${open?`$<span data-px="${x.symbol}">${pxFmt(cur)}</span>`:money(x.exit)}</span></div>
+    ${open?`<div class="pxbig">
+      <div><div class="pxbig-k">&#9679; LIVE PRICE</div><div class="pxbig-p">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div>
+      <div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)}">${sign(chg)}</div></div>
+    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="addToPos('${x.id}')">Fade in another $1,000 ${long?'&#8599;':'&#8600;'}</button>`:''}
+    <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">${x.qty.toFixed(4)} &#183; $${money(notional)}</span></div>
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
     <div class="mrow"><span class="k">Mental stop</span><span class="v" style="color:${RED}">${money(x.stop)}</span></div>
-    ${open?`<button class="mbtn" style="background:${BLUE};color:#04122b" onclick="addToPos('${x.id}')">+ Add $1,000 to position</button>
-    <button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ ${money(cur)}</button>`:''}
+    ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
     <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askSetup('${x.symbol}')">Ask Fade AI about ${x.symbol}</button>
     <button class="mbtn" style="background:none;color:var(--ash)" onclick="closeModal()">Done</button>`; }
 function openPos(id){ openModal(posModal(id)); }
@@ -687,7 +708,16 @@ function loadLB(){ if(!API){ if(S.screen==='social')render(); return; }
 
 /* ---------- FADE AI ---------- */
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function gateScreen(icon,title,body){ return `<div class="screen">${topbar()}
+    <div class="auth" style="padding-top:26px">
+      <div style="font-size:52px;margin-bottom:12px">${icon}</div>
+      <h2>${title}</h2>
+      <div class="sub2" style="margin:8px 0 22px">${body}</div>
+      <button class="btn-wide" style="background:${BLUE};color:#04122b" onclick="AUTHMODE='signup';go('profile')">Create free account &#8594;</button>
+      <div class="authlink" style="margin-top:12px">Already a member? <b onclick="AUTHMODE='login';go('profile')">Sign in</b></div>
+    </div></div>`; }
 function ai(){
+  if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and breaks down any setup in my voice. Create your free account to unlock it &#8212; invite-only beta right now.');
   if(!S.chat.length){
     S.chat=[{role:'assistant',content:"I'm Fade AI. I teach one method \u2014 fade the extreme, at real levels, on volume. Ask me anything, or tap a starter below."}];
     if(!API){ S.chat.push(
@@ -1008,7 +1038,7 @@ function shareNative(){ const url='https://fade.markets'; if(navigator.share){ n
 function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fade.markets'); toast('Caption copied \u2014 screenshot the card & post'); }catch(e){ toast('Screenshot the card to share'); } }
 
 function render(){ const scr={feed,markets,detail,wallet,social,ai,profile}[S.screen]||feed;
-  document.getElementById('app').innerHTML = scr() + nav() + (S.tour!=null?tourHTML():''); }
+  document.getElementById('app').innerHTML = scr() + nav(); }
 
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
 // baked snapshot with live data from the backend. Grades still computed server-side.
@@ -1089,7 +1119,7 @@ async function livePoll(){ if(!API||document.hidden) return;
     if(!b||!b.items) return;
     BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor(); clampGrades();
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
-    const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.screen==='ai'||S.screen==='profile';
+    const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.coach||S.screen==='ai'||S.screen==='profile';
     const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
     if(!busy&&!typing&&(S.screen==='feed'||S.screen==='markets'||S.screen==='detail')){
       const app=document.getElementById('app'); const y=(app&&app.scrollTop)||window.scrollY||0;
@@ -1104,8 +1134,10 @@ async function loadChart(sym){ if(!API) return; const it=quote(sym); if(!it||it.
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
-if(!S.user){ AUTHMODE='signup'; S.tour=0; S.screen=(TOUR[0].sc||'feed'); }
+if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
 pxReanchor(); clampGrades(); render(); hydrate(); if(S.hlAddr) loadHL();
+// Guests get the coachmark walkthrough over the live board (until they sign up).
+if(!S.user) setTimeout(coachStart,600);
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
