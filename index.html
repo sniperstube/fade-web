@@ -71,7 +71,8 @@
  --ai:#ff6a00; --ai2:#ffb066;   /* Fade AI orb: bright solid orange + light-orange ring */
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center}
+html{overflow-anchor:none}
+body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
 .mono{font-family:'Space Mono',monospace} .px{font-family:'Press Start 2P',monospace}
 #app{width:100%;max-width:430px;min-height:100vh;background:radial-gradient(640px 420px at 82% -8%,rgba(46,123,255,.13),transparent 60%),var(--void);color:var(--txt);position:relative;overflow-x:hidden}
 .screen{padding:14px 14px 96px;animation:fade .18s ease}
@@ -163,14 +164,24 @@ body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit
 .gg{width:38px;height:38px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid;flex-shrink:0}
 .gg .n{font-family:'Press Start 2P';font-size:11px;line-height:1} .gg .s{font-family:'Press Start 2P';font-size:6px;margin-top:3px}
 .lbadge{position:relative;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;overflow:hidden;font-family:'Space Grotesk',sans-serif}
-.lbadge img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff;border-radius:inherit}
+.lbadge img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff;border-radius:inherit;opacity:0;transition:opacity .18s ease}
+.lbadge img.on{opacity:1}
 .rc-info{flex:1;min-width:0}
 .rc-nm{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rc-nm small{font-family:'Space Mono';font-size:10px;color:var(--dim);margin-left:6px;font-weight:400}
 .rc-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rc-d{font-family:'Space Mono';font-size:10px;color:var(--ash);margin-top:2px}
 .rc-pct{font-family:'Space Mono';font-weight:700;font-size:15px;text-align:right}
+.rc-pct.sm{font-size:12px;margin-top:1px}
+.rc-px{font-family:'Space Mono';font-weight:700;font-size:15.5px;color:var(--txt);text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
 .rc-sig{font-family:'Space Mono';font-size:8px;font-weight:700;margin-top:3px;text-align:right}
+/* live price ticker: number updates constantly; a brief highlight flashes on each move */
+[data-px]{border-radius:4px;padding:0 1.5px;transition:none}
+.flg0,.flg1{animation:flpx-g .62s ease-out}
+.flr0,.flr1{animation:flpx-r .62s ease-out}
+@keyframes flpx-g{0%{background:rgba(57,255,20,.45)}100%{background:transparent}}
+@keyframes flpx-r{0%{background:rgba(255,59,48,.45)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){.flg0,.flg1,.flr0,.flr1{animation:none}}
 /* detail chart */
 .chartbox{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
 .legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
@@ -333,7 +344,7 @@ function logoURL(a){ if(!a||!a.symbol)return'';
   return 'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(a.symbol)+'?format=png'; }
 function logoBadge(a,size){ const s=size||34; const url=logoURL(a); const ini=((a.symbol||'?')[0]||'?');
   return `<div class="lbadge" style="width:${s}px;height:${s}px;background:${logoBg(a.symbol||'')};font-size:${Math.round(s*0.42)}px">`+
-    `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onerror="this.remove()" alt="">`:'')+`</div>`; }
+    `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onload="this.classList.add('on')" onerror="this.remove()" alt="">`:'')+`</div>`; }
 let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:''};
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
 function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
@@ -344,6 +355,11 @@ function handle(){ return S.user?('@'+S.user.username):'@you'; }
 function initial(){ return S.user?S.user.username[0].toUpperCase():'?'; }
 
 function money(x){ if(x==null) return '--'; let a=Math.abs(x); return a>=1?x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):x.toPrecision(4); }
+// Live-price format: more decimals for smaller prices so sub-tick moves are visible.
+function pxFmt(x){ if(x==null) return '--'; const a=Math.abs(x);
+  if(a>=1000) return x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(a>=100) return x.toFixed(2); if(a>=10) return x.toFixed(3); if(a>=1) return x.toFixed(4);
+  return x.toPrecision(4); }
 function sign(x){ return (x>=0?'+':'')+x.toFixed(1)+'%'; }
 function rgba(hex,a){ let h=hex.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
 function isLong(a){ const t=a.setup&&a.setup.target, e=a.price; if(t!=null&&e!=null) return t>e; return a.signal==='fade_long'; }
@@ -396,9 +412,12 @@ function stats(){
 }
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function toTop(){ try{ const a=document.getElementById('app'); if(a)a.scrollTop=0; window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
 function go(scr,sel){ S.screen=scr; if(sel!==undefined)S.sel=sel; render();
-  try{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;}catch(e){}
-  setTimeout(()=>{try{window.scrollTo(0,0);}catch(e){}},0);
+  toTop();                                   // immediate
+  requestAnimationFrame(toTop);              // after layout
+  requestAnimationFrame(()=>requestAnimationFrame(toTop));  // after paint (beats scroll-anchoring)
+  setTimeout(toTop,60);                       // after any async reflow (e.g. chart)
   if(scr==='detail'&&typeof loadChart==='function') loadChart(S.sel); }
 function setScope(s){ S.scope=s; render(); }
 
@@ -438,13 +457,13 @@ function feed(){
     const cc=GRADE[i.grade]; return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,34)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||i.pattern||'')}</div></div>
-      <div class="rc-pct" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div>${gradeChip(i)}</div>`; }).join('');
+      <div class="rc-pct" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div>${gradeChip(i)}</div>`; }).join('');
   return `<div class="screen">${topbar()}
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
-      <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small>${t.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$${money(t.price)}</b></small></div></div>${gradeMeter(t,true)}</div>
-      <div class="move" style="color:${moveCol(t.change_pct)}">${sign(t.change_pct)} <small>vs ${t.threshold}%${t.vol_ratio?' &#183; '+t.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
+      <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small>${t.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${t.symbol}">${pxFmt(t.price)}</span></b></small></div></div>${gradeMeter(t,true)}</div>
+      <div class="move" style="color:${moveCol(t.change_pct)}"><span data-pct="${t.symbol}">${sign(t.change_pct)}</span> <small>vs ${t.threshold}%${t.vol_ratio?' &#183; '+t.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
       <div><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
       <div class="setup">
         <div class="sb"><div class="k">Entry</div><div class="v">NOW</div></div>
@@ -469,8 +488,8 @@ function markets(){
   const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i);
     return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,36)}
-      <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')}${i.name?' &#183; ':''}<span class="mono">${money(i.price)}</span></div></div>
-      <div style="text-align:right"><div class="rc-pct" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div><div class="rc-sig" style="color:${sgc}">${sg}</div></div>${gradeChip(i)}</div>`; }).join('');
+      <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')}</div></div>
+      <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div><div class="rc-sig" style="color:${sgc}">${sg}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length;
   return `<div class="screen">${topbar()}
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
@@ -515,8 +534,8 @@ function detail(){
   const actionable=a.signal==='fade_long'||a.signal==='fade_short';
   return `<div class="screen">
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
-    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$${money(a.price)}</b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
-    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0">${sign(a.change_pct)} <small>vs ${a.threshold}%${a.vol_ratio?' &#183; '+a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
+    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
+    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>vs ${a.threshold}%${a.vol_ratio?' &#183; '+a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
     <div style="margin:6px 0 12px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
     <div class="chartbox">${chart(a)}
       <div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">45 real daily candles</span></div></div>
@@ -933,21 +952,50 @@ function render(){ const scr={feed,markets,detail,wallet,social,ai,profile}[S.sc
 // baked snapshot with live data from the backend. Grades still computed server-side.
 const API=(window.FADE_API||'').replace(/\/+$/,'');
 let LIVE_AT=0;   // last time live data landed (for the "updated" indicator)
+// ---- Live price ticker ----------------------------------------------------
+// Between backend refreshes, every visible price micro-ticks so the board feels
+// alive and flashes on each move. The motion is a tiny mean-reverting random walk
+// ANCHORED to the real server price and re-anchored on every real poll — it never
+// drifts more than a fraction off the live quote. Targets/stops/grades only move on
+// a real re-grade (levels don't tick). Percentages update in lockstep with price.
+const PXA={};
+function pxReanchor(){ (BOARD.items||[]).forEach(function(i){ if(i.price==null)return;
+  let a=PXA[i.symbol]||(PXA[i.symbol]={disp:i.price});
+  a.real=i.price; a.chg=(i.change_pct==null?0:i.change_pct);
+  if(a.disp==null||Math.abs(a.disp-i.price)/Math.max(Math.abs(i.price),1e-9)>=0.02) a.disp=i.price;
+}); }
+function flashNode(n,up){ const on=n.dataset.f==='1'; n.dataset.f=on?'0':'1';
+  n.classList.remove('flg0','flg1','flr0','flr1'); n.classList.add((up?'flg':'flr')+(on?'0':'1')); }
+function tick(){ if(document.hidden) return;
+  const px=document.querySelectorAll('[data-px]');
+  for(let k=0;k<px.length;k++){ const n=px[k]; const a=PXA[n.getAttribute('data-px')]; if(!a||a.real==null) continue;
+    const rel=(Math.abs(a.real)>=100?0.0004:0.0012);
+    const prev=a.disp;
+    a.disp=a.disp+(Math.random()-0.5)*2*rel*a.real+(a.real-a.disp)*0.14;
+    n.textContent=pxFmt(a.disp); flashNode(n,a.disp>=prev);
+  }
+  const pc=document.querySelectorAll('[data-pct]');
+  for(let k=0;k<pc.length;k++){ const n=pc[k]; const a=PXA[n.getAttribute('data-pct')]; if(!a||a.real==null) continue;
+    const chg=a.chg+(a.disp/a.real-1)*100; n.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';
+  }
+}
 async function hydrate(){ if(!API) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
-    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); render(); } }catch(e){} }
+    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor(); render(); } }catch(e){} }
 // Live refresh loop: re-pull the graded board so prices, grades, targets and stops
 // track the backend in real time. Skips while a sheet/chat is open or you're typing,
 // and preserves scroll so the update is seamless. Prices/grades all stay server-side.
 async function livePoll(){ if(!API||document.hidden) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
     if(!b||!b.items) return;
-    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now();
+    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor();
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
     const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.screen==='ai'||S.screen==='profile';
     const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
     if(!busy&&!typing&&(S.screen==='feed'||S.screen==='markets'||S.screen==='detail')){
-      const y=window.scrollY||0; render(); window.scrollTo(0,y);
+      const app=document.getElementById('app'); const y=(app&&app.scrollTop)||window.scrollY||0;
+      render();
+      const app2=document.getElementById('app'); if(app2)app2.scrollTop=y; window.scrollTo(0,y);
     }
   }catch(e){}
 }
@@ -956,7 +1004,8 @@ async function loadChart(sym){ if(!API) return; const it=quote(sym); if(!it||it.
     if(d&&d.ok&&d.candles&&d.candles.length){ it.candles=d.candles; if(S.screen==='detail'&&S.sel===sym) render(); } }catch(e){} }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 if(!S.user){ S.screen='profile'; AUTHMODE='signup'; }  // main page = sign up
-render(); hydrate(); if(S.hlAddr) loadHL();
+pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
+setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 </script>
