@@ -216,6 +216,8 @@ input,textarea,select{font-size:16px}
 .stat .k{font-family:'Space Mono';font-size:9px;color:var(--ash);text-transform:uppercase;margin-top:3px}
 .btn-wide{width:100%;border:none;padding:13px;border-radius:12px;font-family:'Space Grotesk';font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px}
 .pos{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
+.pos-closed{opacity:.5;background:transparent}            /* history: muted + flat */
 .empty{text-align:center;color:var(--ash);font-family:'Space Mono';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
@@ -383,6 +385,7 @@ const COACH=[
  {sel:'.pair',sc:'feed',t:'Ask the AI anything',b:'Tap Pattern or Narrative and Fade AI breaks it down in plain, simple English &#8212; like a patient analyst.'},
  {sel:'.fabwrap',sc:'feed',t:'Fade AI is your coach',b:'The orb reads the live board and breaks down any setup on demand. Members only.'},
  {sel:'.rowcard',sc:'markets',t:'The whole board',b:'Browse every graded setup in Markets with prices flashing live. Trade the A grades, skip the rest.'},
+ {sel:'.balance',sc:'wallet',t:'Your $10,000 paper account',b:'Every trade lands here. Cash drops when you open a position and comes back when you close. Open trades show live with a green edge; your closed history sits dimmed below.'},
  {sel:null,sc:'feed',t:'Ready to fade?',b:'Create your free account to take trades, build your record, and unlock Fade AI. Free $10,000 paper &#8212; you are early.'}
 ];
 let COACHI=0;
@@ -648,7 +651,7 @@ function wallet(){
   const posRow=(x,open)=>{ const c=GRADE[x.grade]; const q=quote(x.symbol); const cur=q?q.price:x.entry;
     const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl;
     const pc=pnl>=0?GREEN:RED;
-    return `<div class="pos"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
+    return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
       <div class="rc-d">${open?'tap to manage &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
