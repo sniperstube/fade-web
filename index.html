@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fade — trade the extreme</title><meta name="description" content="The one trade worth taking. Graded trading signals + Fade AI. Start with $10,000 paper.">
+<title>Fade — trade the fade</title><meta name="description" content="The one trade worth taking. Graded trading signals + Fade AI. Start with $10,000 paper.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="/og.png"><meta name="theme-color" content="#0a0a0f">
 <meta property="og:type" content="website"><meta property="og:site_name" content="fade.markets"><meta property="og:url" content="https://fade.markets">
-<meta property="og:title" content="Fade — trade the extreme"><meta property="og:description" content="The one trade worth taking. Graded signals + Fade AI."><meta property="og:image" content="https://fade.markets/og.png">
+<meta property="og:title" content="Fade — trade the fade"><meta property="og:description" content="The one trade worth taking. Graded signals + Fade AI."><meta property="og:image" content="https://fade.markets/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — trade the extreme"><meta name="twitter:description" content="The one trade worth taking. Graded signals + Fade AI."><meta name="twitter:image" content="https://fade.markets/og.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — trade the fade"><meta name="twitter:description" content="The one trade worth taking. Graded signals + Fade AI."><meta name="twitter:image" content="https://fade.markets/og.png">
 <link rel="manifest" href="/manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Fade"><link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 </head><body><script>window.FADE_API="https://fade-app.onrender.com";</script>
 <style>
@@ -2084,10 +2084,10 @@ function shareSetup(sym){ const a=quote(sym)||BOARD.top; if(!a)return; const c=G
     <div class="sc-setup"><div class="sc-sb"><div class="k">Entry</div><div class="v">NOW</div></div>
       <div class="sc-sb"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
       <div class="sc-sb"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
-    <div class="sc-foot"><div class="sc-cta">Graded by Fade AI<small>trade the extreme &#183; grades run server-side</small></div>
+    <div class="sc-foot"><div class="sc-cta">Graded by Fade AI<small>trade the fade &#183; grades run server-side</small></div>
       <span class="sc-chip" style="background:${rgba(BLUE,.16)};color:${BLUE}">fade.markets</span></div>
   </div>`;
-  openShare(html, 'Fade '+a.symbol+': graded '+gLet(a.grade,true)+' on fade.markets. '+sg+'. Trade the extreme.');
+  openShare(html, 'Fade '+a.symbol+': graded '+gLet(a.grade,true)+' on fade.markets. '+sg+'. Trade the fade.');
 }
 function shareStats(){ const s=stats(); const wr=s.winrate==null?'--':s.winrate+'%'; const good=s.winrate!=null&&s.winrate>=50;
   const col=s.winrate==null?ASH:(good?GREEN:RED);
@@ -2284,6 +2284,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 
 
 
