@@ -1176,6 +1176,7 @@ const TET_PIECES={
   L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]]
 };
 const TET_KEYS=['I','O','T','S','Z','J','L'];
+const TET_PADV=78;   // vertical space reserved for the ARCADE HUD (top) + disclaimer (bottom); matches tetDraw padT+padB
 let TET={cv:null,ctx:null,grid:null,piece:null,next:null,x:3,y:0,rot:0,score:0,lines:0,level:1,best:0,
   over:false,dropAcc:0,frame:0,sym:'',nsym:'',flash:0,flashTxt:''};
 try{ TET.best=+(localStorage.getItem('fade_tet_best')||0)||0; }catch(e){}
@@ -1185,7 +1186,7 @@ function tetStockSym(){ const st=(BOARD.items||[]).filter(i=>i.asset_class==='st
 // Columns FLEX to fill the screen width (20 rows tall stays constant). On a tall phone this
 // widens the well to ~12-14 cols so there are no dead side margins.
 function tetCols(){ const W=TET.W||375; return Math.max(8, Math.min(11, Math.round(W/40))); }   // fewer cols = BIGGER squares, still flush to the full width
-function tetRows(){ const C=tetCols(), cell=(TET.W||375)/C; return Math.max(12, Math.floor((TET.H||640)/cell)); }   // rows fill the FULL height at the width-cell size → flush both ways, no dead space
+function tetRows(){ const C=tetCols(), cell=(TET.W||375)/C; const availH=(TET.H||640)-TET_PADV; return Math.max(12, Math.floor(availH/cell)); }   // rows fill the height BETWEEN the HUD + disclaimer
 function tetReset(){ TET.cols=tetCols(); TET.rows=tetRows(); TET.grid=[]; for(let r=0;r<TET.rows;r++){ TET.grid.push(new Array(TET.cols).fill(0)); }
   TET.score=0;TET.lines=0;TET.level=1;TET.over=false;TET.dropAcc=0;
   TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym(); tetSpawn(); }
@@ -1222,8 +1223,9 @@ function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; 
 function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
   ctx.clearRect(0,0,W,H);
   // maximise: fill the whole area (near-zero margin), centered
-  const M=1; const C=TET.cols||10, R=TET.rows||20; const cell=Math.min(Math.floor((W-M*2)/C), Math.floor((H-M*2)/R));
-  const wW=cell*C, wH=cell*R; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
+  const M=1, padT=48, padB=30; const availH=H-padT-padB;   // reserve room for the ARCADE HUD (top) + disclaimer (bottom) so blocks never overlap the text
+  const C=TET.cols||10, R=TET.rows||20; const cell=Math.min(Math.floor((W-M*2)/C), Math.floor(availH/R));
+  const wW=cell*C, wH=cell*R; const wx=Math.round((W-wW)/2), wy=padT+Math.round((availH-wH)/2);
   // 8-bit well: near-black field, very faint grid
   ctx.fillStyle='#050505'; ctx.fillRect(wx-1,wy-1,wW+2,wH+2);
   ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1;
