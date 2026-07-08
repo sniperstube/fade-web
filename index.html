@@ -1,3 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fade — trade the extreme</title><meta name="description" content="The one trade worth taking. Graded trading signals + Fade AI. Start with $10,000 paper.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%277%27%20fill%3D%27%230a0a0f%27/%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2716%27%20r%3D%279%27%20fill%3D%27%23ff6a00%27/%3E%3Cpath%20d%3D%27M13%2016%20L22%2011%20A9%209%200%200%201%2022%2021%20Z%27%20fill%3D%27%230a0a0f%27/%3E%3Crect%20x%3D%2722%27%20y%3D%2711%27%20width%3D%273%27%20height%3D%2710%27%20rx%3D%271%27%20fill%3D%27%23ff3b30%27/%3E%3C/svg%3E"><link rel="apple-touch-icon" href="/og.png"><meta name="theme-color" content="#0a0a0f">
+<meta property="og:type" content="website"><meta property="og:site_name" content="fade.markets"><meta property="og:url" content="https://fade.markets">
+<meta property="og:title" content="Fade — trade the extreme"><meta property="og:description" content="The one trade worth taking. Graded signals + Fade AI."><meta property="og:image" content="https://fade.markets/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Fade — trade the extreme"><meta name="twitter:description" content="The one trade worth taking. Graded signals + Fade AI."><meta name="twitter:image" content="https://fade.markets/og.png">
+<link rel="manifest" href="/manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Fade"><link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
+</head><body><script>window.FADE_API="https://fade-app.onrender.com";</script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -382,11 +392,13 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-dot{width:7px;height:7px;border-radius:50%;background:#3ddc6e;box-shadow:0 0 8px #3ddc6e;animation:slpulse 1.4s ease-in-out infinite}
 .scan-live.closed .sl-dot{background:#ff9f0a;box-shadow:0 0 8px #ff9f0a}
 @keyframes slpulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes scananim{0%,100%{opacity:1}50%{opacity:.55}}
 .sl-stat{font-size:12px;color:var(--ash)}
 .sl-stat b{color:var(--txt);font-weight:800;font-size:14px}
 .sl-hot b{color:#ffb020}
 .sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
-.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.35;color:var(--dim);z-index:6;pointer-events:none;padding:0 18px}
+.scan-anim{animation:scananim 1.8s ease-in-out infinite}
+.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--dim);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
 .acls.st{color:#2e7bff;background:rgba(46,123,255,.14)}
 .acls.cr{color:#b57bff;background:rgba(181,123,255,.16)}
@@ -716,7 +728,9 @@ async function api(path,opts){ opts=opts||{}; const h=Object.assign({'Content-Ty
   if(r.status===401){ handle401(); throw new Error('unauthorized'); } return r; }
 function handle401(){ setToken(''); saveUser(null); AUTHMODE='login'; toast('Session expired — please sign in'); try{render();}catch(e){} }
 async function restoreSession(){ if(!API||!authToken())return; try{ const r=await api('/api/auth/me'); const d=await r.json();
-  if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm})); if(S.screen==='profile')render(); } }catch(e){} }
+  if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm}));
+    hydratePaper(function(){ render(); });   // pull cross-device wallet the moment we know who's logged in
+    if(S.screen==='profile')render(); } }catch(e){} }
 function handle(){ return S.user?('@'+S.user.username):'@you'; }
 function initial(){ return S.user?S.user.username[0].toUpperCase():'?'; }
 
@@ -732,8 +746,28 @@ function isLong(a){ const t=a.setup&&a.setup.target, e=a.price; if(t!=null&&e!=n
 function moveCol(p){ return p>=0?GREEN:RED; }
 
 /* paper state */
-function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}catch(e){} if(!p){p={cash:10000,positions:[]}; save(p);} return p; }
-function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); }
+function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}catch(e){}
+  // Seed a fresh account WITHOUT stamping a timestamp — a brand-new empty wallet must never
+  // look "newer" than an account's real trades sitting on the server (that would wipe them).
+  if(!p){p={cash:10000,positions:[]}; localStorage.setItem('fade_paper',JSON.stringify(p));} return p; }
+// save() writes locally AND pushes the full state to the server (debounced) so every device
+// this account is logged into stays in sync. The server holds the master copy (last-write-wins).
+// Only a REAL mutation (trade/deposit/close) calls save(), so only real activity stamps a ts.
+let SYNCT=null;
+function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); localStorage.setItem('fade_paper_ts',String(Date.now())); pushPaper(); }
+function pushPaper(){ if(!(API&&authToken()))return; clearTimeout(SYNCT);
+  SYNCT=setTimeout(function(){ try{ const p=paper(); const ts=Number(localStorage.getItem('fade_paper_ts'))||Date.now();
+    api('/api/paper/sync',{method:'POST',body:JSON.stringify({state:p,updated:ts})}).catch(function(){}); }catch(e){} },800); }
+// On login / app load, pull the master state from the server. If the server has a NEWER copy
+// (traded on another device), it wins and we hydrate localStorage so this device matches.
+function hydratePaper(cb){ if(!(API&&authToken())){ if(cb)cb(); return; }
+  api('/api/paper/sync',{method:'GET'}).then(function(r){
+    try{ if(r&&r.ok&&r.state){ const localTs=Number(localStorage.getItem('fade_paper_ts'))||0;
+      if((r.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(r.state)); localStorage.setItem('fade_paper_ts',String(r.updated||Date.now())); }
+      else { pushPaper(); }   // our local copy is newer — push it up
+    } }catch(e){}
+    if(cb)cb();
+  }).catch(function(){ if(cb)cb(); }); }
 function quote(sym){ return BOARD.items.find(i=>i.symbol===sym); }
 // You already hold this asset — it's kept OFF the lineup (manage/add it from the wallet).
 function hasOpenPos(sym){ try{ return paper().positions.some(x=>x.status==='open'&&x.symbol===sym); }catch(e){ return false; } }
@@ -1008,26 +1042,25 @@ let SCAN={x:50,y:52,tx:50,ty:52,dir:0,vx:0,vy:0,playing:false,score:0,best:0,com
 try{ SCAN.best=+(localStorage.getItem('fade_hiscore')||0)||0; }catch(e){}
 const GHOST_DEFS=[{c:'#ff3b30',s:0.52},{c:'#ff6ac1',s:0.72},{c:'#00e5ff',s:0.40}];   // chasers at different speeds
 const HEAT={1:'#ffe500',2:'#ff9f0a',3:'#ff3b30'};   // cool -> warm -> red-hot as it nears trigger
-function scanData(){ const items=(BOARD.items||[]);
+function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
   // "Almost there" coins = within 1.9% of triggering. Exact %-to-trigger IS shown (Naeem's call);
   // phase 1/2/3 drives the heat colour, ring fill and run speed.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
     .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap);
   return {total:items.length,near:near.slice(0,12),nearCount:near.length}; }
-// Curated readout for the scan strip — deliberately small numbers so it reads exclusive/hand-picked
-// (looks live and shifts with the market, but isn't the raw universe count). Both scopes have games.
+// Curated readout for the scan strip — scope-specific numbers, single digit nearing count
 function scanShow(){ const d=scanData();
-  const near=Math.max(1,Math.min(7,Math.round((d.nearCount||0)/4)||1));
+  const near=Math.max(1,Math.min(9,Math.round((d.nearCount||0)/4)||1));
   const scan=Math.min(48,Math.max(near+9,15+near*4));
   return {scan:scan,near:near}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   return stocksClosedView()
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
-function scanDiscHTML(){ return `<div class="scan-disc">Mini-game to pass the downtime &#183; it doesn&#39;t affect your account or the live scan above</div>`; }
-function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>`; }
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">tracked <b>${sh.scan}</b></span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
+function scanDiscHTML(){ return `<div class="scan-disc">Pass the wait with mini-games — doesn&#39;t affect live scan</div>`; }
+function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">PASS</span><br><span class="rt-sub">the wait</span></div></div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
@@ -1876,7 +1909,9 @@ async function doLogin(){
       const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not sign in'); return; }
       S.busy=false; setToken(d.token);
       if(d.needs_password){ DRAFT.who=(d.user&&d.user.username)||identifier; DRAFT.setid=identifier; DRAFT.pw=''; AUTHMODE='setpw'; render(); return; }   // grandfather flow
-      saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
+      saveUser(d.user);
+      hydratePaper(function(){ go('profile'); render(); });   // pull this account's wallet from the server (cross-device)
+      toast('Welcome back, @'+d.user.username);
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     const u=loadUser();
@@ -2207,3 +2242,8 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
+
+<style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
+</body>
+</html>
