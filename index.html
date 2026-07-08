@@ -226,7 +226,8 @@ input,textarea,select{font-size:16px}
 .sb .k{font-family:'Space Grotesk';font-size:8px;color:var(--ash);text-transform:uppercase;letter-spacing:.5px}
 .sb .v{font-family:'Space Grotesk';font-size:12.5px;font-weight:700;margin-top:4px;color:var(--txt)}
 .cta{display:flex;gap:8px;margin-top:16px}
-.cta button{flex:1;border:none;padding:14px;border-radius:12px;font-family:'Space Grotesk';font-size:14.5px;font-weight:700;cursor:pointer}
+.cta button{flex:1;border:none;padding:14px;border-radius:12px;font-family:'Space Grotesk';font-size:14.5px;font-weight:700;cursor:pointer;transition:transform .09s ease,filter .09s ease}
+.cta button:active{transform:scale(.97);filter:brightness(.93)}
 .cta .no{background:var(--void2);color:var(--ash);border:1px solid var(--line)}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
 .mini{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -292,7 +293,8 @@ input,textarea,select{font-size:16px}
 .stat{background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px;text-align:center}
 .stat .v{font-family:'Space Grotesk';font-size:18px;font-weight:700}
 .stat .k{font-family:'Space Grotesk';font-size:9px;color:var(--ash);text-transform:uppercase;margin-top:3px}
-.btn-wide{width:100%;border:none;padding:13px;border-radius:12px;font-family:'Space Grotesk';font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px}
+.btn-wide{width:100%;border:none;padding:13px;border-radius:12px;font-family:'Space Grotesk';font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;transition:transform .09s ease,filter .09s ease}
+.btn-wide:active{transform:scale(.985);filter:brightness(.93)}
 .pos{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
 .pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
 .pos-closed{opacity:.5;background:transparent}            /* history: muted + flat */
@@ -371,7 +373,21 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 @keyframes minichomp{0%,100%{clip-path:polygon(50% 50%,100% 0,100% 100%)}50%{clip-path:polygon(50% 50%,100% 38%,100% 62%)}}
 .scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
-@media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}}
+/* LIVE MARKET SCAN readout — real data, deliberately OUTSIDE the arcade (own font + green live dot) */
+.scan-live{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 13px;margin-bottom:9px;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
+.scan-live.closed{background:linear-gradient(90deg,rgba(255,159,10,.09),transparent 82%);border-color:rgba(255,159,10,.24)}
+.sl-badge{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:#3ddc6e;text-transform:uppercase}
+.scan-live.closed .sl-badge{color:#ff9f0a}
+.sl-dot{width:7px;height:7px;border-radius:50%;background:#3ddc6e;box-shadow:0 0 8px #3ddc6e;animation:slpulse 1.4s ease-in-out infinite}
+.scan-live.closed .sl-dot{background:#ff9f0a;box-shadow:0 0 8px #ff9f0a}
+@keyframes slpulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sl-stat{font-size:12px;color:var(--ash)}
+.sl-stat b{color:var(--txt);font-weight:800;font-size:14px}
+.sl-hot b{color:#ffb020}
+.sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.35;color:var(--dim);z-index:6;pointer-events:none;padding:0 18px}
+.scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--dim);font-size:7px}
+@media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}.sl-dot{animation:none}}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
 .ava{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#123a80);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0a0a0f;flex-shrink:0}
@@ -481,7 +497,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .ct-cta{display:flex;gap:12px;align-items:center}
 .ct-next{flex:1;background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit}
 .ct-skip{background:none;border:none;color:var(--ash);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:85;display:none;align-items:flex-end;justify-content:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:85;display:none;align-items:flex-end;justify-content:center}
 .modal.show{display:flex}
 .modalcard{background:var(--void);color:var(--txt);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:460px;padding:18px 17px calc(22px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow-y:auto;animation:sheet .22s ease}
 @keyframes sheet{from{transform:translateY(30px);opacity:.4}to{transform:translateY(0);opacity:1}}
@@ -739,9 +755,9 @@ function openTradePanel(sym){
   openModal(tradePanel());
 }
 function tradeAmt(){ const p=paper(); return Math.max(0,Math.min(TRADE.amt||0, p.cash)); }
-function setTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.round(v), p.cash)); refreshTradePanel(); }
+function setTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.round(v), p.cash)); patchTradePanel(); }
 function setTradePct(pct){ const p=paper(); TRADE.amt=Math.round(p.cash*pct/100); patchTradePanel(); }   // in-place (no rebuild) so Confirm stays instantly clickable
-function setTradeLev(l){ TRADE.lev=l; refreshTradePanel(); }
+function setTradeLev(l){ TRADE.lev=l; patchTradePanel(); }   // in-place too — never recreate the Confirm button mid-flow
 function refreshTradePanel(){ const b=document.getElementById('modalbody'); if(b)b.innerHTML=tradePanel(); }
 // Smooth allocation: on slider / number drag, patch the derived values IN PLACE so we
 // never rebuild (and destroy) the slider mid-drag. Discrete taps (%, leverage) still
@@ -756,14 +772,19 @@ function patchTradePanel(){ const a=quote(TRADE.sym); if(!a)return; const p=pape
   set('tp_qty',(qty?qty.toPrecision(5):'--')+' '+a.symbol);
   const cf=document.getElementById('tp_confirm'); if(cf)cf.innerHTML=(TRADE.add?'Add':'Confirm')+' '+(long?'Long &#8599;':'Short &#8600;')+' &#183; $'+money(margin)+(lev>1?' &#183; '+lev+'x':'');
   const pct=p.cash>0?Math.min(100,Math.round(margin/p.cash*100)):0;
-  document.querySelectorAll('.allocb').forEach(function(b){ b.classList.toggle('on',(+b.getAttribute('data-pct'))===pct); }); }
+  document.querySelectorAll('.allocb').forEach(function(b){ b.classList.toggle('on',(+b.getAttribute('data-pct'))===pct); });
+  // leverage bits (so leverage taps patch in place too — the Confirm button is never recreated)
+  document.querySelectorAll('.levb').forEach(function(b){ b.classList.toggle('on',(+b.getAttribute('data-lev'))===lev); });
+  const lsub=document.getElementById('tp_levsub'); if(lsub)lsub.innerHTML=(lev===1?'spot &#183; no leverage':lev+'x &#183; amplifies P&amp;L '+lev+'&#215;');
+  const liq=liqPrice(a.price,TRADE.side,lev), lr=document.getElementById('tp_liqrow');
+  if(lr){ if(liq){ lr.style.display=''; const lq=document.getElementById('tp_liq'); if(lq)lq.innerHTML='$'+money(liq); } else lr.style.display='none'; } }
 function tradePanel(){
   const a=quote(TRADE.sym); if(!a) return '';
   const p=paper(); const long=TRADE.side==='long'; const col=long?GREEN:RED, ink=long?'#062100':'#2a0000';
   const margin=tradeAmt(); const lev=TRADE.lev||1; const notional=margin*lev; const qty=a.price?notional/a.price:0;
   const liq=liqPrice(a.price,TRADE.side,lev);
   const st=a.setup||{}; const pct=p.cash>0?Math.min(100,Math.round(margin/p.cash*100)):0;
-  const chip=(l)=>`<button class="levb ${lev===l?'on':''}" onclick="setTradeLev(${l})">${l}x</button>`;
+  const chip=(l)=>`<button class="levb ${lev===l?'on':''}" data-lev="${l}" onclick="setTradeLev(${l})">${l}x</button>`;
   const pctb=(pp,lbl)=>`<button class="allocb ${pct===pp?'on':''}" data-pct="${pp}" onclick="setTradePct(${pp})">${lbl}</button>`;
   return `<div class="tpanel">
     <div class="tp-head"><div><div class="tp-sym">${a.symbol} <span class="tp-side" style="color:${col}">${long?'LONG':'SHORT'}</span></div>
@@ -775,7 +796,7 @@ function tradePanel(){
       <input id="tp_slider" class="tp-slider" type="range" min="0" max="${Math.max(1,Math.round(p.cash))}" value="${margin}" oninput="dragTradeAmt(this.value)">
       <div class="allocrow">${pctb(10,'10%')}${pctb(25,'25%')}${pctb(50,'50%')}${pctb(100,'Max')}</div></div>
 
-    <div class="tp-sec"><div class="tp-lbl"><span>Leverage</span><span style="color:var(--ash)">${lev===1?'spot &#183; no leverage':lev+'x &#183; amplifies P&amp;L '+lev+'&#215;'}</span></div>
+    <div class="tp-sec"><div class="tp-lbl"><span>Leverage</span><span id="tp_levsub" style="color:var(--ash)">${lev===1?'spot &#183; no leverage':lev+'x &#183; amplifies P&amp;L '+lev+'&#215;'}</span></div>
       <div class="levrow">${LEVS.map(chip).join('')}</div></div>
 
     <div class="tp-summary">
@@ -783,7 +804,7 @@ function tradePanel(){
       <div class="tp-row"><span>Margin (cash used)</span><span id="tp_margin" class="mono">$${money(margin)}</span></div>
       <div class="tp-row"><span>Quantity</span><span id="tp_qty" class="mono">${qty?qty.toPrecision(5):'--'} ${a.symbol}</span></div>
       <div class="tp-row"><span>Entry &#183; Target &#183; Stop</span><span class="mono">${money(a.price)} &#183; <b style="color:${GREEN}">${money(st.target)}</b> &#183; <b style="color:${RED}">${money(st.mental_stop)}</b></span></div>
-      ${liq?`<div class="tp-row"><span>Est. liquidation</span><span class="mono" style="color:${RED}">$${money(liq)}</span></div>`:''}
+      <div class="tp-row" id="tp_liqrow" style="${liq?'':'display:none'}"><span>Est. liquidation</span><span id="tp_liq" class="mono" style="color:${RED}">${liq?'$'+money(liq):'--'}</span></div>
     </div>
 
     <button id="tp_confirm" class="tp-confirm" style="background:${col};color:${ink}" onclick="confirmTrade()">${TRADE.add?'Add':'Confirm'} ${long?'Long &#8599;':'Short &#8600;'} &#183; $${money(margin)}${lev>1?' &#183; '+lev+'x':''}</button>
@@ -985,8 +1006,10 @@ function scanData(){ const items=(BOARD.items||[]);
   // phase 1/2/3 drives the heat colour, ring fill and run speed.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
-    .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap).slice(0,12);
-  return {total:items.length,near}; }
+    .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap);
+  // nearCount = the REAL number nearing a trigger (displayed, live). `near` is capped to 12
+  // ONLY for how many runners the arcade animates — the readout always shows the true count.
+  return {total:items.length,near:near.slice(0,12),nearCount:near.length}; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
@@ -1021,14 +1044,18 @@ function scannerHTML(closed){
         +`<span class="rlab">${esc(p.sym)}</span></div>`; }   // ticker only — heat/ring/speed carry the closeness (and the exact threshold stays private)
     return `<i class="scan-dot ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`; }).join('');
   const ghostsHTML=(SCAN.ghosts||[]).map((g,i)=>`<div class="scan-ghost" data-g="${i}" style="left:${g.x}%;top:${g.y}%;color:${g.color};background:${g.color};opacity:${g.alive?1:0}"></div>`).join('');
-  const right=closed?`<span class="open">MARKET CLOSED</span><br>opens <span id="scanopen">${nextMarketOpen()}</span>`:`<span class="live">&#9679; NEARING TRIGGER</span><br>${d.near.length} hot &#183; ${d.total} scanned`;
-  return `<div class="scanner ${cls}">
+  // REAL, LIVE market data — kept clearly OUTSIDE the game (own strip, clean font, live dot).
+  const liveBar=closed
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${d.total}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${d.total}</b> scanning</span><span class="sl-stat sl-hot"><b>${d.nearCount}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
+  return `${liveBar}<div class="scanner ${cls}">
     <div class="scan-field" id="scanfield">${dotsHTML}${ghostsHTML}<div class="scan-pm${SCAN.inv>0?' inv':''}" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
-    <div class="scan-hud2"><div class="sc"><span id="scanscore">${SCAN.score}</span><small>BEST <span id="scanbest">${SCAN.best}</span></small></div><div class="rt">${right}</div></div>
+    <div class="scan-hud2"><div class="sc"><span id="scanscore">${SCAN.score}</span><small>BEST <span id="scanbest">${SCAN.best}</span></small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>
     <div class="scan-combo" id="scancombo"></div><div class="scan-caught" id="scancaught">CAUGHT!</div>
+    <div class="scan-disc">Mini-game to pass downtime &#183; it doesn&#39;t affect your account or the live scan above</div>
   </div>`; }
 function scanStrip(){ const d=scanData(); if(!d.total)return '';
-  return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} for setups&#8230;</span>${d.near.length?`<span class="ss-n">${d.near.length} almost there</span>`:''}</div>`; }
+  return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} for setups&#8230;</span>${d.nearCount?`<span class="ss-n">${d.nearCount} almost there</span>`:''}</div>`; }
 function scanHuntTarget(){ if(!SCAN.dots)return null; let t=null,bs=-1e9;   // hunt the hottest, nearest runner (else nearest pellet)
   for(const p of SCAN.dots){ if(p.eaten)continue; const dd=Math.hypot(p.x-SCAN.x,p.y-SCAN.y);
     const s=(p.run?(p.phase*9+26):0)-dd; if(s>bs){bs=s;t=p;} }
@@ -1379,7 +1406,7 @@ function wallet(){
         <div><div class="k">Paper balance</div><div class="big" data-eq="1" style="color:${eqCol}">$${money(s.equity)}</div></div>
         <div class="dwrap"><button class="dwbtn dep" onclick="depositPaper()">&#8595; Deposit</button><button class="dwbtn wd" onclick="withdrawPaper()">&#8593; Withdraw</button></div>
       </div>
-      <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)} open P&amp;L</span></div></div>
+      <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)} open P&amp;L</span> &#183; <span style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)} closed P&amp;L</span></div></div>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
     <button class="btn-wide" style="background:${BLUE};color:#0a0a0f" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.7">(preview)</span></button>
     <div class="lbl">Open positions</div>
