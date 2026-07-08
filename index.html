@@ -386,6 +386,15 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-hot b{color:#ffb020}
 .sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
 .scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.35;color:var(--dim);z-index:6;pointer-events:none;padding:0 18px}
+.acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
+.acls.st{color:#2e7bff;background:rgba(46,123,255,.14)}
+.acls.cr{color:#b57bff;background:rgba(181,123,255,.16)}
+.nr-list{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.nr-row{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--void2);border:1px solid var(--line);border-radius:11px;font-family:'Space Grotesk'}
+.nr-sym{font-weight:800;font-size:14px;color:var(--txt);flex:1}
+.nr-chg{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.nr-gap{font-size:11px;color:var(--ash);min-width:82px;text-align:right}
+.nr-empty{text-align:center;padding:40px 20px;color:var(--dim);font-family:'Space Grotesk';font-size:12.5px;line-height:1.5}
 .scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--dim);font-size:7px}
 @media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}.sl-dot{animation:none}}
 /* social */
@@ -843,7 +852,7 @@ function simulate(){
   opened.forEach(x=>{ const win=Math.random()<(WINPROB[x.grade]||.5);
     const exit=win?x.target:x.stop;
     const pnl=(x.side==='long'?(exit-x.entry):(x.entry-exit))*x.qty;
-    x.status='closed'; x.exit=exit; x.pnl=pnl; x.result=pnl>0?'win':'loss';
+    x.status='closed'; x.exit=exit; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss';
     p.cash+=posMargin(x)+pnl; });   // return the margin you put in + result to cash
   save(p); toast('Simulated '+opened.length+' trade(s) to target/stop  (preview)'); render();
 }
@@ -1263,18 +1272,28 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
   a.sort(relSort); return a[0]||null; }
 // Stocks with NO live setup: downtime → Fade Blocks (Tetris) waiting room; market open but quiet →
 // a scanning line. NEVER the Pac-Man scanner — that game belongs to crypto only.
-function stocksIdleHTML(){
-  if(stocksClosedView()) return `${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}`;
-  return `<div style="text-align:center;padding:70px 26px;color:var(--dim)">
-    <div style="font-size:15px;font-weight:800;color:var(--ink);letter-spacing:.2px">Scanning stocks for setups&#8230;</div>
-    <div style="font-size:12.5px;color:var(--ash);margin-top:7px;line-height:1.55">Nothing at the extreme right now &#183; the board is live and watching.<br>Fade Blocks returns the moment the market closes.</div></div>`;
+function gamesOn(){ return lsGet('fade_games',true); }   // waiting-room mini-games (default ON)
+// Games OFF: a clean, non-game live readout (both scopes) — real scan data, no arcade.
+function scanReadoutHTML(){
+  const d=scanData(), closed=stocksClosedView();
+  const near=(d.near||[]).map(x=>`<div class="nr-row"><span class="nr-sym">${esc(x.sym)}</span><span class="nr-chg" style="color:${(x.chg||0)>=0?GREEN:RED}">${(x.chg||0)>=0?'+':''}${(x.chg||0).toFixed(2)}%</span><span class="nr-gap">${x.gap<=0.5?'&#9679; very close':'&#8776; '+x.gap.toFixed(1)+'% away'}</span></div>`).join('');
+  const bar=closed
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${d.total}</b> tracked</span><span class="sl-stat">opens <b>${nextMarketOpen()}</b></span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${d.total}</b> scanning</span><span class="sl-stat sl-hot"><b>${d.nearCount}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
+  return `${bar}<div class="nr-list">${near||'<div class="nr-empty">Nothing near a trigger right now &#183; the board is live and watching.</div>'}</div>`;
 }
+// Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
+// stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
+function waitingRoomHTML(){
+  if(!gamesOn()) return scanReadoutHTML();
+  if(S.scope==='crypto') return scannerHTML(false);
+  return `${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}`;
+}
+function stocksIdleHTML(){ return waitingRoomHTML(); }   // back-comat alias
 function feed(){
-  // Live setups always win (trades take priority). Stocks with none → downtime waiting room (never
-  // Pac-Man). Crypto with none → the Pac-Man scanner.
+  // Live setups always win (trades take priority). No setups in scope → the waiting room.
   const t=topFor();
-  if(S.scope==='stocks' && !t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${stocksIdleHTML()}</div>`;
-  if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
+  if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML()}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
   const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
@@ -1316,7 +1335,7 @@ function markets(){
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')} &#183; <b style="color:${long?GREEN:RED};font-weight:800;letter-spacing:.3px">${long?'LONG':'SHORT'}</b></div></div>
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
-  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${S.scope==='stocks'?stocksIdleHTML():scannerHTML(stocksClosedView())}</div>`;   // stocks → Fade Blocks/scanning (never Pac-Man); crypto → Pac-Man scanner
+  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML()}</div>`;   // no setups → waiting room (game or readout per the Games toggle)
   return `<div class="screen">${topbar()}
     ${scopeBar()}
     ${scanStrip()}
@@ -1326,7 +1345,7 @@ function markets(){
 
 /* ---------- DETAIL ---------- */
 function chart(a){
-  const cs=a.candles, st=a.setup||{};
+  const cs=a.candles||CANDLES[a.symbol], st=a.setup||{};
   if(!cs||!cs.length){
     const box='height:170px;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;color:var(--ash);font-family:\'Space Grotesk\';font-size:11.5px;text-align:center;line-height:1.6';
     const state=(typeof CHARTLD!=='undefined')?CHARTLD[a.symbol]:null;
@@ -1370,7 +1389,7 @@ function detail(){
     : `<b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>`;
   return `<div class="screen">
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
-    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; ${pxHtml}${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
+    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}${assetChip(a)}<small>${a.name} &#183; ${pxHtml}${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
     <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>${a.vol_ratio?'<span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
     <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
     ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="openTradePanel('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; set size</button>`:''}
@@ -1397,7 +1416,7 @@ function wallet(){
     const pc=pnl>=0?GREEN:RED;
     return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
-      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span>':x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
+      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span>':x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)+' &#183; held '+heldFor(x)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
       ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();closePos('${x.id}')">Close</button>`:''}</div>`; };
   return `<div class="screen">${topbar()}
@@ -1419,7 +1438,7 @@ function wallet(){
 function closePos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
   if(lsGet('fade_confirm_close',false)){ if(!confirm('Close your '+x.symbol+' '+x.side+' position?')) return; }
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty;
-  x.status='closed'; x.exit=cur; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
+  x.status='closed'; x.exit=cur; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
 // --- Position modal: open a position to see + modify it (add to it, close it) ---
 function openModal(html){ document.getElementById('modalbody').innerHTML=html; document.getElementById('modal').classList.add('show'); }
 function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); MODALPOS=null; }
@@ -1429,13 +1448,17 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
   const notional=posNotional(x); const chg=(q&&q.change_pct!=null)?q.change_pct:0;
   const long=x.side==='long';
   return `<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px"><button onclick="closeModal()" aria-label="Back" style="width:30px;height:30px;flex:none;border-radius:9px;border:1px solid var(--line);background:var(--void2);color:var(--txt);font-size:19px;line-height:1;cursor:pointer;padding:0 0 2px 0">&#8249;</button>${logoBadge(x,46)}
-      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}${assetChip(x)}</div>
       <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; entry grade ${x.gradeEntry||gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
       ${open?'':`<div style="text-align:right"><div style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${(x.result||'').toUpperCase()}</div></div>`}</div>
     ${open?`<div class="pnlhero">
       <div><div class="pxbig-k" style="color:${pc}">&#9679; UNREALIZED P&amp;L</div><div class="pnlhero-n" data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}" style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div></div>
       <div class="rt"><div class="pxbig-k" style="color:var(--ash)">LIVE PRICE</div><div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;margin-top:3px;letter-spacing:-.5px">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div></div>`:''}
-    ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:2px 0 8px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
+    ${(function(){ var qa=quote(x.symbol);
+      // Chart from the POSITION's own levels (entry/target/stop) so it always renders — even for a
+      // crypto position while the board scope is Stocks (qa would be undefined there).
+      var ci={symbol:x.symbol, price:cur, candles:(qa&&qa.candles)||CANDLES[x.symbol], setup:{target:x.target, mental_stop:x.stop}, asset_class:x.asset_class};
+      return `<div class="chartbox" style="margin:2px 0 8px">${chart(ci)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Live</span><span style="color:var(--ash)">your levels</span></div></div>`; })()}
     ${open?`<button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="closeModal();openTradePanel('${x.symbol}')">+ Add to position</button>`:''}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">$${money(notional)}${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''} &#183; <small style="color:var(--ash)">$${money(posMargin(x))} margin</small></span></div>
@@ -1538,7 +1561,10 @@ function backFromAI(){
 function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function fmtAgo(ts){ const s=(Date.now()-ts)/1000; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
-function elapsed(ts){ if(!ts)return'—'; let s=(Date.now()-ts)/1000; if(s<60)return Math.max(0,Math.floor(s))+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m'; return Math.floor(s/86400)+'d '+Math.floor((s%86400)/3600)+'h'; }
+function fmtDur(s){ if(s<60)return Math.max(0,Math.floor(s))+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m'; return Math.floor(s/86400)+'d '+Math.floor((s%86400)/3600)+'h'; }
+function elapsed(ts){ if(!ts)return'—'; return fmtDur((Date.now()-ts)/1000); }
+function heldFor(x){ if(!x||!x.opened)return'—'; return fmtDur(((x.closed||Date.now())-x.opened)/1000); }   // opened -> closed (falls back to now for legacy closes w/o a close ts)
+function assetChip(a){ const c=(a&&a.asset_class==='crypto'); return `<span class="acls ${c?'cr':'st'}">${c?'CRYPTO':'STOCK'}</span>`; }
 function dl(name,text,type){ try{ const a=document.createElement('a'); a.href='data:'+(type||'text/plain')+';charset=utf-8,'+encodeURIComponent(text); a.download=name; document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded '+name); }catch(e){ toast('Download not supported here'); } }
 function downloadData(){ const data={exported:new Date().toISOString(),account:S.user||null,chats:lsGet('fade_chats',[]),projects:lsGet('fade_projects',[]),scheduled:lsGet('fade_sched',[]),paper:(typeof paper==='function'?paper():null)}; dl('fade-data.json',JSON.stringify(data,null,2),'application/json'); }
 function downloadChat(id,e){ if(e)e.stopPropagation(); const c=lsGet('fade_chats',[]).find(x=>x.id===id); if(!c)return; dl('fade-chat.txt',c.msgs.map(m=>(m.role==='user'?'You':'Fade AI')+': '+m.content).join('\n\n')); }
@@ -1850,7 +1876,7 @@ function toggleStocksOnly(){ const v=!lsGet('fade_stocks_only',false); lsSet('fa
 function setMinGrade(v){ lsSet('fade_min_grade',+v); render(); }
 function settings(){
   if(!S.user) return authScreen();
-  const ac=lsGet('fade_autoclose',false); const th=getTheme();
+  const ac=lsGet('fade_autoclose',true); const th=getTheme();
   const prio=lsGet('fade_prioritize_stocks',true); const cc=lsGet('fade_confirm_close',false);
   const dv=defView(); const dsz=defSize(); const dlv=defLev();
   const so=lsGet('fade_stocks_only',false); const mg=minGrade();
@@ -1878,7 +1904,10 @@ function settings(){
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default leverage</div><div class="setd">Spot is 1x. Panel opens on this by default.</div></div>
       <div class="seg" style="width:auto;flex-shrink:0">${[1,2,3].map(l=>`<button class="${dlv===l?'on':''}" onclick="setDefLev(${l})">${l}x</button>`).join('')}</div></div>
     ${setrow('Confirm before closing','Ask for a confirm tap before a position is closed.',cc,'toggleConfirmClose()')}
-    ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss).',ac,'toggleAutoClose()')}
+    ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). On by default.',ac,'toggleAutoClose()')}
+
+    <div class="lbl" style="margin-top:16px">Waiting room</div>
+    ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto). Turn off for a clean live-scan readout instead. On by default.',lsGet('fade_games',true),'toggleGames()')}
 
     <div class="lbl" style="margin-top:16px">Learning &amp; about</div>
     ${linkrow('Replay the tutorial','Walk through the app again, step by step.','coachStart()')}
@@ -1918,15 +1947,16 @@ function applyTheme(){ const t=getTheme();
     RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};
   } }
 function setTheme(t){ lsSet('fade_theme',t); applyTheme(); render(); toast(t==='light'?'Light mode':'Dark mode'); }
-function toggleAutoClose(){ const v=!lsGet('fade_autoclose',false); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
+function toggleAutoClose(){ const v=!lsGet('fade_autoclose',true); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
+function toggleGames(){ const v=!lsGet('fade_games',true); lsSet('fade_games',v); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
 // Auto-close open positions at their target/stop when enabled. Checked on each live poll
 // against the REAL board price (not the jittered ticker).
-function autoCloseCheck(){ if(!lsGet('fade_autoclose',false)) return;
+function autoCloseCheck(){ if(!lsGet('fade_autoclose',true)) return;
   const p=paper(); let changed=false;
   p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return; const cur=q.price; let hit=null;
     if(x.side==='long'){ if(x.target&&cur>=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur<=x.stop)hit={p:x.stop,w:0}; }
     else { if(x.target&&cur<=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur>=x.stop)hit={p:x.stop,w:0}; }
-    if(hit){ const pnl=(x.side==='long'?(hit.p-x.entry):(x.entry-hit.p))*x.qty; x.status='closed'; x.exit=hit.p; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p)); }
+    if(hit){ const pnl=(x.side==='long'?(hit.p-x.entry):(x.entry-hit.p))*x.qty; x.status='closed'; x.exit=hit.p; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p)); }
   });
   if(changed){ save(p); if(S.screen==='wallet'||S.screen==='profile')render(); }
 }
@@ -2093,15 +2123,17 @@ async function livePoll(){ if(!API||document.hidden) return;
   }catch(e){}
 }
 var CHARTLD={};   // sym -> 'loading' | 'error' : so chart() can show the right state (fixes silent blank charts)
+var CANDLES={};   // sym -> candles, keyed by SYMBOL so a held position charts even when its symbol isn't in the current scope's board (e.g. a crypto position while viewing Stocks)
 function chartRefresh(sym){
   if(S.screen==='detail'&&S.sel===sym) render();
   const m=document.getElementById('modal');
   if(MODALPOS&&m&&m.classList.contains('show')){ const px=paper().positions.find(y=>y.id===MODALPOS); if(px&&px.symbol===sym) openModal(posModal(MODALPOS)); }
 }
-async function loadChart(sym,attempt){ if(!API) return; const it=quote(sym); if(!it||it.candles) return;
+async function loadChart(sym,attempt){ if(!API||!sym) return; const it=quote(sym);
+  if(CANDLES[sym]||(it&&it.candles)) return;   // already have candles (board item OR symbol cache) — works even off-board
   attempt=attempt||1; CHARTLD[sym]='loading';
   try{ const r=await fetch(API+'/api/chart/'+sym); const d=await r.json();
-    if(d&&d.ok&&d.candles&&d.candles.length){ it.candles=d.candles; delete CHARTLD[sym]; chartRefresh(sym); return; }
+    if(d&&d.ok&&d.candles&&d.candles.length){ CANDLES[sym]=d.candles; const b=quote(sym); if(b)b.candles=d.candles; delete CHARTLD[sym]; chartRefresh(sym); return; }
     throw new Error('no candles');
   }catch(e){
     // Backend cold-starts (~50s) and transient blips used to leave the chart blank forever.
@@ -2109,7 +2141,7 @@ async function loadChart(sym,attempt){ if(!API) return; const it=quote(sym); if(
     if(attempt<3){ setTimeout(function(){ loadChart(sym,attempt+1); }, attempt*1800); return; }
     CHARTLD[sym]='error'; chartRefresh(sym);
   } }
-function retryChart(sym){ delete CHARTLD[sym]; const it=quote(sym); if(it)it.candles=null; loadChart(sym,1); chartRefresh(sym); }
+function retryChart(sym){ delete CHARTLD[sym]; delete CANDLES[sym]; const it=quote(sym); if(it)it.candles=null; loadChart(sym,1); chartRefresh(sym); }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 // The default scope FOLLOWS THE MARKET: stocks-first when the US market is open (or the
 // user's Default-view setting), crypto-first when it's closed — so after-hours users land
