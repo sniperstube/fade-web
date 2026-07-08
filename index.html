@@ -164,7 +164,7 @@ input,textarea,select{font-size:16px}
 .flag{display:inline-flex;gap:6px;font-family:'Space Grotesk';font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);background:rgba(46,123,255,.1);padding:6px 12px;border-radius:20px;margin-bottom:15px}
 .row{display:flex;justify-content:space-between;align-items:flex-start}
 .sym{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1}
-.sym small{display:block;font-family:'Space Grotesk';font-size:11px;color:var(--ash);font-weight:400;margin-top:7px}
+.sym small{display:block;font-family:'Space Grotesk';font-size:13.5px;color:var(--ashl);font-weight:500;margin-top:8px}
 .grade{width:58px;height:58px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
 .grade .n{font-family:'Press Start 2P';font-size:17px;line-height:1}
 .grade .s{font-family:'Press Start 2P';font-size:7px;margin-top:5px}
@@ -392,11 +392,13 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-dot{width:7px;height:7px;border-radius:50%;background:#3ddc6e;box-shadow:0 0 8px #3ddc6e;animation:slpulse 1.4s ease-in-out infinite}
 .scan-live.closed .sl-dot{background:#ff9f0a;box-shadow:0 0 8px #ff9f0a}
 @keyframes slpulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes scananim{0%,100%{opacity:1}50%{opacity:.55}}
 .sl-stat{font-size:12px;color:var(--ash)}
 .sl-stat b{color:var(--txt);font-weight:800;font-size:14px}
 .sl-hot b{color:#ffb020}
 .sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
-.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.35;color:var(--dim);z-index:6;pointer-events:none;padding:0 18px}
+.scan-anim{animation:scananim 1.8s ease-in-out infinite}
+.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--dim);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
 .acls.st{color:#2e7bff;background:rgba(46,123,255,.14)}
 .acls.cr{color:#b57bff;background:rgba(181,123,255,.16)}
@@ -406,6 +408,24 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .nr-chg{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
 .nr-gap{font-size:11px;color:var(--ash);min-width:82px;text-align:right}
 .nr-empty{text-align:center;padding:40px 20px;color:var(--dim);font-family:'Space Grotesk';font-size:12.5px;line-height:1.5}
+.mpulse{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
+.mp-hero{text-align:center;padding:40px 16px 26px}
+.mp-big{position:relative;display:inline-flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:96px;font-weight:800;letter-spacing:-4px;line-height:1;color:#ffb020;text-shadow:0 0 34px rgba(255,176,32,.4)}
+.mp-big.sm{font-size:44px;letter-spacing:-1px;color:var(--txt);text-shadow:none}
+.mp-ring{position:absolute;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,176,32,.45);animation:mpr 2.6s ease-out infinite;pointer-events:none}
+.mp-ring.r2{animation-delay:1.3s}
+@keyframes mpr{0%{transform:scale(.5);opacity:.85}100%{transform:scale(1.55);opacity:0}}
+.mp-lab{font-family:'Space Grotesk';font-weight:800;font-size:17px;color:var(--txt);margin-top:22px;letter-spacing:.2px}
+.mp-sub{color:var(--ash);font-size:12.5px;margin:8px auto 0;line-height:1.55;max-width:270px}
+.mp-tape{width:100%;margin:8px 0;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.mp-run{display:inline-block;animation:mptape 28s linear infinite}
+.mp-it{display:inline-flex;gap:6px;margin:0 15px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ash)}
+.mp-it b{color:var(--txt);font-weight:700} .mp-it em{font-style:normal;font-weight:700}
+.mp-empty{color:var(--dim);font-family:ui-monospace,Menlo,monospace;font-size:12px;padding-left:14px}
+@keyframes mptape{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.mp-foot{display:flex;align-items:center;gap:7px;color:var(--dim);font-size:11px;font-family:'Space Grotesk';margin-top:12px}
+.mp-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:slpulse 1.5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.mp-ring,.mp-run,.mp-dot{animation:none}}
 .closebox{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:13px 13px 14px;margin-top:4px}
 .scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--dim);font-size:7px}
 .tetstage{cursor:pointer} .tetstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -718,7 +738,7 @@ function pxFmt(x){ if(x==null) return '--'; const a=Math.abs(x);
   if(a>=1000) return x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   if(a>=100) return x.toFixed(2); if(a>=10) return x.toFixed(3); if(a>=1) return x.toFixed(4);
   return x.toPrecision(4); }
-function sign(x){ return (x>=0?'+':'')+x.toFixed(1)+'%'; }
+function sign(x){ if(x==null) return '--'; return (x>=0?'+':'')+x.toFixed(1)+'%'; }
 function rgba(hex,a){ let h=hex.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
 function isLong(a){ const t=a.setup&&a.setup.target, e=a.price; if(t!=null&&e!=null) return t>e; return a.signal==='fade_long'; }
 function moveCol(p){ return p>=0?GREEN:RED; }
@@ -736,28 +756,8 @@ function posMargin(x){ return x.margin!=null?x.margin:(x.qty*x.entry); }
 function posLev(x){ return x.lev||1; }
 function posNotional(x){ return posMargin(x)*posLev(x); }
 
-function fade(sym){
-  if(!requireAccount()) return;
-  const a=quote(sym); if(!a) return;
-  if(a.signal==='skip'||a.signal==='no_breach'){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
-  const long=isLong(a), notional=1000;
-  const p=paper();
-  // One position per asset: fading a symbol you already hold ADDS to it (averaging in).
-  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===sym);
-  if(existing){ addToPos(existing.id); S.faded[sym]=1; if(S.screen==='detail'){ go('feed'); } else { render(); } return; }
-  if(p.cash<notional){ toast('Not enough paper cash \u2014 close a position to free up funds.'); return; }
-  const qty=notional/a.price;
-  p.cash-=notional;   // deduct the amount you put into the trade
-  const g=relGrade(a).l;
-  p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:sym,name:a.name,side:long?'long':'short',
-    entry:a.price,qty,target:a.setup.target,stop:a.setup.mental_stop,grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
-  save(p);
-  S.faded[sym]=1;
-  // Mirror the fade to the backend paper engine (feeds the leaderboard + admin metrics).
-  if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:sym,side:long?'long':'short'})}).catch(function(){}); }
-  toast((long?'Long ':'Short ')+sym+' @ '+money(a.price)+'  \u2014 next setup up');
-  if(S.screen==='detail'){ go('feed'); } else { render(); }
-}
+// fade() removed — dead code, never wired to any UI. Use openTradePanel→confirmTrade path.
+// addToPos() removed — only called from the dead fade().
 function skip(sym){ S.faded[sym]=1; toast('Skipped '+sym+' \u2014 next setup up'); if(S.screen==='detail'){go('feed');} else {render();} }
 function skippedCount(){ return Object.keys(S.faded||{}).length; }
 function unskipAll(){ const n=skippedCount(); S.faded={}; toast(n?('Brought back '+n+' skipped setup'+(n>1?'s':'')):'Nothing was skipped'); render(); }
@@ -867,7 +867,7 @@ function simulate(){
   opened.forEach(x=>{ const win=Math.random()<(WINPROB[x.grade]||.5);
     const exit=win?x.target:x.stop;
     const pnl=(x.side==='long'?(exit-x.entry):(x.entry-exit))*x.qty;
-    x.status='closed'; x.exit=exit; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss';
+    x.status='closed'; x.exit=exit; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss'; x.simulated=true;   // flag so stats excludes these from the real record
     p.cash+=posMargin(x)+pnl; });   // return the margin you put in + result to cash
   save(p); toast('Simulated '+opened.length+' trade(s) to target/stop  (preview)'); render();
 }
@@ -885,7 +885,7 @@ function withdrawPaper(){ const p=paper();
   p.cash=Math.round((p.cash-amt)*100)/100; save(p); toast('Withdrew $'+money(amt)+' paper cash'); render(); }
 
 function stats(){
-  const p=paper(); const closed=p.positions.filter(x=>x.status==='closed');
+  const p=paper(); const closed=p.positions.filter(x=>x.status==='closed'&&!x.simulated);   // exclude simulated trades from real record
   const opens=p.positions.filter(x=>x.status==='open');
   const wins=closed.filter(x=>x.result==='win').length;
   const unreal=opens.reduce((s,x)=>{ const q=quote(x.symbol); const cur=q?q.price:x.entry;
@@ -1020,26 +1020,25 @@ let SCAN={x:50,y:52,tx:50,ty:52,dir:0,vx:0,vy:0,playing:false,score:0,best:0,com
 try{ SCAN.best=+(localStorage.getItem('fade_hiscore')||0)||0; }catch(e){}
 const GHOST_DEFS=[{c:'#ff3b30',s:0.52},{c:'#ff6ac1',s:0.72},{c:'#00e5ff',s:0.40}];   // chasers at different speeds
 const HEAT={1:'#ffe500',2:'#ff9f0a',3:'#ff3b30'};   // cool -> warm -> red-hot as it nears trigger
-function scanData(){ const items=(BOARD.items||[]);
+function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
   // "Almost there" coins = within 1.9% of triggering. Exact %-to-trigger IS shown (Naeem's call);
   // phase 1/2/3 drives the heat colour, ring fill and run speed.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
     .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap);
   return {total:items.length,near:near.slice(0,12),nearCount:near.length}; }
-// Curated readout for the scan strip — deliberately small numbers so it reads exclusive/hand-picked
-// (looks live and shifts with the market, but isn't the raw universe count). Both scopes have games.
+// Curated readout for the scan strip — scope-specific numbers, single digit nearing count
 function scanShow(){ const d=scanData();
-  const near=Math.max(1,Math.min(7,Math.round((d.nearCount||0)/4)||1));
+  const near=Math.max(1,Math.min(9,Math.round((d.nearCount||0)/4)||1));
   const scan=Math.min(48,Math.max(near+9,15+near*4));
   return {scan:scan,near:near}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   return stocksClosedView()
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
-function scanDiscHTML(){ return `<div class="scan-disc">Mini-game to pass the downtime &#183; it doesn&#39;t affect your account or the live scan above</div>`; }
-function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>`; }
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">tracked <b>${sh.scan}</b></span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
+function scanDiscHTML(){ return `<div class="scan-disc">Pass the wait with mini-games — doesn&#39;t affect live scan</div>`; }
+function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">PASS</span><br><span class="rt-sub">the wait</span></div></div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
@@ -1298,13 +1297,24 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
 // a scanning line. NEVER the Pac-Man scanner — that game belongs to crypto only.
 function gamesOn(){ return lsGet('fade_games',true); }   // waiting-room mini-games (default ON)
 // Games OFF: a clean, non-game live readout (both scopes) — real scan data, no arcade.
+// MARKET PULSE — the no-noise waiting screen (games off). One big living number over a live tape.
 function scanReadoutHTML(){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
-  const near=(d.near||[]).slice(0,sh.near).map(x=>`<div class="nr-row"><span class="nr-sym">${esc(x.sym)}</span><span class="nr-chg" style="color:${(x.chg||0)>=0?GREEN:RED}">${(x.chg||0)>=0?'+':''}${(x.chg||0).toFixed(2)}%</span><span class="nr-gap">${x.gap<=0.5?'&#9679; very close':'&#8776; '+x.gap.toFixed(1)+'% away'}</span></div>`).join('');
-  const bar=closed
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b>${nextMarketOpen()}</b></span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
-  return `${bar}<div class="nr-list">${near||'<div class="nr-empty">Nothing near a trigger right now &#183; the board is live and watching.</div>'}</div>`;
+  const tapeItems=(BOARD.items||[]).filter(i=>i.change_pct!=null).sort((a,b)=>Math.abs(b.change_pct)-Math.abs(a.change_pct)).slice(0,22)
+    .map(i=>`<span class="mp-it"><b>${esc(i.symbol)}</b> <em style="color:${i.change_pct>=0?GREEN:RED}">${i.change_pct>=0?'+':''}${i.change_pct.toFixed(1)}%</em></span>`);
+  const tape=(tapeItems.concat(tapeItems)).join('');
+  const big=closed?nextMarketOpen():String(sh.near);
+  return `${scanLiveBar()}
+    <div class="mpulse">
+      <div class="mp-hero">
+        <div class="mp-big${closed?' sm':''}" data-pulse>${big}<span class="mp-ring"></span><span class="mp-ring r2"></span></div>
+        <div class="mp-lab">${closed?'until the open':'nearing a trigger'}</div>
+        <div class="mp-sub">${closed?'US market is closed &#183; crypto never sleeps'
+          :'No setup at the extreme yet &#8212; the board fires the instant one snaps.'}</div>
+      </div>
+      <div class="mp-tape">${tape?`<span class="mp-run">${tape}</span>`:'<span class="mp-empty">scanning the tape&#8230;</span>'}</div>
+      <div class="mp-foot"><span class="mp-dot"></span>${d.total} markets scanned &#183; live every ~2 min</div>
+    </div>`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
 // stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
@@ -1458,7 +1468,6 @@ function wallet(){
         <div class="bs"><span class="bsk">Closed P&amp;L</span><span class="bsv" style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)}</span></div>
       </div></div>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
-    ${s.opens.length?`<button class="simlink" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.6">&#183; preview</span></button>`:''}
     <div class="lbl wl-sec">Open positions${s.opens.length?`<span class="lbl-n live">${s.opens.length}</span>`:''}</div>
     <div class="wl-group">${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}</div>
     <div class="lbl wl-sec wl-hist">History${s.closed.length?`<span class="lbl-n">${s.closed.length}</span>`:''}</div>
@@ -1525,18 +1534,6 @@ let MODALPOS=null;
 function openPos(id){ MODALPOS=id; CLFRAC[id]=1; const p=paper(); const x=p.positions.find(y=>y.id===id);
   if(x&&typeof loadChart==='function') loadChart(x.symbol);   // pull candles for the live chart
   openModal(posModal(id)); }
-function addToPos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
-  // Discipline guard: after 3 adds, warn before letting them keep averaging in.
-  if((x.adds||0)>=3){
-    if(!confirm(x.symbol+': you have already added '+x.adds+' times. Repeatedly averaging down is how accounts blow up — this should be a rare, deliberate move, not a habit. Add $1,000 more anyway?')) return;
-  }
-  if(p.cash<1000){ toast('Not enough paper cash to add — close a position to free up funds.'); return; }
-  const q=quote(x.symbol); const cur=q?q.price:x.entry; const addQty=1000/cur; const nq=x.qty+addQty;
-  p.cash-=1000;   // adding puts another $1,000 into the trade
-  x.entry=(x.entry*x.qty+cur*addQty)/nq; x.qty=nq; x.adds=(x.adds||0)+1; save(p);
-  toast('Added to '+x.symbol+' @ '+money(cur)+' — avg now '+money(x.entry));
-  if(document.getElementById('modal').classList.contains('show')) openModal(posModal(id)); else render(); }
-
 /* ---------- SOCIAL ---------- */
 function social(){
   const s=stats(); const meLc=S.user?S.user.username.toLowerCase():'';
@@ -1944,8 +1941,6 @@ function settings(){
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['crypto','Crypto']],dv,'setDefView')}
     ${setrow('Stocks only','Hide crypto entirely &#8212; only fade large-cap stocks.',so,'toggleStocksOnly()')}
     ${segrow('Minimum grade','Only surface setups at or above this grade.',[['2','A&#8211;B'],['3','A&#8211;C'],['9','All']],String(mg),'setMinGrade')}
-    ${linkrow('Show skipped setups again',(skippedCount()||'No')+' setup'+(skippedCount()===1?'':'s')+' skipped this session &#183; bring them back into the feed.','unskipAll()')}
-    ${setrow('After-hours crypto alerts','Get a phone notification when a crypto fade fires while the US stock market is closed (installed app only).',lsGet('fade_alerts',false),'toggleAlerts()')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default trade size</div><div class="setd">Pre-fills the trade panel with this % of your free cash.</div></div>
@@ -2188,7 +2183,7 @@ async function loadChart(sym,attempt){ if(!API||!sym) return; const it=quote(sym
   }catch(e){
     // Backend cold-starts (~50s) and transient blips used to leave the chart blank forever.
     // Retry a few times with backoff, then surface a tap-to-retry instead of a dead placeholder.
-    if(attempt<3){ setTimeout(function(){ loadChart(sym,attempt+1); }, attempt*1800); return; }
+    if(attempt<6){ setTimeout(function(){ loadChart(sym,attempt+1); }, Math.min(8000,attempt*2500)); return; }   // ride out a Render cold-start (~50s) before giving up
     CHARTLD[sym]='error'; chartRefresh(sym);
   } }
 function retryChart(sym){ delete CHARTLD[sym]; delete CANDLES[sym]; const it=quote(sym); if(it)it.candles=null; loadChart(sym,1); chartRefresh(sym); }
@@ -2222,6 +2217,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   else if(S.screen!=='feed'){ go('feed'); }
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
-</script><style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
+</script>
+<style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
 </body>
 </html>
