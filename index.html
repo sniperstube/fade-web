@@ -655,10 +655,22 @@ function tourBanner(){ if(lsGet('fade_tour_done',false)) return '';
   return `<div class="tourbanner"><span>&#128075; New here? Take the 30-second tour.</span><span style="display:flex;gap:4px;flex-shrink:0"><button onclick="event.stopPropagation();coachStart()">Start</button><button class="x" onclick="event.stopPropagation();dismissTour()">&#215;</button></span></div>`; }
 function dismissTour(){ lsSet('fade_tour_done',true); render(); }
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
-function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
+function requireAccount(){ if(S.user&&(authToken()||!API)) return true;
+  if(S.user&&!authToken()){ AUTHMODE='login'; toast('Please sign in to keep trading'); go('profile'); return false; }   // legacy (pre-password) user → grandfather login
+  toast('Create a free account to take trades'); go('profile'); return false; }
 let AUTHMODE='signup', CONTACT='email', DRAFT={user:'',contact:''};
 function loadUser(){ try{ return JSON.parse(localStorage.getItem('fade_user')||'null'); }catch(e){ return null; } }
 function saveUser(u){ if(u){localStorage.setItem('fade_user',JSON.stringify(u));} else {localStorage.removeItem('fade_user');} S.user=u; }
+// --- JWT session (Phase 6): token stored client-side, sent as Bearer on protected calls ---
+function authToken(){ try{ return localStorage.getItem('fade_token')||''; }catch(e){ return ''; } }
+function setToken(t){ try{ if(t)localStorage.setItem('fade_token',t); else localStorage.removeItem('fade_token'); }catch(e){} }
+async function api(path,opts){ opts=opts||{}; const h=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  const t=authToken(); if(t)h['Authorization']='Bearer '+t;
+  const r=await fetch(API+path,Object.assign({},opts,{headers:h}));
+  if(r.status===401){ handle401(); throw new Error('unauthorized'); } return r; }
+function handle401(){ setToken(''); saveUser(null); AUTHMODE='login'; toast('Session expired — please sign in'); try{render();}catch(e){} }
+async function restoreSession(){ if(!API||!authToken())return; try{ const r=await api('/api/auth/me'); const d=await r.json();
+  if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm})); if(S.screen==='profile')render(); } }catch(e){} }
 function handle(){ return S.user?('@'+S.user.username):'@you'; }
 function initial(){ return S.user?S.user.username[0].toUpperCase():'?'; }
 
@@ -704,7 +716,7 @@ function fade(sym){
   save(p);
   S.faded[sym]=1;
   // Mirror the fade to the backend paper engine (feeds the leaderboard + admin metrics).
-  if(API&&S.user){ fetch(API+'/api/paper/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:S.user.username,symbol:sym,side:long?'long':'short'})}).catch(function(){}); }
+  if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:sym,side:long?'long':'short'})}).catch(function(){}); }
   toast((long?'Long ':'Short ')+sym+' @ '+money(a.price)+'  \u2014 next setup up');
   if(S.screen==='detail'){ go('feed'); } else { render(); }
 }
@@ -798,7 +810,7 @@ function confirmTrade(){
     entry:a.price,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,
     grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
   save(p); S.faded[TRADE.sym]=1;
-  if(API&&S.user){ fetch(API+'/api/paper/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:S.user.username,symbol:TRADE.sym,side:long?'long':'short'})}).catch(function(){}); }
+  if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:TRADE.sym,side:long?'long':'short'})}).catch(function(){}); }
   closeModal();
   toast((long?'Long ':'Short ')+TRADE.sym+' &#183; $'+money(margin)+(lev>1?' at '+lev+'x':'')+' \u2014 live in your wallet');
   if(S.screen==='detail'){ go('feed'); } else { render(); }
@@ -1702,7 +1714,17 @@ async function loadHL(){ if(!API||!S.hlAddr) return;
 function setAuth(m){ AUTHMODE=m; render(); }
 function setContact(c){ CONTACT=c; render(); }
 function authScreen(){
-  const signup=AUTHMODE==='signup';
+  const signup=AUTHMODE==='signup', setpw=AUTHMODE==='setpw';
+  if(setpw){ return `<div class="screen">${topbar()}
+    <div class="auth">
+      <div class="pava" style="margin:6px auto 14px">&#128274;</div>
+      <h2>Secure your account</h2>
+      <div class="sub2">Welcome back${DRAFT.who?', @'+esc(DRAFT.who):''} &#8212; we added passwords. Set one now; your paper balance and history are safe.</div>
+      <div class="autherr" id="autherr"></div>
+      <div class="fld"><label>New password</label><input id="a_pw" type="password" value="${DRAFT.pw||''}" oninput="DRAFT.pw=this.value" placeholder="at least 8 characters" autocapitalize="off"></div>
+      <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doSetPassword()">${S.busy?'Securing…':'Set password &amp; continue &#8594;'}</button>
+    </div>
+  </div>`; }
   return `<div class="screen">${topbar()}
     <div class="auth">
       <div class="pava" style="margin:6px auto 14px">&#10022;</div>
@@ -1714,10 +1736,12 @@ function authScreen(){
         <label style="display:block;color:var(--ash);font-size:12.5px;margin:4px 2px 6px">Sign up with <b style="color:var(--txt)">email OR phone</b> &#8212; pick one:</label>
         <div class="seg"><button class="${CONTACT==='email'?'on':''}" onclick="setContact('email')">Email</button><button class="${CONTACT==='phone'?'on':''}" onclick="setContact('phone')">Phone</button></div>
         <div class="fld"><input id="a_contact" value="${DRAFT.contact}" oninput="DRAFT.contact=this.value" placeholder="${CONTACT==='email'?'you@email.com':'+1 555 123 4567'}" type="${CONTACT==='email'?'email':'tel'}" autocapitalize="off"></div>
+        <div class="fld"><label>Password</label><input id="a_pw" type="password" value="${DRAFT.pw||''}" oninput="DRAFT.pw=this.value" placeholder="at least 8 characters" autocapitalize="off"></div>
         <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doSignup()">${S.busy?'Creating account…':'Create account &#8594;'}</button>
         <div class="authlink">Already have one? <b onclick="setAuth('login')">Sign in</b></div>
       `:`
         <div class="fld"><label>Username, email, or phone</label><input id="a_id" placeholder="how you signed up" autocapitalize="off"></div>
+        <div class="fld"><label>Password</label><input id="a_pw" type="password" placeholder="your password" autocapitalize="off"></div>
         <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doLogin()">${S.busy?'Signing in…':'Sign in &#8594;'}</button>
         <div class="authlink">New here? <b onclick="setAuth('signup')">Create account</b></div>
       `}
@@ -1740,13 +1764,15 @@ async function doSignup(){
   const username=((document.getElementById('a_user')||{}).value||'').trim();
   const contact=((document.getElementById('a_contact')||{}).value||'').trim();
   const email=CONTACT==='email'?contact:'', phone=CONTACT==='phone'?contact:'';
+  const password=((document.getElementById('a_pw')||{}).value||'');
   autherr('');
   const v=validateLocal(username,email,phone); if(v){ autherr(v); return; }   // instant local check first
+  if(password.length<8){ autherr('Password must be at least 8 characters.'); return; }
   if(API){
     S.busy=true; render();   // disable + show "Creating…" so nobody double-taps
-    try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone})});
+    try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone,password})});
       const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not create account'); return; }
-      S.busy=false; DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
+      S.busy=false; DRAFT={user:'',contact:'',pw:''}; setToken(d.token); saveUser(Object.assign({},d.user,{crm:d.crm})); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); go('feed'); toast('Welcome, @'+username+' — tap "Take the tour" to learn the app');
@@ -1754,13 +1780,16 @@ async function doSignup(){
 }
 async function doLogin(){
   if(S.busy) return;
-  const identifier=((document.getElementById('a_id')||{}).value||'').trim(); autherr('');
+  const identifier=((document.getElementById('a_id')||{}).value||'').trim();
+  const password=((document.getElementById('a_pw')||{}).value||''); autherr('');
   if(!identifier){ autherr('Enter your username, email, or phone.'); return; }
   if(API){
     S.busy=true; render();
-    try{ const r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier})});
+    try{ const r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier,password})});
       const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not sign in'); return; }
-      S.busy=false; saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
+      S.busy=false; setToken(d.token);
+      if(d.needs_password){ DRAFT.who=(d.user&&d.user.username)||identifier; DRAFT.setid=identifier; DRAFT.pw=''; AUTHMODE='setpw'; render(); return; }   // grandfather flow
+      saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     const u=loadUser();
@@ -1768,7 +1797,18 @@ async function doLogin(){
     else autherr('No preview account on this device \u2014 create one.');
   }
 }
-function signOut(){ saveUser(null); AUTHMODE='signup'; go('profile'); toast('Signed out'); }
+async function doSetPassword(){
+  if(S.busy) return;
+  const password=((document.getElementById('a_pw')||{}).value||DRAFT.pw||''); autherr('');
+  if(password.length<8){ autherr('Password must be at least 8 characters.'); return; }
+  if(!API){ AUTHMODE='login'; render(); return; }
+  S.busy=true; render();
+  try{ const r=await fetch(API+'/api/auth/set-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:DRAFT.setid||DRAFT.who,password})});
+    const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not set password'); return; }
+    S.busy=false; setToken(d.token); DRAFT.pw=''; saveUser(d.user); go('feed'); toast('You’re all set, @'+d.user.username);
+  }catch(e){ S.busy=false; render(); autherr('Server is waking up — try again.'); }
+}
+function signOut(){ setToken(''); saveUser(null); AUTHMODE='login'; go('profile'); toast('Signed out'); }
 /* ---------- SETTINGS ---------- */
 // settings getters/setters (localStorage-backed, safe defaults)
 function defView(){ const v=lsGet('fade_default_view','stocks'); return v==='both'?'stocks':v; }   // combined view removed — one or the other
@@ -2053,7 +2093,7 @@ try{ S.scope = stocksOnly() ? 'stocks' : (stockMarketOpen() ? defView() : 'crypt
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
 else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same SCREEN (scope stays market-driven above)
   if(nv&&['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } }catch(e){} }
-applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
+applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL(); restoreSession();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
