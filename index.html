@@ -310,6 +310,12 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
 .tetriswrap{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 22%,rgba(46,123,255,.05),transparent 70%),#05070d}
 #tetris{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+/* Tetris HUD strip — score + market countdown ABOVE the board (text off the play field) */
+.tethud{display:flex;align-items:center;justify-content:space-between;padding:5px 14px 3px;flex:none}
+.tethud .sc{display:flex;align-items:baseline;gap:8px;font-family:'Press Start 2P',ui-monospace,monospace;color:var(--yellow);font-size:15px;text-shadow:0 0 10px rgba(255,229,0,.35)}
+.tethud .sc small{font-family:'SF Mono',ui-monospace,monospace;color:var(--ash);font-size:8px}
+.tethud .mkt{font-family:'SF Mono',ui-monospace,monospace;font-size:10px;font-weight:700}
+.tethud .mkt.closed{color:var(--red)} .tethud .mkt.live{color:var(--green)}
 /* pre-market / after-hours movers tape (only shown during extended hours) */
 .pmtape{margin:0 -14px;overflow:hidden;white-space:nowrap;background:#090b12;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex:none}
 .pmtape:empty{display:none}
@@ -1094,7 +1100,7 @@ function scanInputInit(){ let sx=0,sy=0,active=false;
 /* ============================ FADE BLOCKS (Tetris) — the STOCKS game ============================
    OG Tetris, Arcade Classic look, full-screen. Each falling piece is a stock; clear a line and it
    "fades" (fires). Canvas-based; one rAF loop that no-ops when the board isn't mounted. */
-const TET_COL={I:'#00e5ff',O:'#ffe500',T:'#b57bff',S:'#39ff14',Z:'#ff3b30',J:'#3aa0ff',L:'#ff9f0a'};
+const TET_COL={I:'#3cbcfc',O:'#f8b800',T:'#b83cf8',S:'#58f858',Z:'#f83c3c',J:'#3c5cf8',L:'#f88c3c'};
 const TET_PIECES={
   I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
   O:[[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]]],
@@ -1132,54 +1138,47 @@ function tetStep(){ if(TET.over||!TET.piece)return; TET.frame++; if(TET.flash>0)
   const every=Math.max(5,49-(TET.level-1)*4); TET.dropAcc++;
   if(TET.dropAcc>=every){ TET.dropAcc=0; if(!tetHit(TET.x,TET.y+1,TET.rot)){ TET.y++; } else tetLock(); } }
 // --- beveled arcade block ---
-function tetBlock(ctx,x,y,s,col,ghost){ if(ghost){ ctx.strokeStyle=col+'66'; ctx.lineWidth=2; ctx.strokeRect(x+2,y+2,s-4,s-4); return; }
+function tetShade(hex,f){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.max(0,Math.min(255,r*f))|0; g=Math.max(0,Math.min(255,g*f))|0; b=Math.max(0,Math.min(255,b*f))|0; return 'rgb('+r+','+g+','+b+')'; }
+// 8-bit pixel block: solid fill + light bevel (top+left) + dark bevel (bottom+right).
+function tetBlock(ctx,x,y,s,col,ghost){ if(ghost){ ctx.globalAlpha=.32; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.strokeRect(x+2,y+2,s-4,s-4); ctx.globalAlpha=1; return; }
+  const b=Math.max(2,Math.round(s*0.17));
   ctx.fillStyle=col; ctx.fillRect(x,y,s,s);
-  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+s,y); ctx.lineTo(x+s-s*0.16,y+s*0.16); ctx.lineTo(x+s*0.16,y+s*0.16); ctx.lineTo(x+s*0.16,y+s-s*0.16); ctx.lineTo(x,y+s); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.moveTo(x+s,y); ctx.lineTo(x+s,y+s); ctx.lineTo(x,y+s); ctx.lineTo(x+s*0.16,y+s-s*0.16); ctx.lineTo(x+s-s*0.16,y+s-s*0.16); ctx.lineTo(x+s-s*0.16,y+s*0.16); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,s-1,s-1); }
+  ctx.fillStyle=tetShade(col,1.30); ctx.fillRect(x,y,s,b); ctx.fillRect(x,y,b,s);            // light top + left
+  ctx.fillStyle=tetShade(col,0.55); ctx.fillRect(x,y+s-b,s,b); ctx.fillRect(x+s-b,y,b,s);    // dark bottom + right
+  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,s-1,s-1); }
 function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; const w=wrap.clientWidth,h=wrap.clientHeight;
   const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1)); cv.width=w*dpr; cv.height=h*dpr; cv.style.width=w+'px'; cv.style.height=h+'px';
   TET.ctx.setTransform(dpr,0,0,dpr,0,0); TET.W=w; TET.H=h; }
 function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
   ctx.clearRect(0,0,W,H);
-  const M=3; const cell=Math.min(Math.floor((W-M*2)/10), Math.floor((H-M*2)/20));
+  // maximise: fill the whole area (near-zero margin), centered
+  const M=1; const cell=Math.min(Math.floor((W-M*2)/10), Math.floor((H-M*2)/20));
   const wW=cell*10, wH=cell*20; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
-  // well bg + grid
-  ctx.fillStyle='#0a0c12'; ctx.fillRect(wx-2,wy-2,wW+4,wH+4);
-  ctx.strokeStyle='#1a2030'; ctx.lineWidth=1;
+  // 8-bit well: near-black field, very faint grid
+  ctx.fillStyle='#050505'; ctx.fillRect(wx-1,wy-1,wW+2,wH+2);
+  ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1;
   for(let r=0;r<=20;r++){ ctx.beginPath(); ctx.moveTo(wx,wy+r*cell); ctx.lineTo(wx+wW,wy+r*cell); ctx.stroke(); }
   for(let c=0;c<=10;c++){ ctx.beginPath(); ctx.moveTo(wx+c*cell,wy); ctx.lineTo(wx+c*cell,wy+wH); ctx.stroke(); }
-  // settled
   for(let r=0;r<20;r++)for(let c=0;c<10;c++){ if(TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
-  // ghost + current
   if(!TET.over){ const gy=tetGhostY(); const col=TET_COL[TET.piece];
     for(const [cx,cy] of tetCells(TET.x,gy,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col,true); }
     for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col); } }
-  // HUD — overlaid on the top of the board (kept compact so the well is as large as possible)
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,.9)'; ctx.shadowBlur=4;
-  ctx.textAlign='left'; ctx.fillStyle='#ffe500'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(String(TET.score),wx+6,wy+21);
-  ctx.fillStyle='#c7c7d0'; ctx.font='800 8px ui-monospace,Menlo,monospace'; ctx.fillText('BEST '+TET.best+' · L'+TET.lines+' · LV'+TET.level,wx+6,wy+35);
-  ctx.fillStyle=TET_COL[TET.piece]||'#fff'; ctx.font='900 11px -apple-system,Arial'; ctx.fillText('▾ '+TET.sym, wx+6, wy+51);
-  // market status + live countdown to open (the bit people love), top-center
-  TET._dc=(TET._dc||0)+1; if(!TET._open||TET._dc%30===0){ try{TET._open=nextMarketOpen();}catch(e){TET._open='';} }
-  let mktOpen=false; try{mktOpen=stockMarketOpen();}catch(e){}
-  ctx.textAlign='center';
-  if(mktOpen){ ctx.fillStyle='#39ff14'; ctx.font='900 10px ui-monospace,Menlo,monospace'; ctx.fillText('● MARKET LIVE', W/2, wy+15); }
-  else { ctx.fillStyle='#ff3b30'; ctx.font='900 11px ui-monospace,Menlo,monospace'; ctx.fillText('● MARKET CLOSED', W/2, wy+15);
-    ctx.fillStyle='#ffb3ae'; ctx.font='800 9px ui-monospace,Menlo,monospace'; ctx.fillText('opens '+(TET._open||''), W/2, wy+29); }
-  // next preview mini (top-right, over the well)
-  const nk=TET.next; if(nk){ const ns=Math.max(7,Math.floor(cell*0.42));
-    ctx.textAlign='right'; ctx.fillStyle='#9a9aac'; ctx.font='800 7px ui-monospace,Menlo,monospace'; ctx.fillText('NEXT', wx+wW-6, wy+13);
-    const nx=wx+wW-ns*4-6, ny=wy+17; ctx.shadowBlur=0;
-    for(const [cx,cy] of TET_PIECES[nk][0]){ tetBlock(ctx,nx+cx*ns,ny+cy*ns,ns,TET_COL[nk]); } }
-  ctx.restore();
-  // flash
-  if(TET.flash>0){ ctx.globalAlpha=Math.min(1,TET.flash/12); ctx.textAlign='center'; ctx.fillStyle='#39ff14'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(TET.flashTxt, W/2, wy+wH/2); ctx.globalAlpha=1; }
-  if(TET.over){ ctx.fillStyle='rgba(0,0,0,.72)'; ctx.fillRect(0,0,W,H); ctx.textAlign='center';
-    ctx.fillStyle='#ff3b30'; ctx.font='900 26px -apple-system,Arial'; ctx.fillText('GAME OVER',W/2,H/2-14);
-    ctx.fillStyle='#f4f4f8'; ctx.font='900 15px -apple-system,Arial'; ctx.fillText('Score '+TET.score,W/2,H/2+12);
-    ctx.fillStyle='#8a8a9a'; ctx.font='11px ui-monospace,Menlo,monospace'; ctx.fillText('tap to play again',W/2,H/2+40); }
+  // line-clear flash (the only on-board text — it's the payoff)
+  if(TET.flash>0){ ctx.globalAlpha=Math.min(1,TET.flash/12); ctx.textAlign='center'; ctx.fillStyle='#58f858'; ctx.font='900 22px -apple-system,Arial'; ctx.fillText(TET.flashTxt, W/2, wy+wH/2); ctx.globalAlpha=1; }
+  if(TET.over){ ctx.fillStyle='rgba(0,0,0,.8)'; ctx.fillRect(0,0,W,H); ctx.textAlign='center';
+    ctx.fillStyle='#f83c3c'; ctx.font='900 28px -apple-system,Arial'; ctx.fillText('GAME OVER',W/2,H/2-14);
+    ctx.fillStyle='#f4f4f8'; ctx.font='900 16px -apple-system,Arial'; ctx.fillText('Score '+TET.score,W/2,H/2+16);
+    ctx.fillStyle='#8a8a9a'; ctx.font='11px ui-monospace,Menlo,monospace'; ctx.fillText('tap to play again',W/2,H/2+42); }
+  tetUpdateHUD();
 }
+function tetUpdateHUD(){ const sc=document.getElementById('tetscore'); if(sc)sc.textContent=TET.score;
+  const ln=document.getElementById('tetsub'); if(ln)ln.textContent='LV '+TET.level+' · '+TET.lines+' lines · best '+TET.best;
+  const mk=document.getElementById('tetmkt'); if(!mk)return;
+  TET._dc=(TET._dc||0)+1; if(!TET._open||TET._dc%30===0){ try{TET._open=nextMarketOpen();}catch(e){TET._open='';} }
+  let mo=false; try{mo=stockMarketOpen();}catch(e){}
+  if(mo){ mk.className='mkt live'; mk.textContent='● MARKET LIVE'; }
+  else { mk.className='mkt closed'; mk.textContent='● CLOSED · opens '+(TET._open||''); } }
 function tetLoop(){ const cv=document.getElementById('tetris');
   if(cv){ if(cv!==TET.cv){ TET.cv=cv; TET.ctx=cv.getContext('2d'); tetFit(); if(!TET.grid||TET.over)tetReset(); }
     else { const wrap=cv.parentElement; if(wrap&&(wrap.clientWidth!==TET.W||wrap.clientHeight!==TET.H))tetFit(); }
@@ -1200,6 +1199,7 @@ function tetInputInit(){ let sx=0,sy=0,moved=0,active=false,acc=0;
     else if(k==='ArrowUp'||k==='x'||k==='X')tetRotate(1); else if(k==='z'||k==='Z')tetRotate(-1);
     else if(k===' '){ if(!tetTapRestart())tetHard(); } else return; e.preventDefault(); }); }
 function tetrisHTML(){ return `<div class="tetriswrap" onclick="tetTapRestart()"><canvas id="tetris"></canvas></div>`; }
+function tetHUDstrip(){ return `<div class="tethud"><div class="sc"><span id="tetscore">0</span><small id="tetsub">LV 1 · 0 lines</small></div><div class="mkt closed" id="tetmkt">● CLOSED</div></div>`; }
 // Pre-market / after-hours movers tape (only shows during extended hours; empty otherwise).
 let PM={ts:0};
 function pmTapeHTML(){ return `<div class="pmtape" id="pmtape"></div>`; }
@@ -1221,7 +1221,7 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
   a.sort(relSort); return a[0]||null; }
 function feed(){
   // STOCKS tab = Fade Blocks (Tetris), full-screen. Crypto keeps the Pac-Man scanner.
-  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${pmTapeHTML()}${tetrisHTML()}</div>`;
+  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}</div>`;
   const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
