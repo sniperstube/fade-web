@@ -285,6 +285,10 @@ input,textarea,select{font-size:16px}
 .balance .big{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:34px;font-weight:700;margin-top:6px}
 .balrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .dwrap{display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.balstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.bs{display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 13px}
+.bs .bsk{font-family:'Space Grotesk';font-size:11px;color:rgba(236,239,245,.6);white-space:nowrap}
+.bs .bsv{font-family:'Space Grotesk';font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
 .dwbtn{font-family:'Space Grotesk';font-size:12px;font-weight:700;padding:8px 13px;border-radius:11px;cursor:pointer;white-space:nowrap;border:1px solid var(--line);background:var(--void2);transition:transform .12s ease}
 .dwbtn:active{transform:scale(.94)}
 .dwbtn.dep{color:var(--green);border-color:rgba(57,255,20,.34)}
@@ -1447,7 +1451,12 @@ function wallet(){
         <div><div class="k">Paper balance</div><div class="big" data-eq="1" style="color:${eqCol}">$${money(s.equity)}</div></div>
         <div class="dwrap"><button class="dwbtn dep" onclick="depositPaper()">&#8595; Deposit</button><button class="dwbtn wd" onclick="withdrawPaper()">&#8593; Withdraw</button></div>
       </div>
-      <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)} open P&amp;L</span> &#183; <span style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)} closed P&amp;L</span></div></div>
+      <div class="balstats">
+        <div class="bs"><span class="bsk">Cash</span><span class="bsv">$${money(s.cash)}</span></div>
+        <div class="bs"><span class="bsk">In trades</span><span class="bsv" style="color:var(--blue)">$${money(s.deployed)}</span></div>
+        <div class="bs"><span class="bsk">Open P&amp;L</span><span class="bsv" data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)}</span></div>
+        <div class="bs"><span class="bsk">Closed P&amp;L</span><span class="bsv" style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)}</span></div>
+      </div></div>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
     <button class="btn-wide" style="background:${BLUE};color:#0a0a0f" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.7">(preview)</span></button>
     <div class="lbl wl-sec">Open positions${s.opens.length?`<span class="lbl-n live">${s.opens.length}</span>`:''}</div>
@@ -2131,7 +2140,7 @@ function tick(){ if(document.hidden) return;
       un+=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; dep+=posMargin(x); }
     const eq=P.cash+dep+un;
     eqN.textContent='$'+money(eq); eqN.style.color=eq>=10000?GREEN:RED;
-    const unN=document.querySelector('[data-unreal]'); if(unN){ unN.textContent=(un>=0?'+':'')+un.toFixed(2)+' open P&L'; unN.style.color=un>=0?GREEN:RED; }
+    const unN=document.querySelector('[data-unreal]'); if(unN){ unN.textContent=(un>=0?'+':'')+un.toFixed(2); unN.style.color=un>=0?GREEN:RED; }
   }catch(e){} }
   updateChartNow();   // live chart NOW-line (detail screen OR the open-position sheet)
 }
