@@ -728,7 +728,9 @@ async function api(path,opts){ opts=opts||{}; const h=Object.assign({'Content-Ty
   if(r.status===401){ handle401(); throw new Error('unauthorized'); } return r; }
 function handle401(){ setToken(''); saveUser(null); AUTHMODE='login'; toast('Session expired — please sign in'); try{render();}catch(e){} }
 async function restoreSession(){ if(!API||!authToken())return; try{ const r=await api('/api/auth/me'); const d=await r.json();
-  if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm})); if(S.screen==='profile')render(); } }catch(e){} }
+  if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm}));
+    hydratePaper(function(){ render(); });   // pull cross-device wallet the moment we know who's logged in
+    if(S.screen==='profile')render(); } }catch(e){} }
 function handle(){ return S.user?('@'+S.user.username):'@you'; }
 function initial(){ return S.user?S.user.username[0].toUpperCase():'?'; }
 
@@ -744,8 +746,28 @@ function isLong(a){ const t=a.setup&&a.setup.target, e=a.price; if(t!=null&&e!=n
 function moveCol(p){ return p>=0?GREEN:RED; }
 
 /* paper state */
-function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}catch(e){} if(!p){p={cash:10000,positions:[]}; save(p);} return p; }
-function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); }
+function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}catch(e){}
+  // Seed a fresh account WITHOUT stamping a timestamp — a brand-new empty wallet must never
+  // look "newer" than an account's real trades sitting on the server (that would wipe them).
+  if(!p){p={cash:10000,positions:[]}; localStorage.setItem('fade_paper',JSON.stringify(p));} return p; }
+// save() writes locally AND pushes the full state to the server (debounced) so every device
+// this account is logged into stays in sync. The server holds the master copy (last-write-wins).
+// Only a REAL mutation (trade/deposit/close) calls save(), so only real activity stamps a ts.
+let SYNCT=null;
+function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); localStorage.setItem('fade_paper_ts',String(Date.now())); pushPaper(); }
+function pushPaper(){ if(!(API&&authToken()))return; clearTimeout(SYNCT);
+  SYNCT=setTimeout(function(){ try{ const p=paper(); const ts=Number(localStorage.getItem('fade_paper_ts'))||Date.now();
+    api('/api/paper/sync',{method:'POST',body:JSON.stringify({state:p,updated:ts})}).catch(function(){}); }catch(e){} },800); }
+// On login / app load, pull the master state from the server. If the server has a NEWER copy
+// (traded on another device), it wins and we hydrate localStorage so this device matches.
+function hydratePaper(cb){ if(!(API&&authToken())){ if(cb)cb(); return; }
+  api('/api/paper/sync',{method:'GET'}).then(function(r){
+    try{ if(r&&r.ok&&r.state){ const localTs=Number(localStorage.getItem('fade_paper_ts'))||0;
+      if((r.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(r.state)); localStorage.setItem('fade_paper_ts',String(r.updated||Date.now())); }
+      else { pushPaper(); }   // our local copy is newer — push it up
+    } }catch(e){}
+    if(cb)cb();
+  }).catch(function(){ if(cb)cb(); }); }
 function quote(sym){ return BOARD.items.find(i=>i.symbol===sym); }
 // You already hold this asset — it's kept OFF the lineup (manage/add it from the wallet).
 function hasOpenPos(sym){ try{ return paper().positions.some(x=>x.status==='open'&&x.symbol===sym); }catch(e){ return false; } }
@@ -1887,7 +1909,9 @@ async function doLogin(){
       const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not sign in'); return; }
       S.busy=false; setToken(d.token);
       if(d.needs_password){ DRAFT.who=(d.user&&d.user.username)||identifier; DRAFT.setid=identifier; DRAFT.pw=''; AUTHMODE='setpw'; render(); return; }   // grandfather flow
-      saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
+      saveUser(d.user);
+      hydratePaper(function(){ go('profile'); render(); });   // pull this account's wallet from the server (cross-device)
+      toast('Welcome back, @'+d.user.username);
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     const u=loadUser();
@@ -2218,6 +2242,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 <style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
 </body>
 </html>
