@@ -101,6 +101,7 @@ body{background:var(--bg);font-family:'Space Grotesk',system-ui,sans-serif;-webk
 .munch .cndl{width:3px;height:11px;background:var(--red);border-radius:1px}
 .tbar-r{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ash)}
 .live{font-family:'Space Grotesk';font-size:11px;color:var(--green);font-weight:700;animation:livepulse 2.4s ease-in-out infinite}
+.closedbadge{font-family:'Space Grotesk';font-size:11px;color:var(--ash);font-weight:700}
 @keyframes livepulse{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.live{animation:none}}
 .betatag{font-family:'Space Grotesk';font-size:8.5px;font-weight:700;letter-spacing:1px;color:var(--ai);background:rgba(255,106,0,.14);border:1px solid rgba(255,106,0,.4);padding:2px 5px;border-radius:5px;margin-left:8px;vertical-align:2px}
@@ -762,7 +763,7 @@ function go(scr,sel){ if(scr!==S.screen) S.prevScreen=S.screen; S.screen=scr; if
 function setScope(s){ S.scope=s; saveNav(); render(); }
 
 function topbar(){ return `<div class="top"><div class="logo" onclick="go('feed')" style="cursor:pointer"><span class="munch"><span class="pac"></span><span class="cndl"></span></span><span class="wm">fade<b>.markets</b></span><span class="betatag">BETA</span></div>
-  <div class="tbar-r">${(S.hl&&S.hl.ok)?`<span class="chgbadge" onclick="go('profile')" style="cursor:pointer">&#9889; CHARGED</span>`:`<span class="live">&#9679; LIVE</span>`}
+  <div class="tbar-r">${(S.hl&&S.hl.ok)?`<span class="chgbadge" onclick="go('profile')" style="cursor:pointer">&#9889; CHARGED</span>`:(stocksClosedView()?`<span class="closedbadge">&#9679; CLOSED</span>`:`<span class="live">&#9679; LIVE</span>`)}
     <button class="topava" onclick="go('profile')" title="${S.user?'Your profile':'Sign in'}" style="${S.user?'':'background:var(--void2);color:var(--ash);border:1px solid var(--line)'}">${S.user?initial():'&#128100;'}</button></div></div>`; }
 
 // Plain letter grade (A-F) - no +/-. The GRADE label + scale is what reads as a system.
@@ -814,23 +815,48 @@ function sigTag(a){ if(a.signal==='fade_long')return['LONG',GREEN];
   if(a.signal==='skip')return['NO PLAY',ASH]; return['NO BREACH',ASH]; }
 
 /* ---------- FEED ---------- */
-function inScope(i){ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.scope==='crypto')return i.asset_class==='crypto'; return true; }
+// --- user filters (Settings) + market hours ---
+function stocksOnly(){ return lsGet('fade_stocks_only',false); }
+function minGrade(){ return lsGet('fade_min_grade',9); }   // 9 = show all grades
+const _GRANK={'A+':0,'A':1,'B':2,'C':3,'D':4,'F':5};
+function gradeOK(i){ const mg=minGrade(); if(mg>=9)return true;
+  let l; try{ l=relGrade(i).l; }catch(e){ l=gLet(i.grade,false); }
+  const r=_GRANK[l]; return r==null||r<=mg; }
+// US stock market hours (Mon–Fri 9:30–16:00 ET). Holidays not modeled — fail open.
+function stockMarketOpen(){ try{
+  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const d=et.getDay(); if(d===0||d===6) return false;
+  const m=et.getHours()*60+et.getMinutes(); return m>=570 && m<960;
+}catch(e){ return true; } }
+function inScope(i){
+  // Stocks disappear from the active board when the US market is closed (stale fades aren't tradeable).
+  if(i.asset_class==='stock' && !stockMarketOpen()) return false;
+  if(stocksOnly()) return i.asset_class==='stock';
+  if(S.scope==='stocks')return i.asset_class==='stock';
+  if(S.scope==='crypto')return i.asset_class==='crypto';
+  return true;
+}
+// True when the current view is a stocks-only view AND the market is closed (→ show the closed card).
+function stocksClosedView(){ return (stocksOnly()||S.scope==='stocks') && !stockMarketOpen(); }
+function marketClosedCard(){ return `<div class="empty" style="padding:32px 18px;line-height:1.6"><div style="font-size:32px;margin-bottom:8px">&#128564;</div><b style="color:var(--txt);font-size:15px">US market closed</b><br><span style="font-size:12.5px">Stock fades open at <b>6:30am PST</b> (9:30am ET), Mon&#8211;Fri.<br>Crypto is live 24/7 &#8212; switch to Crypto or Stocks + Crypto.</span></div>`; }
+function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['both','Stocks + Crypto'],['crypto','Crypto']];
+  return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
 // Only setups you can actually act on: a real breach with a long/short fade signal.
 // No-play items (no breach, or a skip like price-discovery) are never displayed.
 function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
-function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
+function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
 function feed(){
-  const t=topFor(); if(!t) return `<div class="screen">${topbar()}<div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><div class="empty">You've actioned every playable setup in this scope.<br><br>New setups appear as the market moves &#8212; check back soon, or switch scope.</div></div>`;
+  const t=topFor(); if(!t) return `<div class="screen">${topbar()}${scopeBar()}${tourBanner()}${stocksClosedView()?marketClosedCard():'<div class="empty">You\'ve actioned every playable setup in this scope.<br><br>New setups appear as the market moves &#8212; check back soon, or switch scope.</div>'}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
-  const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
+  const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
     const cc=GRADE[i.grade]; return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,34)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||i.pattern||'')}</div></div>
       <div class="rc-pct" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div>${gradeChip(i)}</div>`; }).join('');
   return `<div class="screen">${topbar()}
-    <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+    ${scopeBar()}
     ${tourBanner()}
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
@@ -855,7 +881,7 @@ function feed(){
 
 /* ---------- MARKETS ---------- */
 function markets(){
-  let items=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));   // actionable, not-yet-actioned
+  let items=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));   // actionable, not-yet-actioned
   items=items.slice().sort(relSort);   // grade -> market-cap weight -> move
   const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i); const long=i.signal==='fade_long';
     return `<div class="rowcard" onclick="go('detail','${i.symbol}')" style="box-shadow:inset 3px 0 0 ${long?rgba(GREEN,.5):rgba(RED,.5)}">
@@ -864,9 +890,9 @@ function markets(){
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
   return `<div class="screen">${topbar()}
-    <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+    ${scopeBar()}
     <div class="sub" style="margin:0 2px 11px">Markets &#183; ${nb} live setup${nb===1?'':'s'} &#183; ${scanned} scanned</div>
-    ${nb?rows:'<div class="empty">No playable setups in this scope right now &#183; nothing is stretched enough to fade. Check back soon.</div>'}</div>`;
+    ${nb?rows:(stocksClosedView()?marketClosedCard():'<div class="empty">No playable setups in this scope right now &#183; nothing is stretched enough to fade. Check back soon.</div>')}</div>`;
 }
 
 /* ---------- DETAIL ---------- */
@@ -937,7 +963,7 @@ function wallet(){
     const pc=pnl>=0?GREEN:RED;
     return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
-      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span> &#183; $'+money(posMargin(x))+' &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
+      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span>':x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
       ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();closePos('${x.id}')">Close</button>`:''}</div>`; };
   return `<div class="screen">${topbar()}
@@ -1360,11 +1386,14 @@ function setDefSize(p){ lsSet('fade_default_pct',Math.max(5,Math.min(100,p))); r
 function defLev(){ return lsGet('fade_default_lev',1); }
 function setDefLev(l){ lsSet('fade_default_lev',l); render(); }
 function toggleConfirmClose(){ lsSet('fade_confirm_close',!lsGet('fade_confirm_close',false)); render(); }
+function toggleStocksOnly(){ const v=!lsGet('fade_stocks_only',false); lsSet('fade_stocks_only',v); if(v)S.scope='stocks'; render(); }
+function setMinGrade(v){ lsSet('fade_min_grade',+v); render(); }
 function settings(){
   if(!S.user) return authScreen();
   const ac=lsGet('fade_autoclose',false); const th=getTheme();
   const prio=lsGet('fade_prioritize_stocks',true); const cc=lsGet('fade_confirm_close',false);
   const dv=defView(); const dsz=defSize(); const dlv=defLev();
+  const so=lsGet('fade_stocks_only',false); const mg=minGrade();
   const setrow=(k,d,on,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><div class="tgl ${on?'on':'off'}" onclick="${fn}"></div></div>`;
   const segrow=(k,d,opts,cur,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div>
     <div class="seg" style="width:auto;flex-shrink:0">${opts.map(([val,lbl])=>`<button class="${cur===val?'on':''}" onclick="${fn}('${val}')">${lbl}</button>`).join('')}</div></div>`;
@@ -1379,6 +1408,8 @@ function settings(){
 
     <div class="lbl" style="margin-top:16px">Markets</div>
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['both','Both'],['crypto','Crypto']],dv,'setDefView')}
+    ${setrow('Stocks only','Hide crypto entirely &#8212; only fade large-cap stocks.',so,'toggleStocksOnly()')}
+    ${segrow('Minimum grade','Only surface setups at or above this grade.',[['2','A&#8211;B'],['3','A&#8211;C'],['9','All']],String(mg),'setMinGrade')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default trade size</div><div class="setd">Pre-fills the trade panel with this % of your free cash.</div></div>
