@@ -272,8 +272,13 @@ input,textarea,select{font-size:16px}
 .back{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px}
 .back .a{width:30px;height:30px;border-radius:9px;background:var(--void2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 /* wallet */
-.balance{background:linear-gradient(160deg,#161019,var(--panel));border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
-.balance .k{font-family:'Space Grotesk';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash)}
+.balance{background:var(--herobg);border:1px solid var(--herobd);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;color:var(--herotint);box-shadow:0 14px 40px rgba(0,0,0,.28)}
+.balance::before{content:"";position:absolute;top:-45%;right:-15%;width:68%;height:130%;background:radial-gradient(circle,var(--heroglow),transparent 68%);pointer-events:none}
+.balance>*{position:relative}
+.balance .sub{color:rgba(236,239,245,.72)}
+.balance .dwbtn{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.17)}
+.balance .dwbtn.wd{color:rgba(236,239,245,.82)}
+.balance .k{font-family:'Space Grotesk';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(236,239,245,.6)}
 .balance .big{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:34px;font-weight:700;margin-top:6px}
 .balrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .dwrap{display:flex;flex-direction:column;gap:7px;flex-shrink:0}
@@ -1374,7 +1379,6 @@ function settings(){
 
     <div class="lbl" style="margin-top:16px">Markets</div>
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['both','Both'],['crypto','Crypto']],dv,'setDefView')}
-    ${setrow('Prioritize stocks over crypto','In the combined view, rank stocks above crypto unless it&#8217;s a major coin (BTC, ETH, XRP, ZEC&#8230;).',prio,'togglePrioritize()')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default trade size</div><div class="setd">Pre-fills the trade panel with this % of your free cash.</div></div>
