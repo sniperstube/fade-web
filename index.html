@@ -299,6 +299,11 @@ input,textarea,select{font-size:16px}
 .empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* ---------- Pac-Man Hunt: the game (full-bleed, ghosts, combos, high score) ---------- */
 .scan-screen{display:flex;flex-direction:column;padding:14px 14px 0;height:calc(100vh - 58px);height:calc(100dvh - 58px)}
+/* Game screen: pin to the DYNAMIC viewport so the field expands to the tab bar and touching
+   the area below the field can never scroll the page (no dead black strip). */
+html:has(.scan-screen),body:has(.scan-screen){overflow:hidden;overscroll-behavior:none;height:100dvh}
+#app:has(.scan-screen){height:100dvh;min-height:0;overflow:hidden}
+.scan-screen{overflow:hidden;overscroll-behavior:none}
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void);border-top:1px solid var(--line)}
 .scanner.cr{background:radial-gradient(ellipse at 50% 30%,rgba(181,123,255,.07),transparent 70%),var(--void)}
 .scanner.shake{animation:scanshake .32s ease}
