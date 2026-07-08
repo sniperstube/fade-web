@@ -391,7 +391,7 @@ function logoURL(a){ if(!a||!a.symbol)return'';
 function logoBadge(a,size){ const s=size||34; const url=logoURL(a); const ini=((a.symbol||'?')[0]||'?');
   return `<div class="lbadge" style="width:${s}px;height:${s}px;background:${logoBg(a.symbol||'')};font-size:${Math.round(s*0.42)}px">`+
     `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onload="this.classList.add('on')" onerror="this.remove()" alt="">`:'')+`</div>`; }
-let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:'',coach:false,lb:[]};
+let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,ctx:'',coach:false,lb:[],busy:false};
 // Coachmark walkthrough: spotlight real elements in the real app with popups. Guests
 // can look but can't take trades or use the AI (those prompt signup).
 const COACH=[
@@ -463,23 +463,29 @@ function moveCol(p){ return p>=0?GREEN:RED; }
 function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}catch(e){} if(!p){p={cash:10000,positions:[]}; save(p);} return p; }
 function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); }
 function quote(sym){ return BOARD.items.find(i=>i.symbol===sym); }
+// You already hold this asset — it's kept OFF the lineup (manage/add it from the wallet).
+function hasOpenPos(sym){ try{ return paper().positions.some(x=>x.status==='open'&&x.symbol===sym); }catch(e){ return false; } }
 
 function fade(sym){
   if(!requireAccount()) return;
   const a=quote(sym); if(!a) return;
   if(a.signal==='skip'||a.signal==='no_breach'){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
-  const long=isLong(a), notional=1000, qty=notional/a.price;
+  const long=isLong(a), notional=1000;
   const p=paper();
+  // One position per asset: fading a symbol you already hold ADDS to it (averaging in).
+  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===sym);
+  if(existing){ addToPos(existing.id); S.faded[sym]=1; if(S.screen==='detail'){ go('feed'); } else { render(); } return; }
   if(p.cash<notional){ toast('Not enough paper cash \u2014 close a position to free up funds.'); return; }
+  const qty=notional/a.price;
   p.cash-=notional;   // deduct the amount you put into the trade
+  const g=relGrade(a).l;
   p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:sym,name:a.name,side:long?'long':'short',
-    entry:a.price,qty,target:a.setup.target,stop:a.setup.mental_stop,grade:a.grade,status:'open'});
+    entry:a.price,qty,target:a.setup.target,stop:a.setup.mental_stop,grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
   save(p);
   S.faded[sym]=1;
-  // Mirror the fade to the backend paper engine (feeds the leaderboard + admin
-  // metrics). Fire-and-forget \u2014 the local paper account stays the source of truth.
+  // Mirror the fade to the backend paper engine (feeds the leaderboard + admin metrics).
   if(API&&S.user){ fetch(API+'/api/paper/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:S.user.username,symbol:sym,side:long?'long':'short'})}).catch(function(){}); }
-  toast((long?'Faded LONG ':'Faded SHORT ')+sym+' @ '+money(a.price)+'  \u2014 next setup up');
+  toast((long?'Long ':'Short ')+sym+' @ '+money(a.price)+'  \u2014 next setup up');
   if(S.screen==='detail'){ go('feed'); } else { render(); }
 }
 function skip(sym){ S.faded[sym]=1; toast('Skipped '+sym+' \u2014 next setup up'); if(S.screen==='detail'){go('feed');} else {render();} }
@@ -544,7 +550,10 @@ let RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':A
 function assetWeight(i){ if(!i)return 0; if(i.asset_class==='crypto'){ const r=i.rank||60; return Math.max(0.05,1.05-r*0.02); } return 0.85; }
 function relSort(a,b){ return (a.grade-b.grade)||(assetWeight(b)-assetWeight(a))||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); }
 function computeRel(){ RELG={};
-  let items=(BOARD.items||[]).filter(function(i){return playable(i)&&!S.faded[i.symbol];});
+  // Grade EVERY playable setup (even ones you hold or skipped) so grades are stable and
+  // a held asset still has a live grade in the wallet. The lineup filters hide actioned
+  // ones from display; this only builds the symbol -> grade map.
+  let items=(BOARD.items||[]).filter(function(i){return playable(i);});
   items.sort(relSort);
   const N=items.length;
   items.forEach(function(it,i){ let g;
@@ -566,13 +575,13 @@ function inScope(i){ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.
 // Only setups you can actually act on: a real breach with a long/short fade signal.
 // No-play items (no breach, or a skip like price-discovery) are never displayed.
 function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
-function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]);
+function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
 function feed(){
   const t=topFor(); if(!t) return `<div class="screen">${topbar()}<div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><div class="empty">You've actioned every playable setup in this scope.<br><br>New setups appear as the market moves &#8212; check back soon, or switch scope.</div></div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
-  const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&i.symbol!==t.symbol).slice(0,3).map(i=>{
+  const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
     const cc=GRADE[i.grade]; return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
       ${logoBadge(i,34)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||i.pattern||'')}</div></div>
@@ -603,7 +612,7 @@ function feed(){
 
 /* ---------- MARKETS ---------- */
 function markets(){
-  let items=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]);   // actionable, not-yet-actioned
+  let items=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));   // actionable, not-yet-actioned
   items=items.slice().sort(relSort);   // grade -> market-cap weight -> move
   const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i); const long=i.signal==='fade_long';
     return `<div class="rowcard" onclick="go('detail','${i.symbol}')" style="box-shadow:inset 3px 0 0 ${long?rgba(GREEN,.5):rgba(RED,.5)}">
@@ -681,7 +690,7 @@ function wallet(){
     const pc=pnl>=0?GREEN:RED;
     return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
-      <div class="rc-d">${open?'tap to manage &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
+      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span> &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
       ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();closePos('${x.id}')">Close</button>`:''}</div>`; };
   return `<div class="screen">${topbar()}
@@ -722,6 +731,8 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
     ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:6px 0 6px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">${x.qty.toFixed(4)} &#183; $${money(notional)}</span></div>
+    ${open?`<div class="mrow"><span class="k">Held</span><span class="v" data-held="${x.opened||0}">${elapsed(x.opened)}</span></div>
+    <div class="mrow"><span class="k">Grade now</span><span class="v" style="color:${(q?relGrade(q).c:'var(--ash)')}">${q?relGrade(q).l:(x.gradeEntry||'—')}${(q&&x.gradeEntry&&relGrade(q).l!==x.gradeEntry)?` <small style="color:var(--ash)">was ${x.gradeEntry}</small>`:''}</span></div>`:''}
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
     <div class="mrow"><span class="k">Mental stop</span><span class="v" style="color:${RED}">${money(x.stop)}</span></div>
     ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
@@ -810,6 +821,7 @@ function setAiTab(t){ S.aitab=t; S.proj=null; S.sched=null; render(); if(t==='as
 function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function fmtAgo(ts){ const s=(Date.now()-ts)/1000; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function elapsed(ts){ if(!ts)return'—'; let s=(Date.now()-ts)/1000; if(s<60)return Math.max(0,Math.floor(s))+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m'; return Math.floor(s/86400)+'d '+Math.floor((s%86400)/3600)+'h'; }
 function dl(name,text,type){ try{ const a=document.createElement('a'); a.href='data:'+(type||'text/plain')+';charset=utf-8,'+encodeURIComponent(text); a.download=name; document.body.appendChild(a); a.click(); a.remove(); toast('Downloaded '+name); }catch(e){ toast('Download not supported here'); } }
 function downloadData(){ const data={exported:new Date().toISOString(),account:S.user||null,chats:lsGet('fade_chats',[]),projects:lsGet('fade_projects',[]),scheduled:lsGet('fade_sched',[]),paper:(typeof paper==='function'?paper():null)}; dl('fade-data.json',JSON.stringify(data,null,2),'application/json'); }
 function downloadChat(id,e){ if(e)e.stopPropagation(); const c=lsGet('fade_chats',[]).find(x=>x.id===id); if(!c)return; dl('fade-chat.txt',c.msgs.map(m=>(m.role==='user'?'You':'Fade AI')+': '+m.content).join('\n\n')); }
@@ -1011,11 +1023,11 @@ function authScreen(){
         <label style="display:block;color:var(--ash);font-size:12.5px;margin:4px 2px 6px">Sign up with <b style="color:var(--txt)">email OR phone</b> &#8212; pick one:</label>
         <div class="seg"><button class="${CONTACT==='email'?'on':''}" onclick="setContact('email')">Email</button><button class="${CONTACT==='phone'?'on':''}" onclick="setContact('phone')">Phone</button></div>
         <div class="fld"><input id="a_contact" value="${DRAFT.contact}" oninput="DRAFT.contact=this.value" placeholder="${CONTACT==='email'?'you@email.com':'+1 555 123 4567'}" type="${CONTACT==='email'?'email':'tel'}" autocapitalize="off"></div>
-        <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px" onclick="doSignup()">Create account &#8594;</button>
+        <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doSignup()">${S.busy?'Creating account…':'Create account &#8594;'}</button>
         <div class="authlink">Already have one? <b onclick="setAuth('login')">Sign in</b></div>
       `:`
         <div class="fld"><label>Username, email, or phone</label><input id="a_id" placeholder="how you signed up" autocapitalize="off"></div>
-        <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px" onclick="doLogin()">Sign in &#8594;</button>
+        <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doLogin()">${S.busy?'Signing in…':'Sign in &#8594;'}</button>
         <div class="authlink">New here? <b onclick="setAuth('signup')">Create account</b></div>
       `}
       <div class="authlink" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)"><b style="color:var(--ash)" onclick="guestMode()">Continue without signing up &#8594;</b></div>
@@ -1033,28 +1045,32 @@ function validateLocal(u,e,p){
   return '';
 }
 async function doSignup(){
+  if(S.busy) return;   // one request at a time — stops double-tap during a slow cold start
   const username=((document.getElementById('a_user')||{}).value||'').trim();
   const contact=((document.getElementById('a_contact')||{}).value||'').trim();
   const email=CONTACT==='email'?contact:'', phone=CONTACT==='phone'?contact:'';
   autherr('');
+  const v=validateLocal(username,email,phone); if(v){ autherr(v); return; }   // instant local check first
   if(API){
+    S.busy=true; render();   // disable + show "Creating…" so nobody double-taps
     try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone})});
-      const d=await r.json(); if(!d.ok){ autherr(d.error||'Could not create account'); return; }
-      DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
-    }catch(e){ autherr('Network error \u2014 try again'); }
+      const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not create account'); return; }
+      S.busy=false; DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
+    }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
-    const v=validateLocal(username,email,phone); if(v){ autherr(v); return; }
     DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); go('feed'); toast('Welcome, @'+username+' — tap "Take the tour" to learn the app');
   }
 }
 async function doLogin(){
+  if(S.busy) return;
   const identifier=((document.getElementById('a_id')||{}).value||'').trim(); autherr('');
   if(!identifier){ autherr('Enter your username, email, or phone.'); return; }
   if(API){
+    S.busy=true; render();
     try{ const r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier})});
-      const d=await r.json(); if(!d.ok){ autherr(d.error||'Could not sign in'); return; }
-      saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
-    }catch(e){ autherr('Network error \u2014 try again'); }
+      const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not sign in'); return; }
+      S.busy=false; saveUser(d.user); go('profile'); toast('Welcome back, @'+d.user.username);
+    }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     const u=loadUser();
     if(u&&(identifier.toLowerCase()===u.username.toLowerCase()||identifier===u.email||identifier===u.phone)){ saveUser(u); go('profile'); toast('Welcome back, @'+u.username); }
@@ -1202,6 +1218,8 @@ function tick(){ if(document.hidden) return;
     const pnl=(side==='long'?(a.disp-entry):(entry-a.disp))*qty;
     n.textContent=(pnl>=0?'+':'')+pnl.toFixed(2); n.style.color=pnl>=0?GREEN:RED;
   }
+  const hd=document.querySelectorAll('[data-held]');   // live "held Xm" timers
+  for(let k=0;k<hd.length;k++){ hd[k].textContent=elapsed(+hd[k].getAttribute('data-held')); }
   updateChartNow();   // live chart NOW-line (detail screen OR the open-position sheet)
 }
 async function hydrate(){ if(!API) return;
@@ -1215,6 +1233,7 @@ async function livePoll(){ if(!API||document.hidden) return;
     if(!b||!b.items) return;
     BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor();
     autoCloseCheck();   // auto take-profit / stop-loss on the fresh real prices
+    if(S.screen==='social'&&typeof loadLB==='function') loadLB();   // keep the leaderboard current
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
     const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.coach||S.screen==='ai'||S.screen==='profile';
     const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
