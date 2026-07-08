@@ -299,15 +299,14 @@ input,textarea,select{font-size:16px}
 .empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* ---------- Pac-Man Hunt: the game (full-bleed, ghosts, combos, high score) ---------- */
 .scan-screen{display:flex;flex-direction:column;padding:14px 14px 0;flex:1;min-height:0}
-/* Game screen: pin to the DYNAMIC viewport so the field expands to the tab bar and touching
-   the area below the field can never scroll the page (no dead black strip). */
-html:has(.scan-screen),body:has(.scan-screen){overflow:hidden;overscroll-behavior:none;height:100dvh}
-#app:has(.scan-screen){height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+/* Game screen: JS (fitGame) sets #app to the EXACT visible height via visualViewport, so
+   the iOS Safari toolbar can't leave a dead strip below the field. The tab bar joins the
+   flex column (not fixed) so the field fills right to the buttons and is swipeable all the
+   way down. Class-driven (not :has()/dvh) for reliability across iOS Safari + webviews. */
+body.gamelock{overflow:hidden;overscroll-behavior:none}
+#app.gamefit{min-height:0;overflow:hidden;display:flex;flex-direction:column}   /* height px set by fitGame() */
 .scan-screen{overflow:hidden;overscroll-behavior:none}
-/* On the game screen the tab bar JOINS the flex column (not fixed) so the play field
-   fills exactly down to just above the buttons — no dead black strip, and it works
-   regardless of the iOS Safari toolbar. The field is swipeable the whole way down. */
-#app:has(.scan-screen) .nav{position:static;max-width:none;width:100%;margin:0}
+#app.gamefit .nav{position:static;max-width:none;width:100%;margin:0}
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
 .scanner.cr{background:radial-gradient(ellipse at 50% 30%,rgba(181,123,255,.07),transparent 70%),var(--void)}
 .scanner.shake{animation:scanshake .32s ease}
@@ -1730,7 +1729,27 @@ function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fad
 
 function render(){ try{ computeRel(); }catch(e){ RELG={}; }
   const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
-  document.getElementById('app').innerHTML = scr() + nav(); }
+  document.getElementById('app').innerHTML = scr() + nav();
+  fitGame(); }
+
+// Game screen fills EXACTLY the visible viewport. On iOS Safari the URL toolbar makes
+// 100dvh/100vh unreliable (leaves a dead strip below the field), so we measure the real
+// visible height from visualViewport and set #app in px. The tab bar joins the flex
+// column (see .gamefit CSS) so the field reaches right down to the buttons.
+function fitGame(){
+  const app=document.getElementById('app'); if(!app) return;
+  const isGame=!!app.querySelector('.scan-screen');
+  if(isGame){
+    const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+    app.style.height=Math.round(h)+'px';
+    app.classList.add('gamefit'); document.body.classList.add('gamelock');
+  } else {
+    app.style.height=''; app.classList.remove('gamefit'); document.body.classList.remove('gamelock');
+  }
+}
+window.addEventListener('resize',fitGame);
+window.addEventListener('orientationchange',function(){ setTimeout(fitGame,120); });
+if(window.visualViewport){ window.visualViewport.addEventListener('resize',fitGame); }
 
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
 // baked snapshot with live data from the backend. Grades still computed server-side.
