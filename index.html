@@ -410,6 +410,21 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .nr-empty{text-align:center;padding:40px 20px;color:var(--dim);font-family:'Space Grotesk';font-size:12.5px;line-height:1.5}
 .mpulse{display:flex;flex-direction:column;align-items:center;padding:6px 0 0}
 .mp-hero{text-align:center;padding:40px 16px 26px}
+.mp-hero-sm{padding:22px 16px 16px}
+.mp-wait{font-family:'Space Grotesk';font-size:13px;font-weight:700;color:var(--ash);letter-spacing:.3px;margin-bottom:14px;text-transform:uppercase}
+.mp-wait b{color:#ffb020;text-transform:uppercase}
+.mp-heat{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:100%;padding:0 14px;margin-top:6px}
+.ht{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:10px;font-weight:700;border:1px solid var(--line);background:var(--void2);color:var(--dim);overflow:hidden}
+.ht em{font-style:normal;font-size:8.5px;opacity:.85;margin-top:1px}
+.ht.h1{background:rgba(255,106,0,.10);border-color:rgba(255,106,0,.28);color:var(--ashl)}
+.ht.h2{background:rgba(255,106,0,.24);border-color:rgba(255,106,0,.55);color:#fff}
+.ht.h3{background:rgba(255,106,0,.44);border-color:#ff6a00;color:#fff;animation:htp 1.4s ease-in-out infinite}
+@keyframes htp{0%,100%{opacity:1}50%{opacity:.72}}
+.mp-leg{font-family:'Space Grotesk';font-size:10px;color:var(--dim);margin-top:13px;display:flex;align-items:center;justify-content:center;gap:4px}
+.mp-leg .lg{width:10px;height:10px;border-radius:3px}
+.mp-leg .lg0{background:var(--void2);border:1px solid var(--line)}
+.mp-leg .lg1{background:rgba(255,106,0,.10)} .mp-leg .lg2{background:rgba(255,106,0,.24)} .mp-leg .lg3{background:rgba(255,106,0,.44)}
+@media (prefers-reduced-motion:reduce){.ht.h3{animation:none}}
 .mp-big{position:relative;display:inline-flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:96px;font-weight:800;letter-spacing:-4px;line-height:1;color:#ffb020;text-shadow:0 0 34px rgba(255,176,32,.4)}
 .mp-big.sm{font-size:44px;letter-spacing:-1px;color:var(--txt);text-shadow:none}
 .mp-ring{position:absolute;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,176,32,.45);animation:mpr 2.6s ease-out infinite;pointer-events:none}
@@ -1318,24 +1333,45 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
 // Stocks with NO live setup: downtime → Fade Blocks (Tetris) waiting room; market open but quiet →
 // a scanning line. NEVER the Pac-Man scanner — that game belongs to crypto only.
 function gamesOn(){ return lsGet('fade_games',true); }   // waiting-room mini-games (default ON)
-// Games OFF: a clean, non-game live readout (both scopes) — real scan data, no arcade.
-// MARKET PULSE — the no-noise waiting screen (games off). One big living number over a live tape.
+// Games OFF: MARKET PULSE — the no-noise waiting screen (both scopes). HEAT GRID: a tile per
+// asset in scope, heating orange as it nears a trigger; brightest = about to snap. Scope-clear:
+// the header says exactly which market (Stocks / Crypto) we're waiting on.
 function scanReadoutHTML(){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
-  const tapeItems=(BOARD.items||[]).filter(i=>i.change_pct!=null).sort((a,b)=>Math.abs(b.change_pct)-Math.abs(a.change_pct)).slice(0,22)
-    .map(i=>`<span class="mp-it"><b>${esc(i.symbol)}</b> <em style="color:${i.change_pct>=0?GREEN:RED}">${i.change_pct>=0?'+':''}${i.change_pct.toFixed(1)}%</em></span>`);
-  const tape=(tapeItems.concat(tapeItems)).join('');
-  const big=closed?nextMarketOpen():String(sh.near);
+  const scopeName=S.scope==='crypto'?'crypto':'stocks';
+  // near-map: symbol -> {gap, phase} for the assets closest to triggering (in scope)
+  const nd={}; (d.near||[]).forEach(x=>{ nd[x.sym]=x; });
+  const closest=(d.near||[])[0];
+  // tiles: all in-scope playable candidates (breached-or-not), ranked by heat then move size
+  const inS=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null);
+  const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0;   // 0 cold, 1-3 hot
+      return {sym:i.symbol,heat,gap:n?n.gap:null,chg:i.change_pct}; })
+    .sort((a,b)=>(b.heat-a.heat)||(Math.abs(b.chg)-Math.abs(a.chg))).slice(0,20);
+  const tileHTML=tiles.map(t=>`<div class="ht h${t.heat}">${esc(t.sym)}${t.gap!=null?`<em>${t.gap.toFixed(1)}%</em>`:''}</div>`).join('');
+  if(closed){
+    // Stocks closed: countdown is the hero; crypto never closes so this only shows for stocks scope
+    return `${scanLiveBar()}
+      <div class="mpulse">
+        <div class="mp-hero">
+          <div class="mp-wait">Waiting on <b>stocks</b></div>
+          <div class="mp-big sm" data-pulse>${nextMarketOpen()}</div>
+          <div class="mp-lab">until the US market opens</div>
+          <div class="mp-sub">The stock board wakes at the open. Switch to <b>Crypto</b> &#8212; it never sleeps.</div>
+        </div>
+        <div class="mp-foot"><span class="mp-dot"></span>${d.total} stocks tracked &#183; live at the bell</div>
+      </div>`;
+  }
   return `${scanLiveBar()}
     <div class="mpulse">
-      <div class="mp-hero">
-        <div class="mp-big${closed?' sm':''}" data-pulse>${big}<span class="mp-ring"></span><span class="mp-ring r2"></span></div>
-        <div class="mp-lab">${closed?'until the open':'nearing a trigger'}</div>
-        <div class="mp-sub">${closed?'US market is closed &#183; crypto never sleeps'
-          :'No setup at the extreme yet &#8212; the board fires the instant one snaps.'}</div>
+      <div class="mp-hero mp-hero-sm">
+        <div class="mp-wait">Waiting on a <b>${scopeName}</b> setup</div>
+        <div class="mp-big" data-pulse>${sh.near}<span class="mp-ring"></span><span class="mp-ring r2"></span></div>
+        <div class="mp-lab">${scopeName} ${sh.near===1?'name':'names'} nearing a trigger</div>
+        <div class="mp-sub">${closest?`Closest: <b>${esc(closest.sym)}</b> &#8212; ${closest.gap.toFixed(1)}% from a fade.`:'Scanning the extremes.'} The board fires the instant one snaps.</div>
       </div>
-      <div class="mp-tape">${tape?`<span class="mp-run">${tape}</span>`:'<span class="mp-empty">scanning the tape&#8230;</span>'}</div>
-      <div class="mp-foot"><span class="mp-dot"></span>${d.total} markets scanned &#183; live every ~2 min</div>
+      <div class="mp-heat">${tileHTML}</div>
+      <div class="mp-leg">cold <span class="lg lg0"></span><span class="lg lg1"></span><span class="lg lg2"></span><span class="lg lg3"></span> about to snap</div>
+      <div class="mp-foot"><span class="mp-dot"></span>${d.total} ${scopeName} scanned &#183; live every ~2 min</div>
     </div>`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
@@ -1948,7 +1984,7 @@ function settings(){
   const ac=lsGet('fade_autoclose',true); const th=getTheme();
   const prio=lsGet('fade_prioritize_stocks',true); const cc=lsGet('fade_confirm_close',false);
   const dv=defView(); const dsz=defSize(); const dlv=defLev();
-  const so=lsGet('fade_stocks_only',false); const mg=minGrade();
+  const mg=minGrade();
   const setrow=(k,d,on,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><div class="tgl ${on?'on':'off'}" onclick="${fn}"></div></div>`;
   const segrow=(k,d,opts,cur,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div>
     <div class="seg" style="width:auto;flex-shrink:0">${opts.map(([val,lbl])=>`<button class="${cur===val?'on':''}" onclick="${fn}('${val}')">${lbl}</button>`).join('')}</div></div>`;
@@ -1963,7 +1999,6 @@ function settings(){
 
     <div class="lbl" style="margin-top:16px">Markets</div>
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['crypto','Crypto']],dv,'setDefView')}
-    ${setrow('Stocks only','Hide crypto entirely &#8212; only fade large-cap stocks.',so,'toggleStocksOnly()')}
     ${segrow('Minimum grade','Only surface setups at or above this grade.',[['2','A&#8211;B'],['3','A&#8211;C'],['9','All']],String(mg),'setMinGrade')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
@@ -2242,6 +2277,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 
 
 <style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
