@@ -402,6 +402,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .nr-empty{text-align:center;padding:40px 20px;color:var(--dim);font-family:'Space Grotesk';font-size:12.5px;line-height:1.5}
 .closebox{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:13px 13px 14px;margin-top:4px}
 .scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--dim);font-size:7px}
+.tetstage{cursor:pointer} .tetstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 @media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}.sl-dot{animation:none}}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
@@ -752,6 +753,8 @@ function fade(sym){
   if(S.screen==='detail'){ go('feed'); } else { render(); }
 }
 function skip(sym){ S.faded[sym]=1; toast('Skipped '+sym+' \u2014 next setup up'); if(S.screen==='detail'){go('feed');} else {render();} }
+function skippedCount(){ return Object.keys(S.faded||{}).length; }
+function unskipAll(){ const n=skippedCount(); S.faded={}; toast(n?('Brought back '+n+' skipped setup'+(n>1?'s':'')):'Nothing was skipped'); render(); }
 
 /* ---------- TRADE PANEL: size + leverage before you engage (retail-exchange style) ---------- */
 let TRADE=null;   // {sym, side, pct, amt, lev}
@@ -1029,6 +1032,13 @@ function scanShow(){ const d=scanData();
   const near=Math.max(1,Math.min(7,Math.round((d.nearCount||0)/4)||1));
   const scan=Math.min(48,Math.max(near+9,15+near*4));
   return {scan:scan,near:near}; }
+// Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
+function scanLiveBar(){ const sh=scanShow();
+  return stocksClosedView()
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
+function scanDiscHTML(){ return `<div class="scan-disc">Mini-game to pass the downtime &#183; it doesn&#39;t affect your account or the live scan above</div>`; }
+function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
@@ -1063,16 +1073,12 @@ function scannerHTML(closed){
         +`<span class="rlab">${esc(p.sym)}</span></div>`; }   // ticker only — heat/ring/speed carry the closeness (and the exact threshold stays private)
     return `<i class="scan-dot ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`; }).join('');
   const ghostsHTML=(SCAN.ghosts||[]).map((g,i)=>`<div class="scan-ghost" data-g="${i}" style="left:${g.x}%;top:${g.y}%;color:${g.color};background:${g.color};opacity:${g.alive?1:0}"></div>`).join('');
-  // REAL, LIVE market data — kept clearly OUTSIDE the game (own strip, clean font, live dot).
-  const sh=scanShow();
-  const liveBar=closed
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
-  return `${liveBar}<div class="scanner ${cls}">
+  // REAL, LIVE market data — shared strip (identical to Fade Blocks), game clearly OUTSIDE it.
+  return `${scanLiveBar()}<div class="scanner ${cls}">
     <div class="scan-field" id="scanfield">${dotsHTML}${ghostsHTML}<div class="scan-pm${SCAN.inv>0?' inv':''}" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
     <div class="scan-hud2"><div class="sc"><span id="scanscore">${SCAN.score}</span><small>BEST <span id="scanbest">${SCAN.best}</span></small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>
     <div class="scan-combo" id="scancombo"></div><div class="scan-caught" id="scancaught">CAUGHT!</div>
-    <div class="scan-disc">Mini-game to pass downtime &#183; it doesn&#39;t affect your account or the live scan above</div>
+    ${scanDiscHTML()}
   </div>`; }
 function scanStrip(){ const d=scanData(); if(!d.total)return ''; const sh=scanShow();
   return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${sh.scan} for setups&#8230;</span><span class="ss-n">${sh.near} almost there</span></div>`; }
@@ -1178,19 +1184,20 @@ function tetStockSym(){ const st=(BOARD.items||[]).filter(i=>i.asset_class==='st
   const u=['NVDA','AAPL','TSLA','AMD','MSFT','META','XOM','JPM','KO','GE','V','INTC']; return u[(Math.random()*u.length)|0]; }
 // Columns FLEX to fill the screen width (20 rows tall stays constant). On a tall phone this
 // widens the well to ~12-14 cols so there are no dead side margins.
-function tetCols(){ const W=TET.W||360, H=TET.H||640; return Math.max(10, Math.min(16, Math.round(20*W/H))); }
-function tetReset(){ TET.cols=tetCols(); TET.grid=[]; for(let r=0;r<20;r++){ TET.grid.push(new Array(TET.cols).fill(0)); }
+function tetCols(){ const W=TET.W||375; return Math.max(8, Math.min(11, Math.round(W/40))); }   // fewer cols = BIGGER squares, still flush to the full width
+function tetRows(){ const C=tetCols(), cell=(TET.W||375)/C; return Math.max(12, Math.floor((TET.H||640)/cell)); }   // rows fill the FULL height at the width-cell size → flush both ways, no dead space
+function tetReset(){ TET.cols=tetCols(); TET.rows=tetRows(); TET.grid=[]; for(let r=0;r<TET.rows;r++){ TET.grid.push(new Array(TET.cols).fill(0)); }
   TET.score=0;TET.lines=0;TET.level=1;TET.over=false;TET.dropAcc=0;
   TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym(); tetSpawn(); }
 function tetSpawn(){ TET.piece=TET.next; TET.sym=TET.nsym; TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym();
   TET.rot=0; TET.x=Math.max(0,(((TET.cols||10)/2)|0)-2); TET.y=0; if(tetHit(TET.x,TET.y,TET.rot)){ TET.over=true; try{if(TET.score>TET.best){TET.best=TET.score;localStorage.setItem('fade_tet_best',TET.best);}}catch(e){} } }
 function tetCells(x,y,rot,piece){ const P=TET_PIECES[piece||TET.piece][((rot%4)+4)%4]; const out=[]; for(const c of P)out.push([x+c[0],y+c[1]]); return out; }
-function tetHit(x,y,rot){ const mx=(TET.cols||10)-1; for(const [cx,cy] of tetCells(x,y,rot)){ if(cx<0||cx>mx||cy>19)return true; if(cy>=0&&TET.grid[cy][cx])return true; } return false; }
+function tetHit(x,y,rot){ const mx=(TET.cols||10)-1, my=(TET.rows||20)-1; for(const [cx,cy] of tetCells(x,y,rot)){ if(cx<0||cx>mx||cy>my)return true; if(cy>=0&&TET.grid[cy]&&TET.grid[cy][cx])return true; } return false; }
 function tetMove(dx){ if(TET.over||!TET.piece)return; if(!tetHit(TET.x+dx,TET.y,TET.rot)){ TET.x+=dx; } }
 function tetRotate(dir){ if(TET.over||!TET.piece)return; const nr=TET.rot+dir; for(const k of [0,-1,1,-2,2]){ if(!tetHit(TET.x+k,TET.y,nr)){ TET.x+=k; TET.rot=nr; return; } } }
 function tetGhostY(){ let gy=TET.y; while(!tetHit(TET.x,gy+1,TET.rot))gy++; return gy; }
 function tetLock(){ for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)TET.grid[cy][cx]=TET.piece; }
-  let cleared=0; for(let r=19;r>=0;r--){ if(TET.grid[r].every(v=>v)){ TET.grid.splice(r,1); TET.grid.unshift(new Array(TET.cols).fill(0)); cleared++; r++; } }
+  let cleared=0; for(let r=(TET.rows||20)-1;r>=0;r--){ if(TET.grid[r].every(v=>v)){ TET.grid.splice(r,1); TET.grid.unshift(new Array(TET.cols).fill(0)); cleared++; r++; } }
   if(cleared){ const pts=[0,100,300,500,800][cleared]*TET.level; TET.score+=pts; TET.lines+=cleared; TET.level=1+((TET.lines/10)|0);
     TET.flash=18; TET.flashTxt=(cleared===4?'TETRIS FADE! ':'FADE! ')+'+'+pts; }
   tetSpawn(); }
@@ -1215,14 +1222,14 @@ function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; 
 function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
   ctx.clearRect(0,0,W,H);
   // maximise: fill the whole area (near-zero margin), centered
-  const M=1; const C=TET.cols||10; const cell=Math.min(Math.floor((W-M*2)/C), Math.floor((H-M*2)/20));
-  const wW=cell*C, wH=cell*20; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
+  const M=1; const C=TET.cols||10, R=TET.rows||20; const cell=Math.min(Math.floor((W-M*2)/C), Math.floor((H-M*2)/R));
+  const wW=cell*C, wH=cell*R; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
   // 8-bit well: near-black field, very faint grid
   ctx.fillStyle='#050505'; ctx.fillRect(wx-1,wy-1,wW+2,wH+2);
   ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1;
-  for(let r=0;r<=20;r++){ ctx.beginPath(); ctx.moveTo(wx,wy+r*cell); ctx.lineTo(wx+wW,wy+r*cell); ctx.stroke(); }
+  for(let r=0;r<=R;r++){ ctx.beginPath(); ctx.moveTo(wx,wy+r*cell); ctx.lineTo(wx+wW,wy+r*cell); ctx.stroke(); }
   for(let c=0;c<=C;c++){ ctx.beginPath(); ctx.moveTo(wx+c*cell,wy); ctx.lineTo(wx+c*cell,wy+wH); ctx.stroke(); }
-  for(let r=0;r<20;r++)for(let c=0;c<C;c++){ if(TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){ if(TET.grid[r]&&TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
   if(!TET.over){ const gy=tetGhostY(); const col=TET_COL[TET.piece];
     for(const [cx,cy] of tetCells(TET.x,gy,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col,true); }
     for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col); } }
@@ -1243,7 +1250,7 @@ function tetUpdateHUD(){ const sc=document.getElementById('tetscore'); if(sc)sc.
   else { mk.className='mkt closed'; mk.textContent='● CLOSED · opens '+(TET._open||''); } }
 function tetLoop(){ const cv=document.getElementById('tetris');
   if(cv){ if(cv!==TET.cv){ TET.cv=cv; TET.ctx=cv.getContext('2d'); tetFit(); if(!TET.grid||TET.over)tetReset(); }
-    else { const wrap=cv.parentElement; if(wrap&&(wrap.clientWidth!==TET.W||wrap.clientHeight!==TET.H))tetFit(); }
+    else { const wrap=cv.parentElement; if(wrap&&(wrap.clientWidth!==TET.W||wrap.clientHeight!==TET.H)){ tetFit(); if(TET.grid&&TET.grid.length!==tetRows())tetReset(); } }
     tetStep(); tetDraw(); }
   else { TET.cv=null; }
   requestAnimationFrame(tetLoop); }
@@ -1260,8 +1267,10 @@ function tetInputInit(){ let sx=0,sy=0,moved=0,active=false,acc=0;
     if(k==='ArrowLeft')tetMove(-1); else if(k==='ArrowRight')tetMove(1); else if(k==='ArrowDown')tetSoft();
     else if(k==='ArrowUp'||k==='x'||k==='X')tetRotate(1); else if(k==='z'||k==='Z')tetRotate(-1);
     else if(k===' '){ if(!tetTapRestart())tetHard(); } else return; e.preventDefault(); }); }
-function tetrisHTML(){ return `<div class="tetriswrap" onclick="tetTapRestart()"><canvas id="tetris"></canvas></div>`; }
-function tetHUDstrip(){ return `<div class="tethud"><div class="sc"><span id="tetscore">0</span><small id="tetsub">LV 1 · 0 lines</small></div><div class="mkt closed" id="tetmkt">● CLOSED</div></div>`; }
+function tetrisHTML(){ return `<div class="scanner st tetstage" onclick="tetTapRestart()"><canvas id="tetris"></canvas>
+  <div class="scan-hud2"><div class="sc"><span id="tetscore">0</span><small id="tetsub">LV 1 · 0 lines</small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>
+  ${scanDiscHTML()}</div>`; }
+function tetHUDstrip(){ return ''; }   // superseded by the shared scanLiveBar (top) + the floating arcade HUD
 // Pre-market / after-hours movers tape (only shows during extended hours; empty otherwise).
 let PM={ts:0};
 function pmTapeHTML(){ return `<div class="pmtape" id="pmtape"></div>`; }
@@ -1298,7 +1307,7 @@ function scanReadoutHTML(){
 function waitingRoomHTML(){
   if(!gamesOn()) return scanReadoutHTML();
   if(S.scope==='crypto') return scannerHTML(false);
-  return `${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}`;
+  return `${scanLiveBar()}${pmTapeHTML()}${tetrisHTML()}`;   // Fade Blocks — same chrome as the crypto scan
 }
 function stocksIdleHTML(){ return waitingRoomHTML(); }   // back-comat alias
 function feed(){
@@ -1725,16 +1734,11 @@ function nav(){
 function profile(){
   if(!S.user) return authScreen();
   const s=stats(); const u=S.user;
-  const crmOk=!!(API&&u.crm&&u.crm.synced);
-  const crmPill=crmOk
-    ? `<span class="pill" style="background:${rgba(GREEN,.15)};color:${GREEN}">&#9679; CRM connected</span>`
-    : `<span class="pill" style="background:${rgba(ASH,.14)};color:${ASH}">&#9679; CRM syncs when enabled</span>`;
   return `<div class="screen">${topbar()}
     <div class="prof">
       <div class="pava">${initial()}</div>
       <div class="puname">@${u.username}</div>
       <div class="pmeta">${u.email||u.phone||''} &#183; since ${u.created||'today'}</div>
-      <div style="margin-top:12px">${crmPill}</div>
     </div>
     <div class="pcard">
       <div class="prow"><span class="k">Paper balance</span><span class="v" style="color:${s.equity>=10000?GREEN:RED}">$${money(s.equity)}</span></div>
@@ -1929,6 +1933,7 @@ function settings(){
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['crypto','Crypto']],dv,'setDefView')}
     ${setrow('Stocks only','Hide crypto entirely &#8212; only fade large-cap stocks.',so,'toggleStocksOnly()')}
     ${segrow('Minimum grade','Only surface setups at or above this grade.',[['2','A&#8211;B'],['3','A&#8211;C'],['9','All']],String(mg),'setMinGrade')}
+    ${linkrow('Show skipped setups again',(skippedCount()||'No')+' setup'+(skippedCount()===1?'':'s')+' skipped this session &#183; bring them back into the feed.','unskipAll()')}
     ${setrow('After-hours crypto alerts','Get a phone notification when a crypto fade fires while the US stock market is closed (installed app only).',lsGet('fade_alerts',false),'toggleAlerts()')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
