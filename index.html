@@ -493,6 +493,9 @@ input,textarea,select{font-size:16px}
 .pxbig-k{color:var(--green);font-size:9.5px;letter-spacing:1.2px;font-weight:700;margin-bottom:3px}
 .pxbig-p{font-family:'Space Grotesk';font-size:29px;font-weight:700;color:var(--txt);letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .pxbig-c{font-family:'Space Grotesk';font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.pnlhero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;background:linear-gradient(160deg,var(--void2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:15px 17px;margin:2px 0 10px}
+.pnlhero-n{font-family:'Space Grotesk';font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;font-variant-numeric:tabular-nums;margin-top:5px}
+.pnlhero .rt{text-align:right}
 .sc-hint{font-family:'Space Grotesk';font-size:11px;color:var(--ashl);text-align:center;max-width:340px}
 .sc-hint b{color:var(--blue)}
 .shcard{width:330px;max-width:92vw;border-radius:26px;overflow:hidden;position:relative;color:var(--txt);background:radial-gradient(520px 380px at 80% -8%,rgba(46,123,255,.22),transparent 60%),linear-gradient(165deg,#181119,#0a0a0f);border:1px solid var(--line);box-shadow:0 26px 74px rgba(0,0,0,.7)}
@@ -1156,8 +1159,8 @@ function detail(){
       <div class="tm"><div class="k">Add</div><div class="v">${money(add0)}</div></div>
       <div class="tm"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
       <div class="tm"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
-    ${a.pattern_text?`<div class="why"><h3>Pattern <span class="chip" style="background:${rgba(CYAN,.14)};color:${CYAN}">${a.pattern}</span></h3><p>${a.pattern_text}</p></div>`:''}
-    ${a.narrative_text?`<div class="why"><h3>Narrative <span class="chip" style="background:${rgba(BLUE,.14)};color:${BLUE}">${a.narrative}</span></h3><p>${a.narrative_text}</p></div>`:''}
+    ${a.pattern?`<div class="why" style="cursor:pointer" onclick="askAbout('${a.symbol}','pattern')"><h3>Pattern <span class="chip" style="background:${rgba(CYAN,.14)};color:${CYAN}">${a.pattern}</span> <span class="badge" style="background:${rgba(CYAN,.14)};color:${CYAN};margin-left:auto">tap to ask AI</span></h3>${a.pattern_text?`<p>${a.pattern_text}</p>`:''}</div>`:''}
+    ${a.narrative?`<div class="why" style="cursor:pointer" onclick="askAbout('${a.symbol}','narrative')"><h3>Narrative <span class="chip" style="background:${rgba(BLUE,.14)};color:${BLUE}">${a.narrative}</span> <span class="badge" style="background:${rgba(BLUE,.14)};color:${BLUE};margin-left:auto">tap to ask AI</span></h3>${a.narrative_text?`<p>${a.narrative_text}</p>`:''}</div>`:''}
     <div class="cta">${actionable?`<button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="openTradePanel('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>`:`<button class="no" style="flex:1">No fade \u2014 ${sg}</button>`}
       <button class="no" onclick="go('markets')">Back</button></div>
     <button class="btn-wide" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;margin-top:10px;font-weight:800" onclick="askSetup('${a.symbol}')"><span class="munch" style="width:16px;height:16px;vertical-align:-2px;display:inline-block;margin-right:7px"><span class="pac"></span></span>Ask Fade AI about this setup</button>
@@ -1208,14 +1211,14 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
   const notional=posNotional(x); const chg=(q&&q.change_pct!=null)?q.change_pct:0;
   const long=x.side==='long';
   return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${logoBadge(x,46)}
-      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small></div>
+      <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}</div>
       <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; entry grade ${x.gradeEntry||gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
-      <div style="text-align:right"><div ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${open?'unrealized':(x.result||'').toUpperCase()}</div></div></div>
-    ${open?`<div class="pxbig">
-      <div><div class="pxbig-k">&#9679; LIVE PRICE</div><div class="pxbig-p">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div>
-      <div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)}">${sign(chg)}</div></div>
-    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="closeModal();openTradePanel('${x.symbol}')">+ Add to position</button>`:''}
-    ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:6px 0 6px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
+      ${open?'':`<div style="text-align:right"><div style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${(x.result||'').toUpperCase()}</div></div>`}</div>
+    ${open?`<div class="pnlhero">
+      <div><div class="pxbig-k" style="color:${pc}">&#9679; UNREALIZED P&amp;L</div><div class="pnlhero-n" data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}" style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div></div>
+      <div class="rt"><div class="pxbig-k" style="color:var(--ash)">LIVE $<span data-px="${x.symbol}">${pxFmt(cur)}</span></div><div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)};font-size:16px">${sign(chg)}</div></div></div>`:''}
+    ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:2px 0 8px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
+    ${open?`<button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="closeModal();openTradePanel('${x.symbol}')">+ Add to position</button>`:''}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">$${money(notional)}${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''} &#183; <small style="color:var(--ash)">$${money(posMargin(x))} margin</small></span></div>
     ${open?`<div class="mrow"><span class="k">Held</span><span class="v" data-held="${x.opened||0}">${elapsed(x.opened)}</span></div>
