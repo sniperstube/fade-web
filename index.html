@@ -822,11 +822,19 @@ const _GRANK={'A+':0,'A':1,'B':2,'C':3,'D':4,'F':5};
 function gradeOK(i){ const mg=minGrade(); if(mg>=9)return true;
   let l; try{ l=relGrade(i).l; }catch(e){ l=gLet(i.grade,false); }
   const r=_GRANK[l]; return r==null||r<=mg; }
-// US stock market hours (Mon–Fri 9:30–16:00 ET). Holidays not modeled — fail open.
+// US NYSE full-day market holidays (2026–2027). Pre/after-hours count as CLOSED (thin
+// liquidity — we don't fade it). Extend this list each year.
+const US_MKT_HOLIDAYS=new Set([
+ '2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
+ '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']);
+// Regular session only: Mon–Fri 9:30–16:00 ET, excluding US market holidays. Computed
+// in America/New_York so it's correct regardless of the viewer's timezone.
 function stockMarketOpen(){ try{
   const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const d=et.getDay(); if(d===0||d===6) return false;
-  const m=et.getHours()*60+et.getMinutes(); return m>=570 && m<960;
+  const d=et.getDay(); if(d===0||d===6) return false;                                   // weekend
+  const ymd=et.getFullYear()+'-'+String(et.getMonth()+1).padStart(2,'0')+'-'+String(et.getDate()).padStart(2,'0');
+  if(US_MKT_HOLIDAYS.has(ymd)) return false;                                            // market holiday
+  const m=et.getHours()*60+et.getMinutes(); return m>=570 && m<960;                     // 9:30–16:00 ET
 }catch(e){ return true; } }
 function inScope(i){
   // Stocks disappear from the active board when the US market is closed (stale fades aren't tradeable).
@@ -934,9 +942,14 @@ function detail(){
   const a=quote(S.sel)||BOARD.top; if(!a) return `<div class="screen">${topbar()}<div class="empty">Not found.</div></div>`;
   const long=isLong(a); const st=a.setup||{}; const add0=(st.add_ladder||[])[0]; const [sg,sgc]=sigTag(a);
   const actionable=a.signal==='fade_long'||a.signal==='fade_short';
+  // Honesty: a stock while the US market is closed shows its LAST SESSION CLOSE, not a live price (no flash).
+  const stkClosed=a.asset_class==='stock'&&!stockMarketOpen();
+  const pxHtml=stkClosed
+    ? `<b style="color:var(--txt);font-size:13.5px;font-weight:700">$${pxFmt(a.price)}</b> <small style="color:var(--ash)">&#183; last session close</small>`
+    : `<b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>`;
   return `<div class="screen">
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
-    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
+    <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; ${pxHtml}${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
     <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>${a.vol_ratio?'<span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
     <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
     ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="openTradePanel('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; set size</button>`:''}
@@ -1625,13 +1638,15 @@ async function loadChart(sym,attempt){ if(!API) return; const it=quote(sym); if(
   } }
 function retryChart(sym){ delete CHARTLD[sym]; const it=quote(sym); if(it)it.candles=null; loadChart(sym,1); chartRefresh(sym); }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
-try{ S.scope=defView(); }catch(e){}   // open to the user's default market view (Settings) — a mid-session refresh restores current scope below
+// The default scope FOLLOWS THE MARKET: stocks-first when the US market is open (or the
+// user's Default-view setting), crypto-first when it's closed — so after-hours users land
+// on the live crypto board, not an empty stocks screen. Stocks-only setting always wins.
+try{ S.scope = stocksOnly() ? 'stocks' : (stockMarketOpen() ? defView() : 'crypto'); }catch(e){}
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
-else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same screen
-  if(nv){ if(nv.scope)S.scope=nv.scope;
-    if(['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } } }catch(e){} }
+else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same SCREEN (scope stays market-driven above)
+  if(nv&&['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } }catch(e){} }
 applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
