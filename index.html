@@ -1152,6 +1152,13 @@ function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,
   ctx.textAlign='left'; ctx.fillStyle='#ffe500'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(String(TET.score),wx+6,wy+21);
   ctx.fillStyle='#c7c7d0'; ctx.font='800 8px ui-monospace,Menlo,monospace'; ctx.fillText('BEST '+TET.best+' · L'+TET.lines+' · LV'+TET.level,wx+6,wy+35);
   ctx.fillStyle=TET_COL[TET.piece]||'#fff'; ctx.font='900 11px -apple-system,Arial'; ctx.fillText('▾ '+TET.sym, wx+6, wy+51);
+  // market status + live countdown to open (the bit people love), top-center
+  TET._dc=(TET._dc||0)+1; if(!TET._open||TET._dc%30===0){ try{TET._open=nextMarketOpen();}catch(e){TET._open='';} }
+  let mktOpen=false; try{mktOpen=stockMarketOpen();}catch(e){}
+  ctx.textAlign='center';
+  if(mktOpen){ ctx.fillStyle='#39ff14'; ctx.font='900 10px ui-monospace,Menlo,monospace'; ctx.fillText('● MARKET LIVE', W/2, wy+15); }
+  else { ctx.fillStyle='#ff3b30'; ctx.font='900 11px ui-monospace,Menlo,monospace'; ctx.fillText('● MARKET CLOSED', W/2, wy+15);
+    ctx.fillStyle='#ffb3ae'; ctx.font='800 9px ui-monospace,Menlo,monospace'; ctx.fillText('opens '+(TET._open||''), W/2, wy+29); }
   // next preview mini (top-right, over the well)
   const nk=TET.next; if(nk){ const ns=Math.max(7,Math.floor(cell*0.42));
     ctx.textAlign='right'; ctx.fillStyle='#9a9aac'; ctx.font='800 7px ui-monospace,Menlo,monospace'; ctx.fillText('NEXT', wx+wW-6, wy+13);
