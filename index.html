@@ -776,11 +776,17 @@ function pushPaper(){ if(!(API&&authToken()))return; clearTimeout(SYNCT);
 // On login / app load, pull the master state from the server. If the server has a NEWER copy
 // (traded on another device), it wins and we hydrate localStorage so this device matches.
 function hydratePaper(cb){ if(!(API&&authToken())){ if(cb)cb(); return; }
-  api('/api/paper/sync',{method:'GET'}).then(function(r){
-    try{ if(r&&r.ok&&r.state){ const localTs=Number(localStorage.getItem('fade_paper_ts'))||0;
-      if((r.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(r.state)); localStorage.setItem('fade_paper_ts',String(r.updated||Date.now())); }
-      else { pushPaper(); }   // our local copy is newer — push it up
-    } }catch(e){}
+  api('/api/paper/sync',{method:'GET'}).then(function(r){ return r.json(); }).then(function(d){
+    try{ const localTs=Number(localStorage.getItem('fade_paper_ts'))||0;
+      if(d&&d.ok&&d.state){
+        // server has a wallet — newer-or-equal server copy wins (another device traded)
+        if((d.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(d.state)); localStorage.setItem('fade_paper_ts',String(d.updated||Date.now())); }
+        else { pushPaper(); }   // our local copy is newer — push it up
+      } else { // server has NO wallet yet — seed it from local IF there's real activity (open/closed trades or moved cash), even for pre-sync accounts with no ts
+        const lp=paper(); const hasActivity=(lp.positions&&lp.positions.length>0)||lp.cash!==10000;
+        if(hasActivity){ if(!localStorage.getItem('fade_paper_ts'))localStorage.setItem('fade_paper_ts',String(Date.now())); pushPaper(); }
+      }
+    }catch(e){}
     if(cb)cb();
   }).catch(function(){ if(cb)cb(); }); }
 function quote(sym){ return BOARD.items.find(i=>i.symbol===sym); }
@@ -2277,6 +2283,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 
 
 
