@@ -299,6 +299,8 @@ input,textarea,select{font-size:16px}
 .stat .k{font-family:'Space Grotesk';font-size:9px;color:var(--ash);text-transform:uppercase;margin-top:3px}
 .btn-wide{width:100%;border:none;padding:13px;border-radius:12px;font-family:'Space Grotesk';font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;transition:transform .09s ease,filter .09s ease}
 .btn-wide:active{transform:scale(.985);filter:brightness(.93)}
+.simlink{display:block;width:100%;background:none;border:none;color:var(--ash);font-family:'Space Grotesk';font-size:12px;font-weight:600;padding:6px 4px;margin:0 0 8px;cursor:pointer;text-align:center;letter-spacing:.01em}
+.simlink:active{color:var(--txt)}
 .pos{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
 .pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
 .pos-closed{opacity:.62;background:transparent}           /* history: muted + flat */
@@ -850,7 +852,7 @@ function confirmTrade(){
   p.cash-=margin;
   const g=relGrade(a).l;
   p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:TRADE.sym,name:a.name,side:long?'long':'short',
-    entry:a.price,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,
+    entry:a.price,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,asset_class:a.asset_class,
     grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
   save(p); S.faded[TRADE.sym]=1;
   if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:TRADE.sym,side:long?'long':'short'})}).catch(function(){}); }
@@ -940,19 +942,14 @@ function assetWeight(i){ if(!i)return 0;
   }
   return 0.85;   // large-cap stock
 }
-function relSort(a,b){ return (a.grade-b.grade)||(assetWeight(b)-assetWeight(a))||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); }
+function relSort(a,b){ return (a.grade-b.grade)||(assetWeight(b)-assetWeight(a))||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0))||((a.symbol<b.symbol)?-1:(a.symbol>b.symbol?1:0)); }   // final symbol tiebreak = deterministic order (no reshuffle on equal metrics)
 function computeRel(){ RELG={};
-  // Grade EVERY playable setup (even ones you hold or skipped) so grades are stable and
-  // a held asset still has a live grade in the wallet. The lineup filters hide actioned
-  // ones from display; this only builds the symbol -> grade map.
+  // The strongest setup in the moment shows A+ (relative top). EVERYONE ELSE keeps their
+  // ABSOLUTE server grade — so a letter can't jump just because the crowd size (N) changed
+  // between polls. This is the stability fix: same setup, same move => same grade.
   let items=(BOARD.items||[]).filter(function(i){return playable(i);});
   items.sort(relSort);
-  const N=items.length;
-  items.forEach(function(it,i){ let g;
-    if(i===0) g='A+';
-    else { const f=i/Math.max(N-1,1); g=f<0.16?'A':f<0.36?'B':f<0.58?'C':f<0.80?'D':'F'; }
-    RELG[it.symbol]=g;
-  }); }
+  items.forEach(function(it,i){ let g=(i===0)?'A+':gLet(it.grade,false); if(i>0&&g==='A+')g='A'; RELG[it.symbol]=g; }); }
 function relGrade(a){ const l=(a&&RELG[a.symbol])||gLet(a?a.grade:5,false); return {l:l,c:RELCOL[l]||GRADE[a?a.grade:5]}; }
 function gradeMeter(a,big){ const r=relGrade(a); return `<div class="gmeter${big?' big':''}"><div class="glab">GRADE</div><div class="glet" style="color:${r.c}">${r.l}</div></div>`; }
 function gradeChip(a){ const r=relGrade(a); return `<div class="gchip"><span class="cl">GRADE</span><span class="cv" style="color:${r.c}">${r.l}</span></div>`; }
@@ -1293,7 +1290,8 @@ function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','S
   return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
 // Only setups you can actually act on: a real breach with a long/short fade signal.
 // No-play items (no breach, or a skip like price-discovery) are never displayed.
-function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
+function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')
+  && i.price!=null && i.change_pct!=null && i.setup && i.setup.target!=null && i.setup.mental_stop!=null); }   // require COMPLETE data — no half-loaded/unreliable asset ever shows as a setup
 function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
 // Stocks with NO live setup: downtime → Fade Blocks (Tetris) waiting room; market open but quiet →
@@ -1405,7 +1403,9 @@ function chart(a){
   </svg>`;
 }
 function detail(){
-  const a=quote(S.sel)||BOARD.top; if(!a) return `<div class="screen">${topbar()}<div class="empty">Not found.</div></div>`;
+  const a=quote(S.sel); if(!a) return `<div class="screen">${topbar()}
+    <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setups</div>
+    <div class="empty" style="padding:48px 24px;text-align:center;line-height:1.6">This setup is no longer live &#8212; ${esc(S.sel||'it')} moved back out of the extreme.<br><button class="btn-wide" style="margin-top:16px;background:${BLUE};color:#0a0a0f" onclick="go('markets')">See live setups</button></div></div>`;   // never silently swap to a different ticker
   const long=isLong(a); const st=a.setup||{}; const add0=(st.add_ladder||[])[0]; const [sg,sgc]=sigTag(a);
   const actionable=a.signal==='fade_long'||a.signal==='fade_short';
   // Honesty: a stock while the US market is closed shows its LAST SESSION CLOSE, not a live price (no flash).
@@ -1458,7 +1458,7 @@ function wallet(){
         <div class="bs"><span class="bsk">Closed P&amp;L</span><span class="bsv" style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)}</span></div>
       </div></div>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
-    <button class="btn-wide" style="background:${BLUE};color:#0a0a0f" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.7">(preview)</span></button>
+    ${s.opens.length?`<button class="simlink" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.6">&#183; preview</span></button>`:''}
     <div class="lbl wl-sec">Open positions${s.opens.length?`<span class="lbl-n live">${s.opens.length}</span>`:''}</div>
     <div class="wl-group">${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}</div>
     <div class="lbl wl-sec wl-hist">History${s.closed.length?`<span class="lbl-n">${s.closed.length}</span>`:''}</div>
@@ -2050,7 +2050,8 @@ function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fad
 
 function render(){ try{ computeRel(); }catch(e){ RELG={}; }
   const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
-  document.getElementById('app').innerHTML = scr() + nav();
+  let body; try{ body=scr(); }catch(e){ body=`<div class="screen">${topbar()}<div class="empty" style="padding:48px 24px;text-align:center;line-height:1.6">This view hit a snag rendering.<br><button class="btn-wide" style="margin-top:14px;background:${BLUE};color:#0a0a0f" onclick="render()">Retry</button></div></div>`; }
+  document.getElementById('app').innerHTML = body + nav();
   fitGame(); if(S.screen==='feed'&&S.scope==='stocks')loadPremarket(); }
 
 // Game screen fills EXACTLY the visible viewport. On iOS Safari the URL toolbar makes
