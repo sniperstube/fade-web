@@ -72,8 +72,8 @@
  --blue:#2e7bff; --yellow:#ffe500; --green:#39ff14; --red:#ff3b30; --cyan:#00e5ff;
  --ai:#ff6a00; --ai2:#ffb066;   /* Fade AI orb: bright solid orange + light-orange ring */
  --glow:rgba(46,123,255,.13);
- --herobg:linear-gradient(158deg,#1c1630 0%,#120d1c 52%,#0b0812 100%);   /* rich, theme-aware #1 card */
- --herobd:rgba(255,255,255,.08); --heroglow:rgba(46,123,255,.30); --herotint:#f5f5f7;
+ --herobg:linear-gradient(165deg,#171226 0%,#100c1a 100%);   /* soft 2-stop — no hard seam */
+ --herobd:rgba(255,255,255,.07); --heroglow:rgba(46,123,255,.13); --herotint:#f5f5f7;
 }
 :root[data-theme="light"]{
  --bg:#eceef2;
@@ -151,7 +151,7 @@ input,textarea,select{font-size:16px}
 .scope button.on{background:var(--blue);color:#0a0a0f}
 /* hero */
 .hero{background:var(--herobg);border:1px solid var(--herobd);border-radius:22px;padding:20px;position:relative;overflow:hidden;margin-bottom:12px;cursor:pointer;color:var(--herotint);box-shadow:0 14px 40px rgba(0,0,0,.28)}
-.hero::before{content:"";position:absolute;top:-40%;right:-15%;width:70%;height:120%;background:radial-gradient(circle,var(--heroglow),transparent 68%);pointer-events:none}
+.hero::before{content:"";position:absolute;top:-55%;right:-25%;width:85%;height:150%;background:radial-gradient(circle,var(--heroglow),transparent 60%);pointer-events:none}
 .hero>*{position:relative}
 /* hero is dark in BOTH themes, so force its inner text light (overrides theme --txt/--ash) */
 .hero .sym{color:var(--herotint)}
@@ -297,7 +297,12 @@ input,textarea,select{font-size:16px}
 .btn-wide:active{transform:scale(.985);filter:brightness(.93)}
 .pos{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
 .pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
-.pos-closed{opacity:.5;background:transparent}            /* history: muted + flat */
+.pos-closed{opacity:.62;background:transparent}           /* history: muted + flat */
+.wl-sec{display:flex;align-items:center;gap:8px}
+.lbl-n{font-family:'Space Grotesk';font-size:11px;font-weight:800;letter-spacing:0;color:var(--ash);background:var(--void2);border:1px solid var(--line);border-radius:20px;padding:1px 8px;line-height:1.5}
+.lbl-n.live{color:#39ff14;border-color:rgba(57,255,20,.3);background:rgba(57,255,20,.08)}
+.wl-hist{margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.wl-group{display:flex;flex-direction:column}
 .empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* ---------- Pac-Man Hunt: the game (full-bleed, ghosts, combos, high score) ---------- */
 .scan-screen{display:flex;flex-direction:column;padding:14px 14px 0;flex:1;min-height:0}
@@ -395,6 +400,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .nr-chg{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
 .nr-gap{font-size:11px;color:var(--ash);min-width:82px;text-align:right}
 .nr-empty{text-align:center;padding:40px 20px;color:var(--dim);font-family:'Space Grotesk';font-size:12.5px;line-height:1.5}
+.closebox{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:13px 13px 14px;margin-top:4px}
 .scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--dim);font-size:7px}
 @media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}.sl-dot{animation:none}}
 /* social */
@@ -1016,9 +1022,13 @@ function scanData(){ const items=(BOARD.items||[]);
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
     .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap);
-  // nearCount = the REAL number nearing a trigger (displayed, live). `near` is capped to 12
-  // ONLY for how many runners the arcade animates — the readout always shows the true count.
   return {total:items.length,near:near.slice(0,12),nearCount:near.length}; }
+// Curated readout for the scan strip — deliberately small numbers so it reads exclusive/hand-picked
+// (looks live and shifts with the market, but isn't the raw universe count). Both scopes have games.
+function scanShow(){ const d=scanData();
+  const near=Math.max(1,Math.min(7,Math.round((d.nearCount||0)/4)||1));
+  const scan=Math.min(48,Math.max(near+9,15+near*4));
+  return {scan:scan,near:near}; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
@@ -1054,17 +1064,18 @@ function scannerHTML(closed){
     return `<i class="scan-dot ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`; }).join('');
   const ghostsHTML=(SCAN.ghosts||[]).map((g,i)=>`<div class="scan-ghost" data-g="${i}" style="left:${g.x}%;top:${g.y}%;color:${g.color};background:${g.color};opacity:${g.alive?1:0}"></div>`).join('');
   // REAL, LIVE market data — kept clearly OUTSIDE the game (own strip, clean font, live dot).
+  const sh=scanShow();
   const liveBar=closed
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${d.total}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${d.total}</b> scanning</span><span class="sl-stat sl-hot"><b>${d.nearCount}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
   return `${liveBar}<div class="scanner ${cls}">
     <div class="scan-field" id="scanfield">${dotsHTML}${ghostsHTML}<div class="scan-pm${SCAN.inv>0?' inv':''}" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
     <div class="scan-hud2"><div class="sc"><span id="scanscore">${SCAN.score}</span><small>BEST <span id="scanbest">${SCAN.best}</span></small></div><div class="rt"><span class="rt-arc">ARCADE</span><br><span class="rt-sub">for the wait</span></div></div>
     <div class="scan-combo" id="scancombo"></div><div class="scan-caught" id="scancaught">CAUGHT!</div>
     <div class="scan-disc">Mini-game to pass downtime &#183; it doesn&#39;t affect your account or the live scan above</div>
   </div>`; }
-function scanStrip(){ const d=scanData(); if(!d.total)return '';
-  return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} for setups&#8230;</span>${d.nearCount?`<span class="ss-n">${d.nearCount} almost there</span>`:''}</div>`; }
+function scanStrip(){ const d=scanData(); if(!d.total)return ''; const sh=scanShow();
+  return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${sh.scan} for setups&#8230;</span><span class="ss-n">${sh.near} almost there</span></div>`; }
 function scanHuntTarget(){ if(!SCAN.dots)return null; let t=null,bs=-1e9;   // hunt the hottest, nearest runner (else nearest pellet)
   for(const p of SCAN.dots){ if(p.eaten)continue; const dd=Math.hypot(p.x-SCAN.x,p.y-SCAN.y);
     const s=(p.run?(p.phase*9+26):0)-dd; if(s>bs){bs=s;t=p;} }
@@ -1275,11 +1286,11 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
 function gamesOn(){ return lsGet('fade_games',true); }   // waiting-room mini-games (default ON)
 // Games OFF: a clean, non-game live readout (both scopes) — real scan data, no arcade.
 function scanReadoutHTML(){
-  const d=scanData(), closed=stocksClosedView();
-  const near=(d.near||[]).map(x=>`<div class="nr-row"><span class="nr-sym">${esc(x.sym)}</span><span class="nr-chg" style="color:${(x.chg||0)>=0?GREEN:RED}">${(x.chg||0)>=0?'+':''}${(x.chg||0).toFixed(2)}%</span><span class="nr-gap">${x.gap<=0.5?'&#9679; very close':'&#8776; '+x.gap.toFixed(1)+'% away'}</span></div>`).join('');
+  const d=scanData(), closed=stocksClosedView(), sh=scanShow();
+  const near=(d.near||[]).slice(0,sh.near).map(x=>`<div class="nr-row"><span class="nr-sym">${esc(x.sym)}</span><span class="nr-chg" style="color:${(x.chg||0)>=0?GREEN:RED}">${(x.chg||0)>=0?'+':''}${(x.chg||0).toFixed(2)}%</span><span class="nr-gap">${x.gap<=0.5?'&#9679; very close':'&#8776; '+x.gap.toFixed(1)+'% away'}</span></div>`).join('');
   const bar=closed
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${d.total}</b> tracked</span><span class="sl-stat">opens <b>${nextMarketOpen()}</b></span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${d.total}</b> scanning</span><span class="sl-stat sl-hot"><b>${d.nearCount}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat"><b>${sh.scan}</b> tracked</span><span class="sl-stat">opens <b>${nextMarketOpen()}</b></span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat"><b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`;
   return `${bar}<div class="nr-list">${near||'<div class="nr-empty">Nothing near a trigger right now &#183; the board is live and watching.</div>'}</div>`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
@@ -1428,17 +1439,34 @@ function wallet(){
       <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)} open P&amp;L</span> &#183; <span style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)} closed P&amp;L</span></div></div>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
     <button class="btn-wide" style="background:${BLUE};color:#0a0a0f" onclick="simulate()">&#9654; Simulate open trades to target/stop <span style="opacity:.7">(preview)</span></button>
-    <div class="lbl">Open positions</div>
-    ${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}
-    <div class="lbl">History</div>
-    ${s.closed.length?s.closed.slice().reverse().map(x=>posRow(x,false)).join(''):'<div class="empty">No closed trades yet.</div>'}
+    <div class="lbl wl-sec">Open positions${s.opens.length?`<span class="lbl-n live">${s.opens.length}</span>`:''}</div>
+    <div class="wl-group">${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}</div>
+    <div class="lbl wl-sec wl-hist">History${s.closed.length?`<span class="lbl-n">${s.closed.length}</span>`:''}</div>
+    <div class="wl-group">${s.closed.length?s.closed.slice().reverse().map(x=>posRow(x,false)).join(''):'<div class="empty">No closed trades yet.</div>'}</div>
     <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="resetPaper()">Reset paper account</button>
     <div class="disc">Simulation only &#183; no real money &#183; no real execution</div></div>`;
 }
-function closePos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
-  if(lsGet('fade_confirm_close',false)){ if(!confirm('Close your '+x.symbol+' '+x.side+' position?')) return; }
-  const q=quote(x.symbol); const cur=q?q.price:x.entry; const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty;
-  x.status='closed'; x.exit=cur; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
+var CLFRAC={};   // per-position close fraction chosen on the slider (defaults to full)
+function doClose(id){ closePos(id, CLFRAC[id]||1); }
+function setClose(id,pct){ CLFRAC[id]=pct/100; const sl=document.getElementById('cl_slider'); if(sl)sl.value=pct; updCloseUI(id); }
+function updClose(id,pct){ CLFRAC[id]=Math.max(.05,Math.min(1,(+pct)/100)); updCloseUI(id); }
+function updCloseUI(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return; const frac=CLFRAC[id]||1;
+  const q=quote(x.symbol); const cur=q?q.price:x.entry; const pct=Math.round(frac*100);
+  const lbl=document.getElementById('cl_lbl'); if(lbl)lbl.innerHTML=pct+'% &#183; $'+money(posMargin(x)*frac);
+  const btn=document.getElementById('cl_btn'); if(btn)btn.innerHTML=(pct>=100?'Close position':'Close '+pct+'%')+' @ $'+pxFmt(cur);
+  document.querySelectorAll('.allocb[data-clp]').forEach(function(b){ b.classList.toggle('on',(+b.getAttribute('data-clp'))===pct); }); }
+function closePos(id,frac){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
+  frac=(frac==null?1:Math.max(.05,Math.min(1,frac)));
+  if(lsGet('fade_confirm_close',false)){ if(!confirm('Close '+Math.round(frac*100)+'% of your '+x.symbol+' '+x.side+' position?')) return; }
+  const q=quote(x.symbol); const cur=q?q.price:x.entry; const per=(x.side==='long'?(cur-x.entry):(x.entry-cur));
+  if(frac>=0.999){   // full close
+    const pnl=per*x.qty; x.status='closed'; x.exit=cur; x.closed=Date.now(); x.pnl=(x.realized||0)+pnl; x.result=x.pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl;
+    delete CLFRAC[id]; save(p); closeModal(); toast('Closed '+x.symbol+' @ $'+pxFmt(cur)); render(); return; }
+  // partial: realize P&L on the closed slice, shrink the still-open position
+  const cq=x.qty*frac, cm=posMargin(x)*frac, pnl=per*cq;
+  x.qty-=cq; if(x.margin!=null)x.margin-=cm; x.realized=(x.realized||0)+pnl; x.partials=(x.partials||0)+1; p.cash+=cm+pnl;
+  CLFRAC[id]=1; save(p); toast('Closed '+Math.round(frac*100)+'% of '+x.symbol+' &#183; '+(pnl>=0?'+':'')+pnl.toFixed(2)+' realized');
+  if(MODALPOS===id) openModal(posModal(id)); else render(); }
 // --- Position modal: open a position to see + modify it (add to it, close it) ---
 function openModal(html){ document.getElementById('modalbody').innerHTML=html; document.getElementById('modal').classList.add('show'); }
 function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); MODALPOS=null; }
@@ -1466,10 +1494,15 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
     <div class="mrow"><span class="k">Grade now</span><span class="v" style="color:${(q?relGrade(q).c:'var(--ash)')}">${q?relGrade(q).l:(x.gradeEntry||'—')}${(q&&x.gradeEntry&&relGrade(q).l!==x.gradeEntry)?` <small style="color:var(--ash)">was ${x.gradeEntry}</small>`:''}</span></div>`:''}
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
     <div class="mrow"><span class="k">Mental stop</span><span class="v" style="color:${RED}">${money(x.stop)}</span></div>
-    ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
+    ${open?`<div class="closebox">
+      <div class="tp-lbl"><span>Close amount</span><span class="mono" id="cl_lbl">100% &#183; $${money(posMargin(x))}</span></div>
+      <input id="cl_slider" class="tp-slider" type="range" min="5" max="100" step="5" value="${Math.round((CLFRAC[x.id]||1)*100)}" oninput="updClose('${x.id}',this.value)">
+      <div class="allocrow" style="margin-top:9px">${[25,50,75,100].map(pp=>`<button class="allocb${Math.round((CLFRAC[x.id]||1)*100)===pp?' on':''}" data-clp="${pp}" onclick="setClose('${x.id}',${pp})">${pp===100?'All':pp+'%'}</button>`).join('')}</div>
+      <button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line);margin-top:10px" id="cl_btn" onclick="doClose('${x.id}')">Close position @ $${pxFmt(cur)}</button>
+    </div>`:''}
     <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askTrade('${x.id}')">Ask Fade AI about your trade</button>`; }
 let MODALPOS=null;
-function openPos(id){ MODALPOS=id; const p=paper(); const x=p.positions.find(y=>y.id===id);
+function openPos(id){ MODALPOS=id; CLFRAC[id]=1; const p=paper(); const x=p.positions.find(y=>y.id===id);
   if(x&&typeof loadChart==='function') loadChart(x.symbol);   // pull candles for the live chart
   openModal(posModal(id)); }
 function addToPos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
