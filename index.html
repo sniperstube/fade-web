@@ -385,18 +385,18 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
 /* LIVE MARKET SCAN readout — real data, deliberately OUTSIDE the arcade (own font + green live dot) */
-.scan-live{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 13px;margin-bottom:9px;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
-.scan-live.closed{background:linear-gradient(90deg,rgba(255,159,10,.09),transparent 82%);border-color:rgba(255,159,10,.24)}
-.sl-badge{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:#3ddc6e;text-transform:uppercase}
-.scan-live.closed .sl-badge{color:#ff9f0a}
-.sl-dot{width:7px;height:7px;border-radius:50%;background:#3ddc6e;box-shadow:0 0 8px #3ddc6e;animation:slpulse 1.4s ease-in-out infinite}
-.scan-live.closed .sl-dot{background:#ff9f0a;box-shadow:0 0 8px #ff9f0a}
+.scan-live{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;height:40px;padding:0 12px;margin-bottom:9px;overflow:hidden;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
+.scan-live.closed{background:linear-gradient(90deg,rgba(255,59,48,.10),transparent 82%);border-color:rgba(255,59,48,.26)}
+.sl-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3ddc6e;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.scan-live.closed .sl-badge{color:#ff3b30}
+.sl-dot{width:7px;height:7px;border-radius:50%;background:#3ddc6e;box-shadow:0 0 8px #3ddc6e;animation:slpulse 1.4s ease-in-out infinite;flex-shrink:0}
+.scan-live.closed .sl-dot{background:#ff3b30;box-shadow:0 0 8px #ff3b30}
 @keyframes slpulse{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes scananim{0%,100%{opacity:1}50%{opacity:.55}}
-.sl-stat{font-size:12px;color:var(--ash)}
-.sl-stat b{color:var(--txt);font-weight:800;font-size:14px}
+.sl-stat{font-size:11.5px;color:var(--ash);white-space:nowrap;flex-shrink:0}
+.sl-stat b{color:var(--txt);font-weight:800;font-size:13.5px}
 .sl-hot b{color:#ffb020}
-.sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.sl-real{margin-left:auto;font-size:9px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--dim);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
@@ -1070,16 +1070,17 @@ function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
     .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap);
   return {total:items.length,near:near.slice(0,12),nearCount:near.length}; }
-// Curated readout for the scan strip — scope-specific numbers, single digit nearing count
+// Readout for the scan strip. `near` = the REAL count nearing a trigger (capped at 9 so it
+// stays single-digit and matches the dots the user actually sees). `scan` = curated universe size.
 function scanShow(){ const d=scanData();
-  const near=Math.max(1,Math.min(9,Math.round((d.nearCount||0)/4)||1));
+  const near=Math.min(9,d.nearCount||0);
   const scan=Math.min(48,Math.max(near+9,15+near*4));
   return {scan:scan,near:near}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   return stocksClosedView()
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">tracked <b>${sh.scan}</b></span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing trigger</span><span class="sl-real">real-time</span></div>`; }
+    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span></div>`; }
 function scanDiscHTML(){ return `<div class="scan-disc">Pass the wait with mini-games — doesn&#39;t affect live scan</div>`; }
 function arcadeHUD(scoreId,subId){ return `<div class="scan-hud2"><div class="sc"><span id="${scoreId}">0</span><small id="${subId}">LV 1</small></div><div class="rt"><span class="rt-arc">PASS</span><br><span class="rt-sub">the wait</span></div></div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
@@ -1373,7 +1374,7 @@ function scanReadoutHTML(){
         <div class="mp-wait">Waiting on a <b>${scopeName}</b> setup</div>
         <div class="mp-big" data-pulse>${sh.near}<span class="mp-ring"></span><span class="mp-ring r2"></span></div>
         <div class="mp-lab">${scopeName} ${sh.near===1?'name':'names'} nearing a trigger</div>
-        <div class="mp-sub">${closest?`Closest: <b>${esc(closest.sym)}</b> &#8212; ${closest.gap.toFixed(1)}% from a fade.`:'Scanning the extremes.'} The board fires the instant one snaps.</div>
+        <div class="mp-sub">${closest?`Closest: <b>${esc(closest.sym)}</b> &#8212; ${closest.gap.toFixed(1)}% from a trade.`:'Scanning the extremes.'} The board fires the instant one snaps.</div>
       </div>
       <div class="mp-heat">${tileHTML}</div>
       <div class="mp-leg">cold <span class="lg lg0"></span><span class="lg lg1"></span><span class="lg lg2"></span><span class="lg lg3"></span> about to snap</div>
@@ -2283,6 +2284,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 
 
 
