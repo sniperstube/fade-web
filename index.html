@@ -65,17 +65,26 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 :root{
+ --bg:#050509;
  --void:#0a0a0f; --void2:#0c0c12; --panel:#141118; --line:#241f2b;
  --txt:#f5f5f7; --ash:#8a8f98; --ashl:#c7c9d1; --dim:#5b5f68;
  --blue:#2e7bff; --yellow:#ffe500; --green:#39ff14; --red:#ff3b30; --cyan:#00e5ff;
  --ai:#ff6a00; --ai2:#ffb066;   /* Fade AI orb: bright solid orange + light-orange ring */
+ --glow:rgba(46,123,255,.13);
+}
+:root[data-theme="light"]{
+ --bg:#eceef2;
+ --void:#ffffff; --void2:#f4f5f8; --panel:#eef0f4; --line:#e3e6ec;
+ --txt:#10131a; --ash:#6b7280; --ashl:#39414e; --dim:#9aa1ab;
+ --green:#12a150; --red:#e5484d; --cyan:#0e8aa8; --yellow:#b58900;
+ --glow:rgba(46,123,255,.07);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{overflow-anchor:none;touch-action:manipulation}   /* no double-tap zoom (native app feel) */
 *{touch-action:manipulation}
-body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
-.mono{font-family:'Space Mono',monospace} .px{font-family:'Press Start 2P',monospace}
-#app{width:100%;max-width:430px;min-height:100vh;background:radial-gradient(640px 420px at 82% -8%,rgba(46,123,255,.13),transparent 60%),var(--void);color:var(--txt);position:relative;overflow-x:hidden}
+body{background:var(--bg);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
+.mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',monospace} .px{font-family:'Press Start 2P',monospace}
+#app{width:100%;max-width:430px;min-height:100vh;background:radial-gradient(640px 420px at 82% -8%,var(--glow),transparent 60%),var(--void);color:var(--txt);position:relative;overflow-x:hidden}
 .screen{padding:14px 14px 96px;animation:fade .18s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 /* top bar */
@@ -86,10 +95,10 @@ body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit
 .munch .pac{width:15px;height:15px;border-radius:50%;background:conic-gradient(var(--yellow) 0 54deg,transparent 54deg 126deg,var(--yellow) 126deg)}
 .munch .cndl{width:3px;height:11px;background:var(--red);border-radius:1px}
 .tbar-r{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ash)}
-.live{font-family:'Space Mono';font-size:11px;color:var(--green);font-weight:700;animation:livepulse 2.4s ease-in-out infinite}
+.live{font-family:'Space Grotesk';font-size:11px;color:var(--green);font-weight:700;animation:livepulse 2.4s ease-in-out infinite}
 @keyframes livepulse{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.live{animation:none}}
-.betatag{font-family:'Space Mono';font-size:8.5px;font-weight:700;letter-spacing:1px;color:var(--ai);background:rgba(255,106,0,.14);border:1px solid rgba(255,106,0,.4);padding:2px 5px;border-radius:5px;margin-left:8px;vertical-align:2px}
+.betatag{font-family:'Space Grotesk';font-size:8.5px;font-weight:700;letter-spacing:1px;color:var(--ai);background:rgba(255,106,0,.14);border:1px solid rgba(255,106,0,.4);padding:2px 5px;border-radius:5px;margin-left:8px;vertical-align:2px}
 /* iOS zooms any focused input under 16px — keep them all at 16px */
 input,textarea,select{font-size:16px}
 /* portrait-only: block the landscape layout on phones */
@@ -100,17 +109,17 @@ input,textarea,select{font-size:16px}
   .rotate .ri{font-size:40px} .rotate .rt{font-size:19px;font-weight:800} .rotate .rs{color:var(--ash);font-size:14px}
 }
 .h1{font-size:22px;font-weight:700;letter-spacing:-.5px}
-.sub{font-family:'Space Mono';font-size:11px;color:var(--ash);margin-top:2px}
+.sub{font-family:'Space Grotesk';font-size:11px;color:var(--ash);margin-top:2px}
 /* scope */
 .scope{display:flex;gap:6px;background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:4px;margin-bottom:14px}
 .scope button{flex:1;border:none;background:none;color:var(--ash);font-family:'Space Grotesk';font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer}
 .scope button.on{background:var(--blue);color:#0a0a0f}
 /* hero */
 .hero{background:linear-gradient(160deg,#161019,var(--panel));border:1px solid var(--line);border-radius:22px;padding:20px;position:relative;overflow:hidden;margin-bottom:12px;cursor:pointer}
-.flag{display:inline-flex;gap:6px;font-family:'Space Mono';font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);background:rgba(46,123,255,.1);padding:6px 12px;border-radius:20px;margin-bottom:15px}
+.flag{display:inline-flex;gap:6px;font-family:'Space Grotesk';font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);background:rgba(46,123,255,.1);padding:6px 12px;border-radius:20px;margin-bottom:15px}
 .row{display:flex;justify-content:space-between;align-items:flex-start}
 .sym{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1}
-.sym small{display:block;font-family:'Space Mono';font-size:11px;color:var(--ash);font-weight:400;margin-top:7px}
+.sym small{display:block;font-family:'Space Grotesk';font-size:11px;color:var(--ash);font-weight:400;margin-top:7px}
 .grade{width:58px;height:58px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
 .grade .n{font-family:'Press Start 2P';font-size:17px;line-height:1}
 .grade .s{font-family:'Press Start 2P';font-size:7px;margin-top:5px}
@@ -126,7 +135,7 @@ input,textarea,select{font-size:16px}
 .sc-grade.letter.flat .n{font-size:46px}
 /* GRADE METER - reads as an actual grading system: label + letter + A-F scale */
 .gmeter{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0}
-.glab{font-family:'Space Mono';font-size:8px;letter-spacing:2.5px;color:var(--ash);font-weight:700}
+.glab{font-family:'Space Grotesk';font-size:8px;letter-spacing:2.5px;color:var(--ash);font-weight:700}
 .glet{font-family:'Space Grotesk';font-weight:700;letter-spacing:-2px;line-height:.9;font-size:34px}
 .gmeter.big .glet{font-size:50px}
 .gscale{display:flex;gap:3px}
@@ -135,19 +144,19 @@ input,textarea,select{font-size:16px}
 .gscale span.on{border-color:transparent;color:#0a0a0f;font-weight:700}
 /* compact grade chip for list rows: GRADE label + letter */
 .gchip{display:flex;flex-direction:column;align-items:center;justify-content:center;width:40px;flex-shrink:0;gap:2px}
-.gchip .cl{font-family:'Space Mono';font-size:6px;letter-spacing:1px;color:var(--dim);font-weight:700}
+.gchip .cl{font-family:'Space Grotesk';font-size:6px;letter-spacing:1px;color:var(--dim);font-weight:700}
 .gchip .cv{font-family:'Space Grotesk';font-weight:700;font-size:24px;letter-spacing:-1px;line-height:.9}
 /* Fade AI hub: Ask / Chats / Projects / Scheduled */
 .aiseg{display:flex;gap:5px;background:var(--void2);border:1px solid var(--line);border-radius:11px;padding:4px;margin-bottom:10px}
 .aiseg button{flex:1;border:none;background:none;color:var(--ash);font-family:'Space Grotesk';font-size:12px;font-weight:600;padding:8px 4px;border-radius:8px;cursor:pointer}
 .aiseg button.on{background:var(--ai);color:#1a0a00}
 .aihub{flex:1;overflow-y:auto;padding:2px 1px 6px}
-.hubh{font-family:'Space Mono';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin:4px 2px 10px}
+.hubh{font-family:'Space Grotesk';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin:4px 2px 10px}
 .hcard{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .hcard .hi{width:34px;height:34px;border-radius:10px;background:rgba(255,106,0,.12);color:var(--ai2);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .hcard .hb{flex:1;min-width:0}
 .hcard .ht{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hcard .hs{font-family:'Space Mono';font-size:10px;color:var(--ash);margin-top:2px}
+.hcard .hs{font-family:'Space Grotesk';font-size:10px;color:var(--ash);margin-top:2px}
 .tgl{width:40px;height:23px;border-radius:12px;flex-shrink:0;position:relative;cursor:pointer}
 .tgl.on{background:var(--ai)} .tgl.off{background:var(--line)}
 .tgl::after{content:"";position:absolute;top:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
@@ -159,23 +168,23 @@ input,textarea,select{font-size:16px}
 .setk{font-weight:700;font-size:14.5px;margin-bottom:4px}
 .setd{color:var(--ash);font-size:12.5px;line-height:1.45}
 .newbtn{width:100%;border:1px dashed var(--line);background:none;color:var(--ash);border-radius:12px;padding:12px;font-family:'Space Grotesk';font-weight:600;font-size:13px;cursor:pointer;margin-top:2px}
-.hubnote{font-family:'Space Mono';font-size:10px;color:var(--dim);text-align:center;padding:14px 10px 4px;line-height:1.7}
-.move{font-family:'Space Mono';font-size:29px;font-weight:700;margin:15px 0 4px}
+.hubnote{font-family:'Space Grotesk';font-size:10px;color:var(--dim);text-align:center;padding:14px 10px 4px;line-height:1.7}
+.move{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:29px;font-weight:700;margin:15px 0 4px}
 .move small{font-size:12px;color:var(--ash);font-weight:400}
-.chip{display:inline-block;font-family:'Space Mono';font-size:9px;font-weight:700;letter-spacing:1px;padding:4px 9px;border-radius:6px;margin-top:4px}
+.chip{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:700;letter-spacing:1px;padding:4px 9px;border-radius:6px;margin-top:4px}
 .setup{display:flex;gap:7px;margin-top:15px}
 .sb{flex:1;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:11px;padding:9px 8px}
-.sb .k{font-family:'Space Mono';font-size:8px;color:var(--ash);text-transform:uppercase;letter-spacing:.5px}
-.sb .v{font-family:'Space Mono';font-size:12.5px;font-weight:700;margin-top:4px;color:var(--txt)}
+.sb .k{font-family:'Space Grotesk';font-size:8px;color:var(--ash);text-transform:uppercase;letter-spacing:.5px}
+.sb .v{font-family:'Space Grotesk';font-size:12.5px;font-weight:700;margin-top:4px;color:var(--txt)}
 .cta{display:flex;gap:8px;margin-top:16px}
 .cta button{flex:1;border:none;padding:14px;border-radius:12px;font-family:'Space Grotesk';font-size:14.5px;font-weight:700;cursor:pointer}
 .cta .no{background:var(--void2);color:var(--ash);border:1px solid var(--line)}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
 .mini{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:14px}
-.mini .k{font-family:'Space Mono';font-size:10px;color:var(--ash);font-weight:700;text-transform:uppercase}
+.mini .k{font-family:'Space Grotesk';font-size:10px;color:var(--ash);font-weight:700;text-transform:uppercase}
 .mini .v{font-size:17px;font-weight:700;margin-top:6px}
-.mini .badge{display:inline-block;font-family:'Space Mono';font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;margin-top:8px}
-.lbl{font-family:'Space Mono';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin:8px 2px 10px}
+.mini .badge{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;margin-top:8px}
+.lbl{font-family:'Space Grotesk';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin:8px 2px 10px}
 /* list rows */
 .rowcard{background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .gg{width:38px;height:38px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid;flex-shrink:0}
@@ -185,13 +194,13 @@ input,textarea,select{font-size:16px}
 .lbadge img.on{opacity:1}
 .rc-info{flex:1;min-width:0}
 .rc-nm{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rc-nm small{font-family:'Space Mono';font-size:10px;color:var(--dim);margin-left:6px;font-weight:400}
+.rc-nm small{font-family:'Space Grotesk';font-size:10px;color:var(--dim);margin-left:6px;font-weight:400}
 .rc-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rc-d{font-family:'Space Mono';font-size:10px;color:var(--ash);margin-top:2px}
-.rc-pct{font-family:'Space Mono';font-weight:700;font-size:15px;text-align:right}
+.rc-d{font-family:'Space Grotesk';font-size:10px;color:var(--ash);margin-top:2px}
+.rc-pct{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:15px;text-align:right}
 .rc-pct.sm{font-size:12px;margin-top:1px}
-.rc-px{font-family:'Space Mono';font-weight:700;font-size:15.5px;color:var(--txt);text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
-.rc-sig{font-family:'Space Mono';font-size:8px;font-weight:700;margin-top:3px;text-align:right}
+.rc-px{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:15.5px;color:var(--txt);text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.rc-sig{font-family:'Space Grotesk';font-size:8px;font-weight:700;margin-top:3px;text-align:right}
 /* live price ticker: number updates constantly; a brief highlight flashes on each move */
 [data-px]{border-radius:4px;padding:0 1.5px;transition:none}
 .flg0,.flg1{animation:flpx-g .62s ease-out}
@@ -202,30 +211,30 @@ input,textarea,select{font-size:16px}
 /* detail chart */
 .chartbox{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
 .legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
-.legend span{font-family:'Space Mono';font-size:10px;color:var(--ashl);display:flex;align-items:center;gap:5px}
+.legend span{font-family:'Space Grotesk';font-size:10px;color:var(--ashl);display:flex;align-items:center;gap:5px}
 .legend i{width:14px;height:0;border-top:2px solid;display:inline-block}
 .terms{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .tm{background:var(--void2);border:1px solid var(--line);border-radius:12px;padding:11px 6px;text-align:center}
-.tm .k{font-family:'Space Mono';font-size:8px;color:var(--ash);text-transform:uppercase}
-.tm .v{font-family:'Space Mono';font-size:12.5px;font-weight:700;margin-top:4px;color:var(--txt)}
+.tm .k{font-family:'Space Grotesk';font-size:8px;color:var(--ash);text-transform:uppercase}
+.tm .v{font-family:'Space Grotesk';font-size:12.5px;font-weight:700;margin-top:4px;color:var(--txt)}
 .why{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:10px}
-.why h3{font-family:'Space Mono';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.why h3{font-family:'Space Grotesk';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-bottom:8px;display:flex;gap:8px;align-items:center}
 .why p{font-size:13px;line-height:1.6;color:var(--ashl)} .why p b{color:var(--txt)}
 .back{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px}
 .back .a{width:30px;height:30px;border-radius:9px;background:var(--void2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
 /* wallet */
 .balance{background:linear-gradient(160deg,#161019,var(--panel));border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
-.balance .k{font-family:'Space Mono';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash)}
-.balance .big{font-family:'Space Mono';font-size:34px;font-weight:700;margin-top:6px}
+.balance .k{font-family:'Space Grotesk';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash)}
+.balance .big{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:34px;font-weight:700;margin-top:6px}
 .stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .stat{background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px;text-align:center}
-.stat .v{font-family:'Space Mono';font-size:18px;font-weight:700}
-.stat .k{font-family:'Space Mono';font-size:9px;color:var(--ash);text-transform:uppercase;margin-top:3px}
+.stat .v{font-family:'Space Grotesk';font-size:18px;font-weight:700}
+.stat .k{font-family:'Space Grotesk';font-size:9px;color:var(--ash);text-transform:uppercase;margin-top:3px}
 .btn-wide{width:100%;border:none;padding:13px;border-radius:12px;font-family:'Space Grotesk';font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px}
 .pos{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
 .pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
 .pos-closed{opacity:.5;background:transparent}            /* history: muted + flat */
-.empty{text-align:center;color:var(--ash);font-family:'Space Mono';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
+.empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
 .ava{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#123a80);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0a0a0f;flex-shrink:0}
@@ -233,7 +242,7 @@ input,textarea,select{font-size:16px}
 .lrow.me{background:rgba(46,123,255,.07);border-color:rgba(46,123,255,.35)}
 .lrank{font-family:'Press Start 2P';font-size:11px;color:var(--ash);width:26px;text-align:center}
 /* nav + toast */
-.nav{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:rgba(10,10,15,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-end;padding:10px 0 13px}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:var(--void);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-end;padding:10px 0 13px}
 .nav .t{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--dim);font-weight:600;cursor:pointer;flex:1}
 .nav .t.on{color:var(--blue)} .nav .t .i{font-size:18px}
 /* Fade AI orb - rises from the footer, bright solid orange + Pac-Man */
@@ -248,14 +257,14 @@ input,textarea,select{font-size:16px}
 .fablbl.on{color:var(--ai2)}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:60;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.disc{font-family:'Space Mono';font-size:9px;color:var(--dim);text-align:center;margin-top:16px;line-height:1.5}
+.disc{font-family:'Space Grotesk';font-size:9px;color:var(--dim);text-align:center;margin-top:16px;line-height:1.5}
 .chat{display:flex;flex-direction:column;padding:14px 14px 0;height:calc(100vh - 104px);height:calc(100dvh - 104px)}
 .aihdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.aihdr .nm{font-weight:700;font-size:16px} .aihdr .on{font-family:'Space Mono';font-size:10px;color:var(--green);font-weight:700}
+.aihdr .nm{font-weight:700;font-size:16px} .aihdr .on{font-family:'Space Grotesk';font-size:10px;color:var(--green);font-weight:700}
 .chatbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:6px 2px 10px}
 .msg{max-width:87%;font-size:14px;line-height:1.5}
 .msg.ai{align-self:flex-start} .msg.me{align-self:flex-end}
-.msg .tag{font-family:'Space Mono';font-size:9px;color:var(--ash);margin:0 0 4px 4px}
+.msg .tag{font-family:'Space Grotesk';font-size:9px;color:var(--ash);margin:0 0 4px 4px}
 .bub{border-radius:5px 16px 16px 16px;padding:11px 13px;background:var(--void2);border:1px solid var(--line);color:var(--txt)}
 .msg.me .bub{border-radius:16px 16px 5px 16px;background:var(--blue);color:#04122b;border-color:transparent;font-weight:500}
 .chips2{display:flex;gap:7px;overflow-x:auto;padding:8px 0 9px}
@@ -268,17 +277,17 @@ input,textarea,select{font-size:16px}
 .prof{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:14px}
 .pava{width:82px;height:82px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:24px;color:#04122b;background:linear-gradient(135deg,var(--blue),#1746a6);margin-bottom:14px}
 .puname{font-size:24px;font-weight:700;letter-spacing:-.5px}
-.pmeta{font-family:'Space Mono';font-size:11.5px;color:var(--ash);margin-top:5px}
+.pmeta{font-family:'Space Grotesk';font-size:11.5px;color:var(--ash);margin-top:5px}
 .pcard{width:100%;background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:6px 16px;margin-top:14px;text-align:left}
 .prow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
 .prow:last-child{border-bottom:none}
-.prow .k{color:var(--ash);font-family:'Space Mono';font-size:10.5px;text-transform:uppercase;letter-spacing:.5px}
+.prow .k{color:var(--ash);font-family:'Space Grotesk';font-size:10.5px;text-transform:uppercase;letter-spacing:.5px}
 .prow .v{font-weight:600}
 .auth{padding-top:6px}
 .auth h2{font-size:24px;font-weight:700;letter-spacing:-.5px;text-align:center}
-.auth .sub2{font-family:'Space Mono';font-size:12px;color:var(--ash);text-align:center;margin:6px 0 16px}
+.auth .sub2{font-family:'Space Grotesk';font-size:12px;color:var(--ash);text-align:center;margin:6px 0 16px}
 .fld{margin-bottom:12px}
-.fld label{display:block;font-family:'Space Mono';font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ash);margin:0 0 6px 2px}
+.fld label{display:block;font-family:'Space Grotesk';font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ash);margin:0 0 6px 2px}
 .fld input{width:100%;background:var(--void2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;color:var(--txt);font-family:'Space Grotesk';font-size:16px;outline:none}
 .fld input:focus{border-color:var(--blue)}
 .seg{display:flex;gap:6px;background:var(--void2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
@@ -287,7 +296,7 @@ input,textarea,select{font-size:16px}
 .autherr{color:var(--red);font-size:12.5px;text-align:center;min-height:17px;margin:0 0 6px}
 .authlink{text-align:center;font-size:13px;color:var(--ash);margin-top:14px}
 .authlink b{color:var(--blue);cursor:pointer}
-.pill{display:inline-flex;align-items:center;gap:5px;font-family:'Space Mono';font-size:10px;font-weight:700;padding:5px 11px;border-radius:20px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:'Space Grotesk';font-size:10px;font-weight:700;padding:5px 11px;border-radius:20px}
 /* share card (viral / marketing) */
 .shwrap{position:fixed;inset:0;background:rgba(0,0,0,.84);backdrop-filter:blur(7px);z-index:80;display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:14px;overflow-y:auto}
 .shwrap.show{display:flex}
@@ -310,9 +319,9 @@ input,textarea,select{font-size:16px}
 .mbtn{width:100%;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:10px;font-family:inherit}
 .pxbig{display:flex;align-items:center;justify-content:space-between;background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:4px 0 9px}
 .pxbig-k{color:var(--green);font-size:9.5px;letter-spacing:1.2px;font-weight:700;margin-bottom:3px}
-.pxbig-p{font-family:'Space Mono';font-size:29px;font-weight:700;color:var(--txt);letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.pxbig-c{font-family:'Space Mono';font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
-.sc-hint{font-family:'Space Mono';font-size:11px;color:var(--ashl);text-align:center;max-width:340px}
+.pxbig-p{font-family:'Space Grotesk';font-size:29px;font-weight:700;color:var(--txt);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.pxbig-c{font-family:'Space Grotesk';font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.sc-hint{font-family:'Space Grotesk';font-size:11px;color:var(--ashl);text-align:center;max-width:340px}
 .sc-hint b{color:var(--blue)}
 .shcard{width:330px;max-width:92vw;border-radius:26px;overflow:hidden;position:relative;color:var(--txt);background:radial-gradient(520px 380px at 80% -8%,rgba(46,123,255,.22),transparent 60%),linear-gradient(165deg,#181119,#0a0a0f);border:1px solid var(--line);box-shadow:0 26px 74px rgba(0,0,0,.7)}
 .shcard::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)}
@@ -320,24 +329,24 @@ input,textarea,select{font-size:16px}
 .sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .sc-logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:-.5px}
 .sc-logo b{color:var(--blue)}
-.sc-flag{font-family:'Space Mono';font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue)}
+.sc-flag{font-family:'Space Grotesk';font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue)}
 .sc-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .sc-sym{font-size:46px;font-weight:700;letter-spacing:-2px;line-height:.92}
-.sc-sym small{display:block;font-family:'Space Mono';font-size:11px;color:var(--ash);font-weight:400;margin-top:9px;letter-spacing:0}
+.sc-sym small{display:block;font-family:'Space Grotesk';font-size:11px;color:var(--ash);font-weight:400;margin-top:9px;letter-spacing:0}
 .sc-grade{width:66px;height:66px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
 .sc-grade .n{font-family:'Press Start 2P';font-size:19px;line-height:1}
 .sc-grade .s{font-family:'Press Start 2P';font-size:7px;margin-top:5px}
-.sc-move{font-family:'Space Mono';font-size:34px;font-weight:700;margin:16px 0 6px}
-.sc-chip{display:inline-block;font-family:'Space Mono';font-size:10px;font-weight:700;letter-spacing:1px;padding:5px 11px;border-radius:6px}
+.sc-move{font-family:'Space Grotesk';font-size:34px;font-weight:700;margin:16px 0 6px}
+.sc-chip{display:inline-block;font-family:'Space Grotesk';font-size:10px;font-weight:700;letter-spacing:1px;padding:5px 11px;border-radius:6px}
 .sc-setup{display:flex;gap:7px;margin-top:16px}
 .sc-sb{flex:1;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:11px;padding:9px 6px;text-align:center}
-.sc-sb .k{font-family:'Space Mono';font-size:7.5px;color:var(--ash);text-transform:uppercase;letter-spacing:.5px}
-.sc-sb .v{font-family:'Space Mono';font-size:12px;font-weight:700;margin-top:4px}
+.sc-sb .k{font-family:'Space Grotesk';font-size:7.5px;color:var(--ash);text-transform:uppercase;letter-spacing:.5px}
+.sc-sb .v{font-family:'Space Grotesk';font-size:12px;font-weight:700;margin-top:4px}
 .sc-flexwr{text-align:center;padding:6px 0 2px}
 .sc-bigwr{font-family:'Press Start 2P';font-size:42px;line-height:1;margin:10px 0 8px}
 .sc-foot{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sc-cta{font-size:12.5px;font-weight:700}
-.sc-cta small{display:block;font-family:'Space Mono';font-size:9px;color:var(--ash);font-weight:400;margin-top:3px}
+.sc-cta small{display:block;font-family:'Space Grotesk';font-size:9px;color:var(--ash);font-weight:400;margin-top:3px}
 .shbar{display:flex;gap:10px}
 .shbtn{border:none;border-radius:12px;padding:12px 18px;font-family:'Space Grotesk';font-weight:700;font-size:13px;cursor:pointer}
 .sharelink{color:var(--blue);cursor:pointer;font-weight:700}
@@ -365,7 +374,7 @@ const GRADE={1:'#39ff14',2:'#a3e635',3:'#fde047',4:'#eab308',5:'#8a8f98'};
 // Letter grades (A best -> F no setup). Colors unchanged; only the label is a letter.
 const LETTER={1:'A',2:'B',3:'C',4:'D',5:'F'};
 function gLet(g,plus){ let l=LETTER[g]||'?'; if(plus&&g==1)l='A+'; return l; }
-const GREEN='#39ff14', RED='#ff3b30', BLUE='#2e7bff', CYAN='#00e5ff', ASH='#8a8f98';
+let GREEN='#39ff14', RED='#ff3b30', BLUE='#2e7bff', CYAN='#00e5ff', ASH='#8a8f98';   // themed in applyTheme()
 const WINPROB={1:.92,2:.85,3:.77,4:.68,5:.62};  // demo skews to winning more than losing
 const HANDLE='@you';
 // Company / coin logos, symbol-based so no per-name lookup or database round-trip is
@@ -503,14 +512,16 @@ function stats(){
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
 function toTop(){ try{ const a=document.getElementById('app'); if(a)a.scrollTop=0; window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
-function go(scr,sel){ S.screen=scr; if(sel!==undefined)S.sel=sel; render();
+// Persist where you are so a refresh reopens the same screen (not home).
+function saveNav(){ try{ localStorage.setItem('fade_nav',JSON.stringify({screen:S.screen,sel:S.sel,scope:S.scope})); }catch(e){} }
+function go(scr,sel){ S.screen=scr; if(sel!==undefined)S.sel=sel; saveNav(); render();
   toTop();                                   // immediate
   requestAnimationFrame(toTop);              // after layout
   requestAnimationFrame(()=>requestAnimationFrame(toTop));  // after paint (beats scroll-anchoring)
   setTimeout(toTop,60);                       // after any async reflow (e.g. chart)
   if(scr==='detail'&&typeof loadChart==='function') loadChart(S.sel);
   if(scr==='social'&&typeof loadLB==='function') loadLB(); }
-function setScope(s){ S.scope=s; render(); }
+function setScope(s){ S.scope=s; saveNav(); render(); }
 
 function topbar(){ return `<div class="top"><div class="logo" onclick="go('feed')" style="cursor:pointer"><span class="munch"><span class="pac"></span><span class="cndl"></span></span><span class="wm">fade<b>.markets</b></span><span class="betatag">BETA</span></div>
   <div class="tbar-r"><span class="live">&#9679; LIVE</span>
@@ -521,15 +532,20 @@ function gLabel(a){ return gLet(a.grade,false); }
 // The A-F scale strip with the current tier lit - this is what reads as a "system".
 function gradeScale(g){ return `<div class="gscale">`+[1,2,3,4,5].map(k=>
   `<span class="${k===g?'on':''}" style="${k===g?'background:'+GRADE[k]:''}">${LETTER[k]}</span>`).join('')+`</div>`; }
-// RELATIVE grade curve. The board is graded against itself so it always spans the
-// full range: the best playable setup in the current scope RIGHT NOW is A+, then the
-// rest scale down A, B, C, D, F by rank. "Whatever is best is A+ in that moment."
-// No A- — only A+, A, B, C, D, F. RELG (rebuilt each render) maps symbol -> letter.
+// RELATIVE grade curve, computed GLOBALLY (across all scopes) so the SAME asset shows
+// the SAME grade in Stocks, Crypto, and Stocks+Crypto. Best overall = A+, then A, B, C,
+// D, F by rank. Larger market cap is weighted up (a big company outranks a small coin
+// at the same grade; among coins, higher market-cap rank wins). Actioned setups are
+// excluded, so fading/skipping in one tab removes it everywhere.
 let RELG={};
-const RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};
+let RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};   // rebuilt in applyTheme()
+// Market-cap weight: coins scale by their rank (BTC ~1.0 down to ~0 at rank 50);
+// large-cap stocks sit high (0.85), so they beat small coins but not BTC/ETH.
+function assetWeight(i){ if(!i)return 0; if(i.asset_class==='crypto'){ const r=i.rank||60; return Math.max(0.05,1.05-r*0.02); } return 0.85; }
+function relSort(a,b){ return (a.grade-b.grade)||(assetWeight(b)-assetWeight(a))||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); }
 function computeRel(){ RELG={};
-  let items=(BOARD.items||[]).filter(function(i){return playable(i)&&inScope(i);});
-  items.sort(function(a,b){ return (a.grade-b.grade)||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); });
+  let items=(BOARD.items||[]).filter(function(i){return playable(i)&&!S.faded[i.symbol];});
+  items.sort(relSort);
   const N=items.length;
   items.forEach(function(it,i){ let g;
     if(i===0) g='A+';
@@ -550,10 +566,10 @@ function inScope(i){ if(S.scope==='stocks')return i.asset_class==='stock'; if(S.
 // Only setups you can actually act on: a real breach with a long/short fade signal.
 // No-play items (no breach, or a skip like price-discovery) are never displayed.
 function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
-function topFor(){ let a=BOARD.items.filter(i=>i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')&&inScope(i)&&!S.faded[i.symbol]);
-  a.sort((x,y)=>(x.grade-y.grade)||Math.abs(y.change_pct||0)-Math.abs(x.change_pct||0)); return a[0]||null; }
+function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]);
+  a.sort(relSort); return a[0]||null; }
 function feed(){
-  const t=topFor(); if(!t) return `<div class="screen">${topbar()}<div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><div class="empty">You've actioned every setup in this scope.<br><br><button class="no" style="padding:10px 16px;border-radius:10px;cursor:pointer" onclick="S.faded={};render()">\u21bb Show all again</button></div></div>`;
+  const t=topFor(); if(!t) return `<div class="screen">${topbar()}<div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div><div class="empty">You've actioned every playable setup in this scope.<br><br>New setups appear as the market moves &#8212; check back soon, or switch scope.</div></div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
   const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]&&i.symbol!==t.symbol).slice(0,3).map(i=>{
@@ -567,7 +583,7 @@ function feed(){
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
       <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small>${t.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${t.symbol}">${pxFmt(t.price)}</span></b></small></div></div>${gradeMeter(t,true)}</div>
-      <div class="move" style="color:${moveCol(t.change_pct)}"><span data-pct="${t.symbol}">${sign(t.change_pct)}</span> <small>vs ${t.threshold}%${t.vol_ratio?' &#183; <span data-vol="'+t.symbol+'">'+t.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
+      <div class="move" style="color:${moveCol(t.change_pct)}"><span data-pct="${t.symbol}">${sign(t.change_pct)}</span> <small>${t.vol_ratio?'<span data-vol="'+t.symbol+'">'+t.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
       <div><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
       <div class="setup">
         <div class="sb"><div class="k">Entry</div><div class="v">NOW</div></div>
@@ -587,13 +603,13 @@ function feed(){
 
 /* ---------- MARKETS ---------- */
 function markets(){
-  let items=BOARD.items.filter(i=>playable(i)&&inScope(i));   // only actionable setups
-  items=items.slice().sort((a,b)=>(a.grade-b.grade)||Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0));
+  let items=BOARD.items.filter(i=>playable(i)&&inScope(i)&&!S.faded[i.symbol]);   // actionable, not-yet-actioned
+  items=items.slice().sort(relSort);   // grade -> market-cap weight -> move
   const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i); const long=i.signal==='fade_long';
     return `<div class="rowcard" onclick="go('detail','${i.symbol}')" style="box-shadow:inset 3px 0 0 ${long?rgba(GREEN,.5):rgba(RED,.5)}">
       ${logoBadge(i,36)}
-      <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')}</div></div>
-      <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div><div class="rc-sig" style="color:${sgc}">${sg}</div></div>${gradeChip(i)}</div>`; }).join('');
+      <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')} &#183; <b style="color:${long?GREEN:RED};font-weight:800;letter-spacing:.3px">${long?'LONG':'SHORT'}</b></div></div>
+      <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
   return `<div class="screen">${topbar()}
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
@@ -605,7 +621,7 @@ function markets(){
 function chart(a){
   const cs=a.candles, st=a.setup||{};
   if(!cs||!cs.length){
-    return `<div style="height:170px;display:flex;align-items:center;justify-content:center;color:var(--ash);font-family:'Space Mono';font-size:11px;text-align:center;line-height:1.6">Real candles load in the<br>deployed app for this asset</div>`;
+    return `<div style="height:170px;display:flex;align-items:center;justify-content:center;color:var(--ash);font-family:'Space Grotesk';font-size:11px;text-align:center;line-height:1.6">Real candles load in the<br>deployed app for this asset</div>`;
   }
   const W=360,H=210,padT=14,padB=14,padL=2,padR=66;
   const lows=cs.map(c=>c[3]), highs=cs.map(c=>c[2]);
@@ -621,7 +637,7 @@ function chart(a){
         +`<rect x="${(x-cw/2).toFixed(1)}" y="${Math.min(yo,yc).toFixed(1)}" width="${cw.toFixed(1)}" height="${Math.max(1,Math.abs(yo-yc)).toFixed(1)}" fill="${col}" rx="1"/>`;
   }
   const hline=(p,col,label)=> (p==null||isNaN(p))?'':`<line x1="0" y1="${Y(p).toFixed(1)}" x2="${W}" y2="${Y(p).toFixed(1)}" stroke="${col}" stroke-width="1.1" stroke-dasharray="5 4" opacity=".9"/>`
-     +`<text x="${W-2}" y="${(Y(p)-4).toFixed(1)}" fill="${col}" text-anchor="end" font-family="Space Mono" font-size="9" font-weight="700">${label} ${money(p)}</text>`;
+     +`<text x="${W-2}" y="${(Y(p)-4).toFixed(1)}" fill="${col}" text-anchor="end" font-family="Space Grotesk" font-size="9" font-weight="700">${label} ${money(p)}</text>`;
   const ey=Y(a.price);
   return `<svg class="livechart" data-sym="${a.symbol}" data-lo="${lo}" data-hi="${hi}" viewBox="0 0 ${W} ${H}" width="100%">
     ${hline(st.target,GREEN,'TGT')}
@@ -629,7 +645,7 @@ function chart(a){
     ${body}
     <line class="nowl" x1="0" y1="${ey.toFixed(1)}" x2="${W}" y2="${ey.toFixed(1)}" stroke="${BLUE}" stroke-width="1" stroke-dasharray="2 3" opacity=".85"/>
     <circle class="nowc" cx="${(W-padR).toFixed(1)}" cy="${ey.toFixed(1)}" r="3.5" fill="${BLUE}"/>
-    <text class="nowt" x="${W-2}" y="${(ey-4).toFixed(1)}" fill="${BLUE}" text-anchor="end" font-family="Space Mono" font-size="9" font-weight="700">NOW ${money(a.price)}</text>
+    <text class="nowt" x="${W-2}" y="${(ey-4).toFixed(1)}" fill="${BLUE}" text-anchor="end" font-family="Space Grotesk" font-size="9" font-weight="700">NOW ${money(a.price)}</text>
   </svg>`;
 }
 function detail(){
@@ -639,7 +655,7 @@ function detail(){
   return `<div class="screen">
     <div class="back" onclick="go('markets')"><span class="a">&#8592;</span> Setup</div>
     <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
-    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>vs ${a.threshold}%${a.vol_ratio?' &#183; <span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
+    <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>${a.vol_ratio?'<span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
     <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
     ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="fade('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; NOW</button>`:''}
     <div class="chartbox">${chart(a)}
@@ -992,6 +1008,7 @@ function authScreen(){
       <div class="autherr" id="autherr"></div>
       ${signup?`
         <div class="fld"><label>Username</label><input id="a_user" value="${DRAFT.user}" oninput="DRAFT.user=this.value" placeholder="pick a handle" autocapitalize="off" maxlength="20"></div>
+        <label style="display:block;color:var(--ash);font-size:12.5px;margin:4px 2px 6px">Sign up with <b style="color:var(--txt)">email OR phone</b> &#8212; pick one:</label>
         <div class="seg"><button class="${CONTACT==='email'?'on':''}" onclick="setContact('email')">Email</button><button class="${CONTACT==='phone'?'on':''}" onclick="setContact('phone')">Phone</button></div>
         <div class="fld"><input id="a_contact" value="${DRAFT.contact}" oninput="DRAFT.contact=this.value" placeholder="${CONTACT==='email'?'you@email.com':'+1 555 123 4567'}" type="${CONTACT==='email'?'email':'tel'}" autocapitalize="off"></div>
         <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px" onclick="doSignup()">Create account &#8594;</button>
@@ -1048,16 +1065,29 @@ function signOut(){ saveUser(null); AUTHMODE='signup'; go('profile'); toast('Sig
 /* ---------- SETTINGS ---------- */
 function settings(){
   if(!S.user) return authScreen();
-  const ac=lsGet('fade_autoclose',false);
+  const ac=lsGet('fade_autoclose',false); const th=getTheme();
   const setrow=(k,d,on,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><div class="tgl ${on?'on':'off'}" onclick="${fn}"></div></div>`;
   return `<div class="screen">${topbar()}
     <div class="back" onclick="go('profile')"><span class="a">&#8592;</span> Profile</div>
     <div class="h1" style="margin:6px 0 6px">Settings</div>
-    <div class="lbl">Trading</div>
+    <div class="lbl">Appearance</div>
+    <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Theme</div><div class="setd">Switch between dark and light mode.</div></div>
+      <div class="seg" style="width:auto;flex-shrink:0"><button class="${th==='dark'?'on':''}" onclick="setTheme('dark')">Dark</button><button class="${th==='light'?'on':''}" onclick="setTheme('light')">Light</button></div></div>
+    <div class="lbl" style="margin-top:16px">Trading</div>
     ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). When off, you close manually.',ac,'toggleAutoClose()')}
     <div class="disc" style="text-align:left;margin-top:14px">Paper trading only &#183; no real money &#183; education, not advice. More settings coming soon.</div>
   </div>`;
 }
+function getTheme(){ return lsGet('fade_theme','dark'); }
+function applyTheme(){ const t=getTheme();
+  if(t==='light'){ document.documentElement.setAttribute('data-theme','light');
+    GREEN='#0f9d4e'; RED='#dc2f34'; CYAN='#0e8aa8'; ASH='#6b7280';
+    RELCOL={'A+':GREEN,'A':GREEN,'B':'#5f8c00','C':'#b07d00','D':'#a35c00','F':ASH};
+  } else { document.documentElement.removeAttribute('data-theme');
+    GREEN='#39ff14'; RED='#ff3b30'; CYAN='#00e5ff'; ASH='#8a8f98';
+    RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};
+  } }
+function setTheme(t){ lsSet('fade_theme',t); applyTheme(); render(); toast(t==='light'?'Light mode':'Dark mode'); }
 function toggleAutoClose(){ const v=!lsGet('fade_autoclose',false); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
 // Auto-close open positions at their target/stop when enabled. Checked on each live poll
 // against the REAL board price (not the jittered ticker).
@@ -1079,7 +1109,7 @@ function shareSetup(sym){ const a=quote(sym)||BOARD.top; if(!a)return; const c=G
     ${scLogo('&#9889; Today&#39;s Fade')}
     <div class="sc-hero"><div class="sc-sym">${a.symbol}<small>${esc(a.name||'')}${a.rank?' &#183; #'+a.rank:''}</small></div>
       ${gradeMeter(a,true)}</div>
-    <div class="sc-move" style="color:${moveCol(a.change_pct)}">${sign(a.change_pct)} <small style="font-size:12px;color:var(--ash)">vs ${a.threshold}%${a.vol_ratio?' &#183; '+a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
+    <div class="sc-move" style="color:${moveCol(a.change_pct)}">${sign(a.change_pct)} <small style="font-size:12px;color:var(--ash)">${a.vol_ratio?a.vol_ratio.toFixed(1)+'&#215; vol':''}</small></div>
     <div><span class="sc-chip" style="background:${rgba(sgc,.16)};color:${sgc}">${sg}</span></div>
     <div class="sc-setup"><div class="sc-sb"><div class="k">Entry</div><div class="v">NOW</div></div>
       <div class="sc-sb"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
@@ -1207,7 +1237,10 @@ S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
-pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
+else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same screen
+  if(nv){ if(nv.scope)S.scope=nv.scope;
+    if(['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } } }catch(e){} }
+applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
