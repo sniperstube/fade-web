@@ -1210,13 +1210,13 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
   const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl; const pc=pnl>=0?GREEN:RED;
   const notional=posNotional(x); const chg=(q&&q.change_pct!=null)?q.change_pct:0;
   const long=x.side==='long';
-  return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${logoBadge(x,46)}
+  return `<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px"><button onclick="closeModal()" aria-label="Back" style="width:30px;height:30px;flex:none;border-radius:9px;border:1px solid var(--line);background:var(--void2);color:var(--txt);font-size:19px;line-height:1;cursor:pointer;padding:0 0 2px 0">&#8249;</button>${logoBadge(x,46)}
       <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}</div>
       <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; entry grade ${x.gradeEntry||gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
       ${open?'':`<div style="text-align:right"><div style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${(x.result||'').toUpperCase()}</div></div>`}</div>
     ${open?`<div class="pnlhero">
       <div><div class="pxbig-k" style="color:${pc}">&#9679; UNREALIZED P&amp;L</div><div class="pnlhero-n" data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}" style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div></div>
-      <div class="rt"><div class="pxbig-k" style="color:var(--ash)">LIVE $<span data-px="${x.symbol}">${pxFmt(cur)}</span></div><div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)};font-size:16px">${sign(chg)}</div></div></div>`:''}
+      <div class="rt"><div class="pxbig-k" style="color:var(--ash)">LIVE PRICE</div><div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;margin-top:3px;letter-spacing:-.5px">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div></div>`:''}
     ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:2px 0 8px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
     ${open?`<button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="closeModal();openTradePanel('${x.symbol}')">+ Add to position</button>`:''}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
@@ -1226,8 +1226,7 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
     <div class="mrow"><span class="k">Mental stop</span><span class="v" style="color:${RED}">${money(x.stop)}</span></div>
     ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
-    <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askTrade('${x.id}')">Ask Fade AI about your trade</button>
-    <button class="mbtn" style="background:none;color:var(--ash)" onclick="closeModal()">Done</button>`; }
+    <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askTrade('${x.id}')">Ask Fade AI about your trade</button>`; }
 let MODALPOS=null;
 function openPos(id){ MODALPOS=id; const p=paper(); const x=p.positions.find(y=>y.id===id);
   if(x&&typeof loadChart==='function') loadChart(x.symbol);   // pull candles for the live chart
@@ -1873,7 +1872,6 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   else if(S.screen!=='feed'){ go('feed'); }
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
-</script>
-<style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
+</script><style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
 </body>
 </html>
