@@ -715,6 +715,20 @@ function setTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.rou
 function setTradePct(pct){ const p=paper(); TRADE.amt=Math.round(p.cash*pct/100); refreshTradePanel(); }
 function setTradeLev(l){ TRADE.lev=l; refreshTradePanel(); }
 function refreshTradePanel(){ const b=document.getElementById('modalbody'); if(b)b.innerHTML=tradePanel(); }
+// Smooth allocation: on slider / number drag, patch the derived values IN PLACE so we
+// never rebuild (and destroy) the slider mid-drag. Discrete taps (%, leverage) still
+// do a full refresh — they don't have a continuous-drag element to preserve.
+function dragTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.round(+v||0), p.cash)); patchTradePanel(); }
+function patchTradePanel(){ const a=quote(TRADE.sym); if(!a)return; const p=paper();
+  const margin=tradeAmt(), lev=TRADE.lev||1, notional=margin*lev, qty=a.price?notional/a.price:0, long=TRADE.side==='long';
+  const set=function(id,html){ const e=document.getElementById(id); if(e)e.innerHTML=html; };
+  const amt=document.getElementById('tp_amt'); if(amt&&document.activeElement!==amt)amt.value=margin;
+  const sl=document.getElementById('tp_slider'); if(sl&&document.activeElement!==sl)sl.value=margin;
+  set('tp_notional','$'+money(notional)); set('tp_margin','$'+money(margin));
+  set('tp_qty',(qty?qty.toPrecision(5):'--')+' '+a.symbol);
+  const cf=document.getElementById('tp_confirm'); if(cf)cf.innerHTML=(TRADE.add?'Add':'Confirm')+' '+(long?'Long &#8599;':'Short &#8600;')+' &#183; $'+money(margin)+(lev>1?' &#183; '+lev+'x':'');
+  const pct=p.cash>0?Math.min(100,Math.round(margin/p.cash*100)):0;
+  document.querySelectorAll('.allocb').forEach(function(b){ b.classList.toggle('on',(+b.getAttribute('data-pct'))===pct); }); }
 function tradePanel(){
   const a=quote(TRADE.sym); if(!a) return '';
   const p=paper(); const long=TRADE.side==='long'; const col=long?GREEN:RED, ink=long?'#062100':'#2a0000';
@@ -722,29 +736,29 @@ function tradePanel(){
   const liq=liqPrice(a.price,TRADE.side,lev);
   const st=a.setup||{}; const pct=p.cash>0?Math.min(100,Math.round(margin/p.cash*100)):0;
   const chip=(l)=>`<button class="levb ${lev===l?'on':''}" onclick="setTradeLev(${l})">${l}x</button>`;
-  const pctb=(pp,lbl)=>`<button class="allocb ${pct===pp?'on':''}" onclick="setTradePct(${pp})">${lbl}</button>`;
+  const pctb=(pp,lbl)=>`<button class="allocb ${pct===pp?'on':''}" data-pct="${pp}" onclick="setTradePct(${pp})">${lbl}</button>`;
   return `<div class="tpanel">
     <div class="tp-head"><div><div class="tp-sym">${a.symbol} <span class="tp-side" style="color:${col}">${long?'LONG':'SHORT'}</span></div>
       <div class="tp-nm">${esc(a.name||'')} &#183; grade ${gLet(a.grade,false)}</div></div>
       <div class="tp-px"><div class="k">Live price</div><div class="v mono">$${pxFmt(a.price)}</div></div></div>
 
     <div class="tp-sec"><div class="tp-lbl"><span>Allocation${TRADE.add?' to add':''}</span><span class="mono" style="color:var(--ash)">free $${money(p.cash)}</span></div>
-      <div class="tp-amt"><span class="cur">$</span><input id="tp_amt" class="mono" inputmode="numeric" value="${margin}" oninput="setTradeAmt(this.value)"></div>
-      <input class="tp-slider" type="range" min="0" max="${Math.max(1,Math.round(p.cash))}" value="${margin}" oninput="setTradeAmt(this.value)">
+      <div class="tp-amt"><span class="cur">$</span><input id="tp_amt" class="mono" inputmode="numeric" value="${margin}" oninput="dragTradeAmt(this.value)"></div>
+      <input id="tp_slider" class="tp-slider" type="range" min="0" max="${Math.max(1,Math.round(p.cash))}" value="${margin}" oninput="dragTradeAmt(this.value)">
       <div class="allocrow">${pctb(10,'10%')}${pctb(25,'25%')}${pctb(50,'50%')}${pctb(100,'Max')}</div></div>
 
     <div class="tp-sec"><div class="tp-lbl"><span>Leverage</span><span style="color:var(--ash)">${lev===1?'spot &#183; no leverage':lev+'x &#183; amplifies P&amp;L '+lev+'&#215;'}</span></div>
       <div class="levrow">${LEVS.map(chip).join('')}</div></div>
 
     <div class="tp-summary">
-      <div class="tp-row"><span>Position size</span><span class="mono" style="color:var(--txt)">$${money(notional)}</span></div>
-      <div class="tp-row"><span>Margin (cash used)</span><span class="mono">$${money(margin)}</span></div>
-      <div class="tp-row"><span>Quantity</span><span class="mono">${qty?qty.toPrecision(5):'--'} ${a.symbol}</span></div>
+      <div class="tp-row"><span>Position size</span><span id="tp_notional" class="mono" style="color:var(--txt)">$${money(notional)}</span></div>
+      <div class="tp-row"><span>Margin (cash used)</span><span id="tp_margin" class="mono">$${money(margin)}</span></div>
+      <div class="tp-row"><span>Quantity</span><span id="tp_qty" class="mono">${qty?qty.toPrecision(5):'--'} ${a.symbol}</span></div>
       <div class="tp-row"><span>Entry &#183; Target &#183; Stop</span><span class="mono">${money(a.price)} &#183; <b style="color:${GREEN}">${money(st.target)}</b> &#183; <b style="color:${RED}">${money(st.mental_stop)}</b></span></div>
       ${liq?`<div class="tp-row"><span>Est. liquidation</span><span class="mono" style="color:${RED}">$${money(liq)}</span></div>`:''}
     </div>
 
-    <button class="tp-confirm" style="background:${col};color:${ink}" onclick="confirmTrade()">${TRADE.add?'Add':'Confirm'} ${long?'Long &#8599;':'Short &#8600;'} &#183; $${money(margin)}${lev>1?' &#183; '+lev+'x':''}</button>
+    <button id="tp_confirm" class="tp-confirm" style="background:${col};color:${ink}" onclick="confirmTrade()">${TRADE.add?'Add':'Confirm'} ${long?'Long &#8599;':'Short &#8600;'} &#183; $${money(margin)}${lev>1?' &#183; '+lev+'x':''}</button>
     <div class="tp-disc">Paper trade &#183; no real money &#183; leverage amplifies gains and losses</div>
   </div>`;
 }
