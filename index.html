@@ -308,6 +308,8 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scan-screen{overflow:hidden;overscroll-behavior:none}
 #app.gamefit .nav{position:static;max-width:none;width:100%;margin:0}
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
+.tetriswrap{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 22%,rgba(46,123,255,.05),transparent 70%),#05070d}
+#tetris{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .scanner.cr{background:radial-gradient(ellipse at 50% 30%,rgba(181,123,255,.07),transparent 70%),var(--void)}
 .scanner.shake{animation:scanshake .32s ease}
 @keyframes scanshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,-3px)}80%{transform:translate(3px,2px)}}
@@ -1081,6 +1083,107 @@ function scanInputInit(){ let sx=0,sy=0,active=false;
   document.addEventListener('touchend',function(){active=false;},{passive:true});
   document.addEventListener('keydown',function(e){ if(!document.getElementById('scanfield'))return; const k=e.key;
     if(k==='ArrowRight')scanSteer(1,0); else if(k==='ArrowLeft')scanSteer(-1,0); else if(k==='ArrowDown')scanSteer(0,1); else if(k==='ArrowUp')scanSteer(0,-1); else return; e.preventDefault(); }); }
+/* ============================ FADE BLOCKS (Tetris) — the STOCKS game ============================
+   OG Tetris, Arcade Classic look, full-screen. Each falling piece is a stock; clear a line and it
+   "fades" (fires). Canvas-based; one rAF loop that no-ops when the board isn't mounted. */
+const TET_COL={I:'#00e5ff',O:'#ffe500',T:'#b57bff',S:'#39ff14',Z:'#ff3b30',J:'#3aa0ff',L:'#ff9f0a'};
+const TET_PIECES={
+  I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
+  O:[[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]]],
+  T:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],
+  S:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],
+  Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]],
+  J:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],
+  L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]]
+};
+const TET_KEYS=['I','O','T','S','Z','J','L'];
+let TET={cv:null,ctx:null,grid:null,piece:null,next:null,x:3,y:0,rot:0,score:0,lines:0,level:1,best:0,
+  over:false,dropAcc:0,frame:0,sym:'',nsym:'',flash:0,flashTxt:''};
+try{ TET.best=+(localStorage.getItem('fade_tet_best')||0)||0; }catch(e){}
+function tetStockSym(){ const st=(BOARD.items||[]).filter(i=>i.asset_class==='stock');
+  if(st.length) return st[(Math.random()*st.length)|0].symbol;
+  const u=['NVDA','AAPL','TSLA','AMD','MSFT','META','XOM','JPM','KO','GE','V','INTC']; return u[(Math.random()*u.length)|0]; }
+function tetReset(){ TET.grid=[]; for(let r=0;r<20;r++){ TET.grid.push(new Array(10).fill(0)); }
+  TET.score=0;TET.lines=0;TET.level=1;TET.over=false;TET.dropAcc=0;
+  TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym(); tetSpawn(); }
+function tetSpawn(){ TET.piece=TET.next; TET.sym=TET.nsym; TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym();
+  TET.rot=0; TET.x=3; TET.y=0; if(tetHit(TET.x,TET.y,TET.rot)){ TET.over=true; try{if(TET.score>TET.best){TET.best=TET.score;localStorage.setItem('fade_tet_best',TET.best);}}catch(e){} } }
+function tetCells(x,y,rot,piece){ const P=TET_PIECES[piece||TET.piece][((rot%4)+4)%4]; const out=[]; for(const c of P)out.push([x+c[0],y+c[1]]); return out; }
+function tetHit(x,y,rot){ for(const [cx,cy] of tetCells(x,y,rot)){ if(cx<0||cx>9||cy>19)return true; if(cy>=0&&TET.grid[cy][cx])return true; } return false; }
+function tetMove(dx){ if(TET.over||!TET.piece)return; if(!tetHit(TET.x+dx,TET.y,TET.rot)){ TET.x+=dx; } }
+function tetRotate(dir){ if(TET.over||!TET.piece)return; const nr=TET.rot+dir; for(const k of [0,-1,1,-2,2]){ if(!tetHit(TET.x+k,TET.y,nr)){ TET.x+=k; TET.rot=nr; return; } } }
+function tetGhostY(){ let gy=TET.y; while(!tetHit(TET.x,gy+1,TET.rot))gy++; return gy; }
+function tetLock(){ for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)TET.grid[cy][cx]=TET.piece; }
+  let cleared=0; for(let r=19;r>=0;r--){ if(TET.grid[r].every(v=>v)){ TET.grid.splice(r,1); TET.grid.unshift(new Array(10).fill(0)); cleared++; r++; } }
+  if(cleared){ const pts=[0,100,300,500,800][cleared]*TET.level; TET.score+=pts; TET.lines+=cleared; TET.level=1+((TET.lines/10)|0);
+    TET.flash=18; TET.flashTxt=(cleared===4?'TETRIS FADE! ':'FADE! ')+'+'+pts; }
+  tetSpawn(); }
+function tetSoft(){ if(TET.over||!TET.piece)return; if(!tetHit(TET.x,TET.y+1,TET.rot)){ TET.y++; TET.score+=1; } else tetLock(); }
+function tetHard(){ if(TET.over||!TET.piece)return; let d=0; while(!tetHit(TET.x,TET.y+1,TET.rot)){ TET.y++; d++; } TET.score+=d*2; tetLock(); }
+function tetStep(){ if(TET.over||!TET.piece)return; TET.frame++; if(TET.flash>0)TET.flash--;
+  const every=Math.max(5,49-(TET.level-1)*4); TET.dropAcc++;
+  if(TET.dropAcc>=every){ TET.dropAcc=0; if(!tetHit(TET.x,TET.y+1,TET.rot)){ TET.y++; } else tetLock(); } }
+// --- beveled arcade block ---
+function tetBlock(ctx,x,y,s,col,ghost){ if(ghost){ ctx.strokeStyle=col+'66'; ctx.lineWidth=2; ctx.strokeRect(x+2,y+2,s-4,s-4); return; }
+  ctx.fillStyle=col; ctx.fillRect(x,y,s,s);
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+s,y); ctx.lineTo(x+s-s*0.16,y+s*0.16); ctx.lineTo(x+s*0.16,y+s*0.16); ctx.lineTo(x+s*0.16,y+s-s*0.16); ctx.lineTo(x,y+s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.moveTo(x+s,y); ctx.lineTo(x+s,y+s); ctx.lineTo(x,y+s); ctx.lineTo(x+s*0.16,y+s-s*0.16); ctx.lineTo(x+s-s*0.16,y+s-s*0.16); ctx.lineTo(x+s-s*0.16,y+s*0.16); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,s-1,s-1); }
+function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; const w=wrap.clientWidth,h=wrap.clientHeight;
+  const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1)); cv.width=w*dpr; cv.height=h*dpr; cv.style.width=w+'px'; cv.style.height=h+'px';
+  TET.ctx.setTransform(dpr,0,0,dpr,0,0); TET.W=w; TET.H=h; }
+function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
+  ctx.clearRect(0,0,W,H);
+  const HUD=64; const cell=Math.min(Math.floor((W-14)/10), Math.floor((H-HUD-12)/20));
+  const wW=cell*10, wH=cell*20; const wx=Math.round((W-wW)/2), wy=HUD+Math.round((H-HUD-wH)/2);
+  // well bg + grid
+  ctx.fillStyle='#0a0c12'; ctx.fillRect(wx-2,wy-2,wW+4,wH+4);
+  ctx.strokeStyle='#1a2030'; ctx.lineWidth=1;
+  for(let r=0;r<=20;r++){ ctx.beginPath(); ctx.moveTo(wx,wy+r*cell); ctx.lineTo(wx+wW,wy+r*cell); ctx.stroke(); }
+  for(let c=0;c<=10;c++){ ctx.beginPath(); ctx.moveTo(wx+c*cell,wy); ctx.lineTo(wx+c*cell,wy+wH); ctx.stroke(); }
+  // settled
+  for(let r=0;r<20;r++)for(let c=0;c<10;c++){ if(TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
+  // ghost + current
+  if(!TET.over){ const gy=tetGhostY(); const col=TET_COL[TET.piece];
+    for(const [cx,cy] of tetCells(TET.x,gy,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col,true); }
+    for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col); } }
+  // HUD
+  ctx.textAlign='left'; ctx.fillStyle='#ffe500'; ctx.font='900 22px -apple-system,Arial'; ctx.fillText(String(TET.score),14,30);
+  ctx.fillStyle='#5a5a6a'; ctx.font='8px ui-monospace,Menlo,monospace'; ctx.fillText('BEST '+TET.best+'  ·  LINES '+TET.lines+'  ·  LV '+TET.level,14,46);
+  ctx.textAlign='center'; ctx.fillStyle=TET_COL[TET.piece]||'#fff'; ctx.font='900 12px -apple-system,Arial';
+  ctx.fillText('▾ '+TET.sym, W/2, 26);
+  ctx.fillStyle='#7a7a8a'; ctx.font='8px ui-monospace,Menlo,monospace'; ctx.fillText('NEXT '+TET.nsym, W/2, 42);
+  // next preview mini (top-right)
+  const nk=TET.next; if(nk){ const ns=9; const nx=W-58, ny=16; ctx.fillStyle='rgba(255,255,255,.03)'; ctx.fillRect(nx-4,ny-4,ns*4+8,ns*4+8);
+    for(const [cx,cy] of TET_PIECES[nk][0]){ tetBlock(ctx,nx+cx*ns,ny+cy*ns,ns,TET_COL[nk]); } }
+  // flash
+  if(TET.flash>0){ ctx.globalAlpha=Math.min(1,TET.flash/12); ctx.textAlign='center'; ctx.fillStyle='#39ff14'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(TET.flashTxt, W/2, wy+wH/2); ctx.globalAlpha=1; }
+  if(TET.over){ ctx.fillStyle='rgba(0,0,0,.72)'; ctx.fillRect(0,0,W,H); ctx.textAlign='center';
+    ctx.fillStyle='#ff3b30'; ctx.font='900 26px -apple-system,Arial'; ctx.fillText('GAME OVER',W/2,H/2-14);
+    ctx.fillStyle='#f4f4f8'; ctx.font='900 15px -apple-system,Arial'; ctx.fillText('Score '+TET.score,W/2,H/2+12);
+    ctx.fillStyle='#8a8a9a'; ctx.font='11px ui-monospace,Menlo,monospace'; ctx.fillText('tap to play again',W/2,H/2+40); }
+}
+function tetLoop(){ const cv=document.getElementById('tetris');
+  if(cv){ if(cv!==TET.cv){ TET.cv=cv; TET.ctx=cv.getContext('2d'); tetFit(); if(!TET.grid||TET.over)tetReset(); }
+    else { const wrap=cv.parentElement; if(wrap&&(wrap.clientWidth!==TET.W||wrap.clientHeight!==TET.H))tetFit(); }
+    tetStep(); tetDraw(); }
+  else { TET.cv=null; }
+  requestAnimationFrame(tetLoop); }
+function tetTapRestart(){ if(TET.over){ tetReset(); return true; } return false; }
+function tetInputInit(){ let sx=0,sy=0,moved=0,active=false,acc=0;
+  document.addEventListener('touchstart',function(e){ const cv=document.getElementById('tetris'); if(!cv||!(cv===e.target||cv.parentElement.contains(e.target))){active=false;return;}
+    active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; moved=0; acc=0; e.preventDefault(); },{passive:false});
+  document.addEventListener('touchmove',function(e){ if(!active)return; const dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy; moved=Math.hypot(dx,dy);
+    const STEP=22; if(dx>STEP){ tetMove(1); sx=e.touches[0].clientX; } else if(dx<-STEP){ tetMove(-1); sx=e.touches[0].clientX; }
+    if(dy>STEP){ tetSoft(); sy=e.touches[0].clientY; } e.preventDefault(); },{passive:false});
+  document.addEventListener('touchend',function(e){ if(!active)return; active=false; const dy=(e.changedTouches?e.changedTouches[0].clientY:sy)-sy;
+    if(moved<12){ if(!tetTapRestart())tetRotate(1); } else if(dy>90){ tetHard(); } });
+  document.addEventListener('keydown',function(e){ if(!document.getElementById('tetris'))return; const k=e.key;
+    if(k==='ArrowLeft')tetMove(-1); else if(k==='ArrowRight')tetMove(1); else if(k==='ArrowDown')tetSoft();
+    else if(k==='ArrowUp'||k==='x'||k==='X')tetRotate(1); else if(k==='z'||k==='Z')tetRotate(-1);
+    else if(k===' '){ if(!tetTapRestart())tetHard(); } else return; e.preventDefault(); }); }
+function tetrisHTML(){ return `<div class="tetriswrap" onclick="tetTapRestart()"><canvas id="tetris"></canvas></div>`; }
+
 function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['crypto','Crypto']];
   return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
 // Only setups you can actually act on: a real breach with a long/short fade signal.
@@ -1089,6 +1192,8 @@ function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal
 function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
 function feed(){
+  // STOCKS tab = Fade Blocks (Tetris), full-screen. Crypto keeps the Pac-Man scanner.
+  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetrisHTML()}</div>`;
   const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
@@ -1911,6 +2016,7 @@ applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
+tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
