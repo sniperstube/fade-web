@@ -899,6 +899,28 @@ function inScope(i){
 // True when the current view is a stocks-only view AND the market is closed (→ show the closed card).
 function stocksClosedView(){ return (stocksOnly()||S.scope==='stocks') && !stockMarketOpen(); }
 function marketClosedCard(){ return scannerHTML(true); }
+// --- market quiet / Fade AI naps / after-hours crypto alerts ---
+function cryptoSetupsLive(){ try{ return BOARD.items.filter(i=>playable(i)&&i.asset_class==='crypto').length; }catch(e){ return 0; } }
+function aiResting(){ return !stockMarketOpen() && cryptoSetupsLive()===0; }   // stocks closed + crypto calm → the AI naps too
+function alertsOn(){ return lsGet('fade_alerts',false) && ('Notification' in window) && Notification.permission==='granted'; }
+function toggleAlerts(){ const cur=lsGet('fade_alerts',false);
+  if(!cur && ('Notification' in window)){ Notification.requestPermission().then(function(p){ lsSet('fade_alerts',p==='granted'); if(p!=='granted')toast('Allow notifications to get after-hours crypto alerts'); render(); }); }
+  else { lsSet('fade_alerts',!cur); render(); } }
+// After-hours: when a NEW crypto fade fires while stocks are closed, wait 60s then alert the phone
+// (and Fade AI knows — it wakes for this). Called from livePoll after the board refreshes.
+let AFTERHOURS={seen:{},last:null};
+function afterHoursWatch(){ try{
+  if(stockMarketOpen()){ AFTERHOURS.seen={}; return; }
+  const cs=BOARD.items.filter(i=>playable(i)&&i.asset_class==='crypto');
+  const now={}; cs.forEach(function(c){ now[c.symbol]=1;
+    if(!AFTERHOURS.seen[c.symbol]){ AFTERHOURS.seen[c.symbol]=1;
+      setTimeout(function(){ const still=BOARD.items.some(i=>i.symbol===c.symbol&&playable(i)); if(!still)return;
+        AFTERHOURS.last={sym:c.symbol,t:Date.now()};   // Fade AI is now aware
+        if(alertsOn()){ try{ new Notification('⚡ Crypto setup live',{body:c.symbol+' triggered a fade while stocks are closed.',icon:'/icon-192.png',tag:'fade-'+c.symbol}); }catch(e){} }
+        if(S.screen==='feed'||S.screen==='markets') toast('⚡ '+c.symbol+' — crypto setup live (stocks closed)');
+      },60000); } });
+  Object.keys(AFTERHOURS.seen).forEach(function(s){ if(!now[s])delete AFTERHOURS.seen[s]; });
+}catch(e){} }
 
 /* ---------- Pac-Man Hunt scanner: ambient auto-hunt over real scan data; secretly playable ---------- */
 let SCAN={x:50,y:52,tx:50,ty:52,dir:0,vx:0,vy:0,playing:false,score:0,best:0,combo:1,comboT:0,inv:0,idle:null,dots:null,sig:'',prevPlay:-1,ghosts:null,openT:0};
@@ -943,7 +965,7 @@ function scannerHTML(closed){
     if(p.run){ const h=HEAT[p.phase]||HEAT[1];
       return `<div class="runcoin p${p.phase}${p.eaten?' eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%;--h:${h};--fill:${p.phase*120}deg">`
         +`<div class="rring"></div>${p.phase>=2?'<div class="rgeo"></div>':''}<span class="rdot"></span>`
-        +`<span class="rlab">${esc(p.sym)}<i>${(p.gap||0).toFixed(1)}%</i></span></div>`; }
+        +`<span class="rlab">${esc(p.sym)}</span></div>`; }   // ticker only — heat/ring/speed carry the closeness (and the exact threshold stays private)
     return `<i class="scan-dot ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`; }).join('');
   const ghostsHTML=(SCAN.ghosts||[]).map((g,i)=>`<div class="scan-ghost" data-g="${i}" style="left:${g.x}%;top:${g.y}%;color:${g.color};background:${g.color};opacity:${g.alive?1:0}"></div>`).join('');
   const right=closed?`<span class="open">MARKET CLOSED</span><br>opens <span id="scanopen">${nextMarketOpen()}</span>`:`<span class="live">&#9679; NEARING TRIGGER</span><br>${d.near.length} hot &#183; ${d.total} scanned`;
@@ -1255,7 +1277,9 @@ function gateScreen(icon,title,body){ return `<div class="screen">${topbar()}
 function ai(){
   if(!S.user) return gateScreen('&#129302;','Fade AI is for members','Fade AI reads the live board and explains any setup in plain, simple English. Create your free account to unlock it &#8212; it is free.');
   if(!S.chat.length){
-    S.chat=[{role:'assistant',content:"I'm Fade AI, your analyst. In plain English: when a stock or coin moves way too fast, it often snaps back \u2014 like a stretched rubber band. I explain every setup simply, step by step. Ask me anything, or tap a starter below."}];
+    S.chat=[{role:'assistant',content: aiResting()
+      ? "\ud83d\ude34 Resting \u2014 the stock market's closed and crypto's quiet, so there's nothing to hunt right now. That's a position, not a problem. I'll wake the moment a setup fires. Ask me anything in the meantime."
+      : "I'm Fade AI, your analyst. In plain English: when a stock or coin moves way too fast, it often snaps back \u2014 like a stretched rubber band. I explain every setup simply, step by step. Ask me anything, or tap a starter below."}];
     if(!API){ S.chat.push(
       {role:'user',content:'What is fading?'},
       {role:'assistant',content:"Fading is betting on a snap-back. When a big stock or coin drops (or jumps) way too fast, it often bounces back toward where it started \u2014 like a stretched rubber band letting go. To 'fade' it means to bet on that bounce instead of chasing the move. We only do it in two conditions: at a 'level' (a price the asset reacted strongly to before, so traders watch it again), and when trading volume is high (a sign big players are active). So the whole idea is simple: a big move, at a real level, on high volume \u2014 bet on the snap-back."}); }
@@ -1267,8 +1291,9 @@ function ai(){
   const chips=['Teach me the method','How are setups graded?','What is a mental stop?',"Today's #1?",'Why fade, not chase?']
     .map(c=>`<div class="chip2" onclick="sendChat(this.textContent)">${c}</div>`).join('');
   const tab=S.aitab||'ask';
+  const napping=aiResting();
   const hdr=`<div class="aihdr"><button class="aiback" onclick="backFromAI()" aria-label="Back">&#8592;</button><span class="munch"><span class="pac"></span><span class="cndl"></span></span>
-      <div><div class="nm">Fade AI</div><div class="on">&#9679; Online${API?'':' &#183; preview'}</div></div></div>`;
+      <div><div class="nm">Fade AI${napping?' &#128564;':''}</div><div class="on" style="${napping?'color:var(--ash)':''}">${napping?'&#9679; Resting &#183; markets quiet':'&#9679; Online'+(API?'':' &#183; preview')}</div></div></div>`;
   const seg=`<div class="aiseg">${[['ask','Ask'],['chats','Chats'],['projects','Projects'],['scheduled','Scheduled']]
     .map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="setAiTab('${k}')">${l}</button>`).join('')}</div>`;
   if(tab==='chats')     return `<div class="screen chat">${hdr}${seg}${aiChats()}</div>`;
@@ -1597,6 +1622,7 @@ function settings(){
     ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['crypto','Crypto']],dv,'setDefView')}
     ${setrow('Stocks only','Hide crypto entirely &#8212; only fade large-cap stocks.',so,'toggleStocksOnly()')}
     ${segrow('Minimum grade','Only surface setups at or above this grade.',[['2','A&#8211;B'],['3','A&#8211;C'],['9','All']],String(mg),'setMinGrade')}
+    ${setrow('After-hours crypto alerts','Get a phone notification when a crypto fade fires while the US stock market is closed (installed app only).',lsGet('fade_alerts',false),'toggleAlerts()')}
 
     <div class="lbl" style="margin-top:16px">Trading defaults</div>
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default trade size</div><div class="setd">Pre-fills the trade panel with this % of your free cash.</div></div>
@@ -1785,6 +1811,7 @@ async function livePoll(){ if(!API||document.hidden) return;
     try{ const npl=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)).length;
       if(SCAN.prevPlay>=0 && npl>SCAN.prevPlay && (S.screen==='feed'||S.screen==='markets')) toast('&#9889; New setup caught &#8212; the hunt paid off');
       SCAN.prevPlay=npl; }catch(e){}
+    afterHoursWatch();   // after-hours crypto fade → 60s → phone alert (+ Fade AI wakes)
     autoCloseCheck();   // auto take-profit / stop-loss on the fresh real prices
     if(S.screen==='social'&&typeof loadLB==='function') loadLB();   // keep the leaderboard current
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
