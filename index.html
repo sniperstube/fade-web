@@ -1117,18 +1117,21 @@ try{ TET.best=+(localStorage.getItem('fade_tet_best')||0)||0; }catch(e){}
 function tetStockSym(){ const st=(BOARD.items||[]).filter(i=>i.asset_class==='stock');
   if(st.length) return st[(Math.random()*st.length)|0].symbol;
   const u=['NVDA','AAPL','TSLA','AMD','MSFT','META','XOM','JPM','KO','GE','V','INTC']; return u[(Math.random()*u.length)|0]; }
-function tetReset(){ TET.grid=[]; for(let r=0;r<20;r++){ TET.grid.push(new Array(10).fill(0)); }
+// Columns FLEX to fill the screen width (20 rows tall stays constant). On a tall phone this
+// widens the well to ~12-14 cols so there are no dead side margins.
+function tetCols(){ const W=TET.W||360, H=TET.H||640; return Math.max(10, Math.min(16, Math.round(20*W/H))); }
+function tetReset(){ TET.cols=tetCols(); TET.grid=[]; for(let r=0;r<20;r++){ TET.grid.push(new Array(TET.cols).fill(0)); }
   TET.score=0;TET.lines=0;TET.level=1;TET.over=false;TET.dropAcc=0;
   TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym(); tetSpawn(); }
 function tetSpawn(){ TET.piece=TET.next; TET.sym=TET.nsym; TET.next=TET_KEYS[(Math.random()*7)|0]; TET.nsym=tetStockSym();
-  TET.rot=0; TET.x=3; TET.y=0; if(tetHit(TET.x,TET.y,TET.rot)){ TET.over=true; try{if(TET.score>TET.best){TET.best=TET.score;localStorage.setItem('fade_tet_best',TET.best);}}catch(e){} } }
+  TET.rot=0; TET.x=Math.max(0,(((TET.cols||10)/2)|0)-2); TET.y=0; if(tetHit(TET.x,TET.y,TET.rot)){ TET.over=true; try{if(TET.score>TET.best){TET.best=TET.score;localStorage.setItem('fade_tet_best',TET.best);}}catch(e){} } }
 function tetCells(x,y,rot,piece){ const P=TET_PIECES[piece||TET.piece][((rot%4)+4)%4]; const out=[]; for(const c of P)out.push([x+c[0],y+c[1]]); return out; }
-function tetHit(x,y,rot){ for(const [cx,cy] of tetCells(x,y,rot)){ if(cx<0||cx>9||cy>19)return true; if(cy>=0&&TET.grid[cy][cx])return true; } return false; }
+function tetHit(x,y,rot){ const mx=(TET.cols||10)-1; for(const [cx,cy] of tetCells(x,y,rot)){ if(cx<0||cx>mx||cy>19)return true; if(cy>=0&&TET.grid[cy][cx])return true; } return false; }
 function tetMove(dx){ if(TET.over||!TET.piece)return; if(!tetHit(TET.x+dx,TET.y,TET.rot)){ TET.x+=dx; } }
 function tetRotate(dir){ if(TET.over||!TET.piece)return; const nr=TET.rot+dir; for(const k of [0,-1,1,-2,2]){ if(!tetHit(TET.x+k,TET.y,nr)){ TET.x+=k; TET.rot=nr; return; } } }
 function tetGhostY(){ let gy=TET.y; while(!tetHit(TET.x,gy+1,TET.rot))gy++; return gy; }
 function tetLock(){ for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)TET.grid[cy][cx]=TET.piece; }
-  let cleared=0; for(let r=19;r>=0;r--){ if(TET.grid[r].every(v=>v)){ TET.grid.splice(r,1); TET.grid.unshift(new Array(10).fill(0)); cleared++; r++; } }
+  let cleared=0; for(let r=19;r>=0;r--){ if(TET.grid[r].every(v=>v)){ TET.grid.splice(r,1); TET.grid.unshift(new Array(TET.cols).fill(0)); cleared++; r++; } }
   if(cleared){ const pts=[0,100,300,500,800][cleared]*TET.level; TET.score+=pts; TET.lines+=cleared; TET.level=1+((TET.lines/10)|0);
     TET.flash=18; TET.flashTxt=(cleared===4?'TETRIS FADE! ':'FADE! ')+'+'+pts; }
   tetSpawn(); }
@@ -1153,14 +1156,14 @@ function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; 
 function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
   ctx.clearRect(0,0,W,H);
   // maximise: fill the whole area (near-zero margin), centered
-  const M=1; const cell=Math.min(Math.floor((W-M*2)/10), Math.floor((H-M*2)/20));
-  const wW=cell*10, wH=cell*20; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
+  const M=1; const C=TET.cols||10; const cell=Math.min(Math.floor((W-M*2)/C), Math.floor((H-M*2)/20));
+  const wW=cell*C, wH=cell*20; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
   // 8-bit well: near-black field, very faint grid
   ctx.fillStyle='#050505'; ctx.fillRect(wx-1,wy-1,wW+2,wH+2);
   ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1;
   for(let r=0;r<=20;r++){ ctx.beginPath(); ctx.moveTo(wx,wy+r*cell); ctx.lineTo(wx+wW,wy+r*cell); ctx.stroke(); }
-  for(let c=0;c<=10;c++){ ctx.beginPath(); ctx.moveTo(wx+c*cell,wy); ctx.lineTo(wx+c*cell,wy+wH); ctx.stroke(); }
-  for(let r=0;r<20;r++)for(let c=0;c<10;c++){ if(TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
+  for(let c=0;c<=C;c++){ ctx.beginPath(); ctx.moveTo(wx+c*cell,wy); ctx.lineTo(wx+c*cell,wy+wH); ctx.stroke(); }
+  for(let r=0;r<20;r++)for(let c=0;c<C;c++){ if(TET.grid[r][c]) tetBlock(ctx,wx+c*cell,wy+r*cell,cell,TET_COL[TET.grid[r][c]]); }
   if(!TET.over){ const gy=tetGhostY(); const col=TET_COL[TET.piece];
     for(const [cx,cy] of tetCells(TET.x,gy,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col,true); }
     for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col); } }
@@ -1221,7 +1224,7 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
   a.sort(relSort); return a[0]||null; }
 function feed(){
   // STOCKS tab = Fade Blocks (Tetris), full-screen. Crypto keeps the Pac-Man scanner.
-  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}</div>`;
+  if(S.scope==='stocks' && stocksClosedView()) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}</div>`;
   const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
