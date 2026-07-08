@@ -249,7 +249,7 @@ input,textarea,select{font-size:16px}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:60;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .disc{font-family:'Space Mono';font-size:9px;color:var(--dim);text-align:center;margin-top:16px;line-height:1.5}
-.chat{display:flex;flex-direction:column;padding:14px 14px 12px;height:calc(100vh - 86px);height:calc(100dvh - 86px)}
+.chat{display:flex;flex-direction:column;padding:14px 14px 0;height:calc(100vh - 104px);height:calc(100dvh - 104px)}
 .aihdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .aihdr .nm{font-weight:700;font-size:16px} .aihdr .on{font-family:'Space Mono';font-size:10px;color:var(--green);font-weight:700}
 .chatbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:6px 2px 10px}
@@ -258,9 +258,9 @@ input,textarea,select{font-size:16px}
 .msg .tag{font-family:'Space Mono';font-size:9px;color:var(--ash);margin:0 0 4px 4px}
 .bub{border-radius:5px 16px 16px 16px;padding:11px 13px;background:var(--void2);border:1px solid var(--line);color:var(--txt)}
 .msg.me .bub{border-radius:16px 16px 5px 16px;background:var(--blue);color:#04122b;border-color:transparent;font-weight:500}
-.chips2{display:flex;gap:7px;overflow-x:auto;padding:8px 0 4px}
+.chips2{display:flex;gap:7px;overflow-x:auto;padding:8px 0 9px}
 .chip2{white-space:nowrap;flex-shrink:0;background:var(--void2);border:1px solid var(--line);color:var(--ashl);border-radius:20px;padding:8px 12px;font-size:12px;cursor:pointer}
-.inbar{display:flex;gap:8px;padding-top:6px}
+.inbar{display:flex;gap:8px;align-items:center;padding:11px 14px 13px;margin:2px -14px 0;background:var(--void);border-top:1px solid var(--line)}
 .inbar input{flex:1;background:var(--void2);border:1px solid var(--line);border-radius:22px;padding:12px 15px;color:var(--txt);font-family:'Space Grotesk';font-size:16px;outline:none}
 .inbar button{width:44px;height:44px;border-radius:50%;border:none;background:var(--blue);color:#04122b;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0}
 /* profile + auth */
