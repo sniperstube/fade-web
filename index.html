@@ -71,7 +71,8 @@
  --ai:#ff6a00; --ai2:#ffb066;   /* Fade AI orb: bright solid orange + light-orange ring */
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{overflow-anchor:none}
+html{overflow-anchor:none;touch-action:manipulation}   /* no double-tap zoom (native app feel) */
+*{touch-action:manipulation}
 body{background:#050509;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
 .mono{font-family:'Space Mono',monospace} .px{font-family:'Press Start 2P',monospace}
 #app{width:100%;max-width:430px;min-height:100vh;background:radial-gradient(640px 420px at 82% -8%,rgba(46,123,255,.13),transparent 60%),var(--void);color:var(--txt);position:relative;overflow-x:hidden}
@@ -151,6 +152,12 @@ input,textarea,select{font-size:16px}
 .tgl.on{background:var(--ai)} .tgl.off{background:var(--line)}
 .tgl::after{content:"";position:absolute;top:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
 .tgl.on::after{left:19px} .tgl.off::after{left:3px}
+.tourbanner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(90deg,rgba(255,106,0,.15),rgba(255,59,48,.07));border:1px solid rgba(255,106,0,.38);border-radius:12px;padding:9px 10px 9px 13px;margin:0 0 12px;font-size:13px;color:var(--ashl)}
+.tourbanner button{background:var(--ai);color:#1a0a00;border:none;border-radius:8px;padding:6px 13px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12.5px}
+.tourbanner button.x{background:none;color:var(--ash);padding:4px 6px;font-size:17px;font-weight:400}
+.setrow{display:flex;align-items:center;gap:14px;background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:15px 15px;margin-bottom:9px}
+.setk{font-weight:700;font-size:14.5px;margin-bottom:4px}
+.setd{color:var(--ash);font-size:12.5px;line-height:1.45}
 .newbtn{width:100%;border:1px dashed var(--line);background:none;color:var(--ash);border-radius:12px;padding:12px;font-family:'Space Grotesk';font-weight:600;font-size:13px;cursor:pointer;margin-top:2px}
 .hubnote{font-family:'Space Mono';font-size:10px;color:var(--dim);text-align:center;padding:14px 10px 4px;line-height:1.7}
 .move{font-family:'Space Mono';font-size:29px;font-weight:700;margin:15px 0 4px}
@@ -420,6 +427,10 @@ function coachEnd(viaFinish){ S.coach=false; try{localStorage.setItem('fade_tour
   if(!S.user&&viaFinish){ AUTHMODE='signup'; go('profile'); } else go('feed'); }
 // compatibility: signup/boot call startTour
 function startTour(){ coachStart(); }
+// Opt-in tour entry point on the feed (shown until the tour is taken or dismissed).
+function tourBanner(){ if(lsGet('fade_tour_done',false)) return '';
+  return `<div class="tourbanner"><span>&#128075; New here? Take the 30-second tour.</span><span style="display:flex;gap:4px;flex-shrink:0"><button onclick="event.stopPropagation();coachStart()">Start</button><button class="x" onclick="event.stopPropagation();dismissTour()">&#215;</button></span></div>`; }
+function dismissTour(){ lsSet('fade_tour_done',true); render(); }
 function guestMode(){ S.guest=true; go('feed'); toast('Browsing as guest — sign up to take trades'); }
 function requireAccount(){ if(S.user) return true; toast('Create a free account to take trades'); go('profile'); return false; }
 let AUTHMODE='signup', CONTACT='email', DRAFT={user:'',contact:''};
@@ -510,25 +521,25 @@ function gLabel(a){ return gLet(a.grade,false); }
 // The A-F scale strip with the current tier lit - this is what reads as a "system".
 function gradeScale(g){ return `<div class="gscale">`+[1,2,3,4,5].map(k=>
   `<span class="${k===g?'on':''}" style="${k===g?'background:'+GRADE[k]:''}">${LETTER[k]}</span>`).join('')+`</div>`; }
-// The single best trade RIGHT NOW (the #1) always presents in the A-band, scaled by
-// how good it actually is: really good (real A/B) -> A+, decent (real C) -> A, and
-// the weakest "best available" (real D) -> A-. It is never shown below A-, because
-// it is the top pick of the moment. TOPSYM (set each render) is that #1's symbol,
-// so the same setup shows the same A-band grade everywhere it appears (no flip).
-let TOPSYM=null;
-function isTop(a){ return !!(a&&a.symbol&&a.symbol===TOPSYM); }
-function topLabel(g){ if(g==null)return 'A'; if(g<=2)return 'A+'; if(g===3)return 'A'; return 'A-'; }
-// Grade meter: GRADE label + the letter. The #1 shows its A-band grade in green.
-function gradeMeter(a,big){ const top=isTop(a); const l=top?topLabel(a.grade):gLet(a.grade,true); const c=top?GREEN:GRADE[a.grade];
-  return `<div class="gmeter${big?' big':''}"><div class="glab">GRADE</div>`+
-  `<div class="glet" style="color:${c}">${l}</div></div>`; }
-// Compact chip for list rows: GRADE label + precise letter.
-function gradeChip(a){ const top=isTop(a); const l=top?topLabel(a.grade):gLabel(a); const c=top?GREEN:GRADE[a.grade];
-  return `<div class="gchip"><span class="cl">GRADE</span>`+
-  `<span class="cv" style="color:${c}">${l}</span></div>`; }
-function gradeBadge(a,big){ const top=isTop(a); const c=top?GREEN:GRADE[a.grade]; const sz=big?'grade':'gg'; const l=top?topLabel(a.grade):gLabel(a);
-  return `<div class="${sz} letter flat" style="color:${c}">
-    <span class="n">${l}</span></div>`; }
+// RELATIVE grade curve. The board is graded against itself so it always spans the
+// full range: the best playable setup in the current scope RIGHT NOW is A+, then the
+// rest scale down A, B, C, D, F by rank. "Whatever is best is A+ in that moment."
+// No A- — only A+, A, B, C, D, F. RELG (rebuilt each render) maps symbol -> letter.
+let RELG={};
+const RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};
+function computeRel(){ RELG={};
+  let items=(BOARD.items||[]).filter(function(i){return playable(i)&&inScope(i);});
+  items.sort(function(a,b){ return (a.grade-b.grade)||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); });
+  const N=items.length;
+  items.forEach(function(it,i){ let g;
+    if(i===0) g='A+';
+    else { const f=i/Math.max(N-1,1); g=f<0.16?'A':f<0.36?'B':f<0.58?'C':f<0.80?'D':'F'; }
+    RELG[it.symbol]=g;
+  }); }
+function relGrade(a){ const l=(a&&RELG[a.symbol])||gLet(a?a.grade:5,false); return {l:l,c:RELCOL[l]||GRADE[a?a.grade:5]}; }
+function gradeMeter(a,big){ const r=relGrade(a); return `<div class="gmeter${big?' big':''}"><div class="glab">GRADE</div><div class="glet" style="color:${r.c}">${r.l}</div></div>`; }
+function gradeChip(a){ const r=relGrade(a); return `<div class="gchip"><span class="cl">GRADE</span><span class="cv" style="color:${r.c}">${r.l}</span></div>`; }
+function gradeBadge(a,big){ const r=relGrade(a); const sz=big?'grade':'gg'; return `<div class="${sz} letter flat" style="color:${r.c}"><span class="n">${r.l}</span></div>`; }
 
 function sigTag(a){ if(a.signal==='fade_long')return['LONG',GREEN];
   if(a.signal==='fade_short')return['SHORT',RED];
@@ -552,6 +563,7 @@ function feed(){
       <div class="rc-pct" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div>${gradeChip(i)}</div>`; }).join('');
   return `<div class="screen">${topbar()}
     <div class="scope">${['stocks','both','crypto'].map(s=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${s==='both'?'Stocks + Crypto':s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+    ${tourBanner()}
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
       <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small>${t.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${t.symbol}">${pxFmt(t.price)}</span></b></small></div></div>${gradeMeter(t,true)}</div>
@@ -577,8 +589,8 @@ function feed(){
 function markets(){
   let items=BOARD.items.filter(i=>playable(i)&&inScope(i));   // only actionable setups
   items=items.slice().sort((a,b)=>(a.grade-b.grade)||Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0));
-  const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i);
-    return `<div class="rowcard" onclick="go('detail','${i.symbol}')">
+  const rows=items.map(i=>{ const c=GRADE[i.grade]; const [sg,sgc]=sigTag(i); const long=i.signal==='fade_long';
+    return `<div class="rowcard" onclick="go('detail','${i.symbol}')" style="box-shadow:inset 3px 0 0 ${long?rgba(GREEN,.5):rgba(RED,.5)}">
       ${logoBadge(i,36)}
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')}</div></div>
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div><div class="rc-sig" style="color:${sgc}">${sg}</div></div>${gradeChip(i)}</div>`; }).join('');
@@ -655,7 +667,7 @@ function wallet(){
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
       <div class="rc-d">${open?'tap to manage &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
-      ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();addToPos('${x.id}')">+ Add</button>`:''}</div>`; };
+      ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();closePos('${x.id}')">Close</button>`:''}</div>`; };
   return `<div class="screen">${topbar()}
     <div class="balance"><div class="k">Paper balance</div><div class="big" style="color:${eqCol}">$${money(s.equity)}</div>
       <div class="sub mono" style="margin-top:6px">cash $${money(s.cash)} &#183; <span style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)} realized</span></div></div>
@@ -690,14 +702,14 @@ function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
     ${open?`<div class="pxbig">
       <div><div class="pxbig-k">&#9679; LIVE PRICE</div><div class="pxbig-p">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div>
       <div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)}">${sign(chg)}</div></div>
-    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="addToPos('${x.id}')">Fade in another $1,000 ${long?'&#8599;':'&#8600;'}</button>`:''}
+    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="addToPos('${x.id}')">+ Add $1,000 to position</button>`:''}
     ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:6px 0 6px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
     <div class="mrow"><span class="k">Size</span><span class="v">${x.qty.toFixed(4)} &#183; $${money(notional)}</span></div>
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
     <div class="mrow"><span class="k">Mental stop</span><span class="v" style="color:${RED}">${money(x.stop)}</span></div>
     ${open?`<button class="mbtn" style="background:var(--void2);color:var(--txt);border:1px solid var(--line)" onclick="closePos('${x.id}')">Close position @ $${pxFmt(cur)}</button>`:''}
-    <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askSetup('${x.symbol}')">Ask Fade AI about ${x.symbol}</button>
+    <button class="mbtn" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00" onclick="closeModal();askTrade('${x.id}')">Ask Fade AI about your trade</button>
     <button class="mbtn" style="background:none;color:var(--ash)" onclick="closeModal()">Done</button>`; }
 let MODALPOS=null;
 function openPos(id){ MODALPOS=id; const p=paper(); const x=p.positions.find(y=>y.id===id);
@@ -803,6 +815,11 @@ function askAbout(sym,kind){ const a=quote(sym); if(!a)return; saveCurrentChat()
   S.chat=[]; S.chatId=null; S.ctx=''; S.screen='ai'; S.aitab='ask'; S.proj=null; S.sched=null; render();
   const what=kind==='pattern'?('the "'+(a.pattern||'pattern')+'" pattern read'):('the "'+(a.narrative||'narrative')+'" narrative');
   sendChat('Elaborate on '+what+' on '+sym+' ('+(a.name||sym)+') — what does it mean for the fade, and where are the key levels? Keep it tight.'); }
+// Ask Fade AI about the user's own open trade (with its context).
+function askTrade(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return; saveCurrentChat();
+  const q=quote(x.symbol); const cur=q?q.price:x.entry;
+  S.chat=[]; S.chatId=null; S.ctx=''; S.screen='ai'; S.aitab='ask'; S.proj=null; S.sched=null; render();
+  sendChat('I have a '+x.side.toUpperCase()+' paper trade on '+x.symbol+' from '+money(x.entry)+', now around '+money(cur)+', with a target near '+money(x.target)+' and a stop near '+money(x.stop)+'. In simple terms, explain what the setup was and what the method says about managing a trade like this. Keep it tight.'); }
 function aiChats(){
   const chats=lsGet('fade_chats',[]);
   const rows=chats.length?chats.map(c=>`<div class="hcard" onclick="openChat('${c.id}')"><div class="hi">&#128172;</div><div class="hb"><div class="ht">${esc(c.title)}</div><div class="hs">${fmtAgo(c.ts)}</div></div><div class="tgl off" style="background:none;width:auto" onclick="downloadChat('${c.id}',event)" title="Download chat"><span style="color:var(--ash);font-size:16px">&#8681;</span></div></div>`).join('')
@@ -929,7 +946,8 @@ function profile(){
     </div>
     <div class="lbl" style="margin-top:16px">Hyperliquid &#183; connect live account</div>
     ${hlBlock()}
-    <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:16px" onclick="signOut()">Sign out</button>
+    <button class="btn-wide" style="background:var(--void2);color:var(--txt);border:1px solid var(--line);margin-top:16px" onclick="go('settings')">&#9881;&#65039; Settings</button>
+    <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:9px" onclick="signOut()">Sign out</button>
     <div class="disc">${API?'Live account':'Preview account &#183; saved on this device'} &#183; paper only &#183; no real money</div>
   </div>`;
 }
@@ -1005,11 +1023,11 @@ async function doSignup(){
   if(API){
     try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone})});
       const d=await r.json(); if(!d.ok){ autherr(d.error||'Could not create account'); return; }
-      DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); toast('Welcome, @'+d.user.username); startTour();
+      DRAFT={user:'',contact:''}; saveUser(Object.assign({},d.user,{crm:d.crm})); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
     }catch(e){ autherr('Network error \u2014 try again'); }
   } else {
     const v=validateLocal(username,email,phone); if(v){ autherr(v); return; }
-    DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); toast('Welcome, @'+username+' (preview)'); startTour();
+    DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); go('feed'); toast('Welcome, @'+username+' — tap "Take the tour" to learn the app');
   }
 }
 async function doLogin(){
@@ -1027,6 +1045,31 @@ async function doLogin(){
   }
 }
 function signOut(){ saveUser(null); AUTHMODE='signup'; go('profile'); toast('Signed out'); }
+/* ---------- SETTINGS ---------- */
+function settings(){
+  if(!S.user) return authScreen();
+  const ac=lsGet('fade_autoclose',false);
+  const setrow=(k,d,on,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><div class="tgl ${on?'on':'off'}" onclick="${fn}"></div></div>`;
+  return `<div class="screen">${topbar()}
+    <div class="back" onclick="go('profile')"><span class="a">&#8592;</span> Profile</div>
+    <div class="h1" style="margin:6px 0 6px">Settings</div>
+    <div class="lbl">Trading</div>
+    ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). When off, you close manually.',ac,'toggleAutoClose()')}
+    <div class="disc" style="text-align:left;margin-top:14px">Paper trading only &#183; no real money &#183; education, not advice. More settings coming soon.</div>
+  </div>`;
+}
+function toggleAutoClose(){ const v=!lsGet('fade_autoclose',false); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
+// Auto-close open positions at their target/stop when enabled. Checked on each live poll
+// against the REAL board price (not the jittered ticker).
+function autoCloseCheck(){ if(!lsGet('fade_autoclose',false)) return;
+  const p=paper(); let changed=false;
+  p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return; const cur=q.price; let hit=null;
+    if(x.side==='long'){ if(x.target&&cur>=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur<=x.stop)hit={p:x.stop,w:0}; }
+    else { if(x.target&&cur<=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur>=x.stop)hit={p:x.stop,w:0}; }
+    if(hit){ const pnl=(x.side==='long'?(hit.p-x.entry):(x.entry-hit.p))*x.qty; x.status='closed'; x.exit=hit.p; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=(x.qty*x.entry)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p)); }
+  });
+  if(changed){ save(p); if(S.screen==='wallet'||S.screen==='profile')render(); }
+}
 
 /* ---------- SHARE CARD (viral / marketing) ---------- */
 let SHARECAP='';
@@ -1066,8 +1109,8 @@ function closeShare(){ document.getElementById('shwrap').classList.remove('show'
 function shareNative(){ const url='https://fade.markets'; if(navigator.share){ navigator.share({title:'fade.markets',text:SHARECAP,url:url}).catch(()=>{}); } else { copyCap(); } }
 function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fade.markets'); toast('Caption copied \u2014 screenshot the card & post'); }catch(e){ toast('Screenshot the card to share'); } }
 
-function render(){ try{ TOPSYM=(topFor()||{}).symbol||null; }catch(e){ TOPSYM=null; }
-  const scr={feed,markets,detail,wallet,social,ai,profile}[S.screen]||feed;
+function render(){ try{ computeRel(); }catch(e){ RELG={}; }
+  const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
   document.getElementById('app').innerHTML = scr() + nav(); }
 
 // LIVE MODE: if window.FADE_API is set (by the deployed index.html), replace the
@@ -1098,14 +1141,7 @@ function updateChartNow(){ const svg=document.querySelector('.livechart'); if(!s
   if(nc){ nc.setAttribute('cy',Y.toFixed(1)); }
   if(nt){ nt.setAttribute('y',(Y-4).toFixed(1)); nt.textContent='NOW '+money(a.disp); }
 }
-// Grades ease one step at a time: a worse grade drops only ONE letter per update
-// (A -> B -> C, never A+ -> C in one jump); a same/better grade applies immediately.
-const GDISP={}, _LETMAP={1:'A',2:'B',3:'C',4:'D',5:'F'};
-function clampGrades(){ (BOARD.items||[]).forEach(function(i){ if(i.grade==null)return;
-  const target=i.grade; let cur=GDISP[i.symbol];
-  if(cur==null) cur=target; else if(target>cur) cur=Math.min(target,cur+1); else cur=target;
-  GDISP[i.symbol]=cur; i.grade=cur; if(i.grade_label) i.grade_label=_LETMAP[cur]||i.grade_label;
-}); }
+// (Grade display is now the relative curve in computeRel(), rebuilt each render.)
 function flashNode(n,up){ const on=n.dataset.f==='1'; n.dataset.f=on?'0':'1';
   n.classList.remove('flg0','flg1','flr0','flr1'); n.classList.add((up?'flg':'flr')+(on?'0':'1')); }
 function tick(){ if(document.hidden) return;
@@ -1140,14 +1176,15 @@ function tick(){ if(document.hidden) return;
 }
 async function hydrate(){ if(!API) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
-    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor(); clampGrades(); render(); } }catch(e){} }
+    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor(); render(); } }catch(e){} }
 // Live refresh loop: re-pull the graded board so prices, grades, targets and stops
 // track the backend in real time. Skips while a sheet/chat is open or you're typing,
 // and preserves scroll so the update is seamless. Prices/grades all stay server-side.
 async function livePoll(){ if(!API||document.hidden) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
     if(!b||!b.items) return;
-    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor(); clampGrades();
+    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor();
+    autoCloseCheck();   // auto take-profit / stop-loss on the fresh real prices
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
     const busy=(m&&m.classList.contains('show'))||(sh&&sh.classList.contains('show'))||S.coach||S.screen==='ai'||S.screen==='profile';
     const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -1170,9 +1207,8 @@ S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
-pxReanchor(); clampGrades(); render(); hydrate(); if(S.hlAddr) loadHL();
-// Guests get the coachmark walkthrough over the live board (until they sign up).
-if(!S.user) setTimeout(coachStart,600);
+pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
+// Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
