@@ -71,6 +71,8 @@
  --blue:#2e7bff; --yellow:#ffe500; --green:#39ff14; --red:#ff3b30; --cyan:#00e5ff;
  --ai:#ff6a00; --ai2:#ffb066;   /* Fade AI orb: bright solid orange + light-orange ring */
  --glow:rgba(46,123,255,.13);
+ --herobg:linear-gradient(158deg,#1c1630 0%,#120d1c 52%,#0b0812 100%);   /* rich, theme-aware #1 card */
+ --herobd:rgba(255,255,255,.08); --heroglow:rgba(46,123,255,.30); --herotint:#f5f5f7;
 }
 :root[data-theme="light"]{
  --bg:#eceef2;
@@ -78,9 +80,12 @@
  --txt:#10131a; --ash:#6b7280; --ashl:#39414e; --dim:#9aa1ab;
  --green:#12a150; --red:#e5484d; --cyan:#0e8aa8; --yellow:#b58900;
  --glow:rgba(46,123,255,.07);
+ --herobg:linear-gradient(158deg,#0f1420 0%,#161d2c 55%,#1b2436 100%);   /* deep navy card — reads premium on a light page, no dark-to-white bleed */
+ --herobd:rgba(20,30,50,.5); --heroglow:rgba(46,123,255,.28); --herotint:#f5f7fb;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{overflow-anchor:none;touch-action:manipulation}   /* no double-tap zoom (native app feel) */
+html{overflow-anchor:none;touch-action:manipulation;overscroll-behavior-x:none}   /* no double-tap zoom, no horizontal swipe-nav */
+body{overscroll-behavior-x:none}
 *{touch-action:manipulation}
 body{background:var(--bg);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
 .mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',monospace} .px{font-family:'Press Start 2P',monospace}
@@ -143,7 +148,17 @@ input,textarea,select{font-size:16px}
 .scope button{flex:1;border:none;background:none;color:var(--ash);font-family:'Space Grotesk';font-size:12.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer}
 .scope button.on{background:var(--blue);color:#0a0a0f}
 /* hero */
-.hero{background:linear-gradient(160deg,#161019,var(--panel));border:1px solid var(--line);border-radius:22px;padding:20px;position:relative;overflow:hidden;margin-bottom:12px;cursor:pointer}
+.hero{background:var(--herobg);border:1px solid var(--herobd);border-radius:22px;padding:20px;position:relative;overflow:hidden;margin-bottom:12px;cursor:pointer;color:var(--herotint);box-shadow:0 14px 40px rgba(0,0,0,.28)}
+.hero::before{content:"";position:absolute;top:-40%;right:-15%;width:70%;height:120%;background:radial-gradient(circle,var(--heroglow),transparent 68%);pointer-events:none}
+.hero>*{position:relative}
+/* hero is dark in BOTH themes, so force its inner text light (overrides theme --txt/--ash) */
+.hero .sym{color:var(--herotint)}
+.hero .sym small{color:rgba(236,239,245,.62)}
+.hero .sym small b{color:var(--herotint)!important}
+.hero .move small{color:rgba(236,239,245,.55)}
+.hero .sb{background:rgba(0,0,0,.26);border-color:rgba(255,255,255,.09)}
+.hero .sb .k{color:rgba(236,239,245,.5)} .hero .sb .v{color:var(--herotint)}
+.hero .gscale span{border-color:rgba(255,255,255,.16);color:rgba(236,239,245,.7)}
 .flag{display:inline-flex;gap:6px;font-family:'Space Grotesk';font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);background:rgba(46,123,255,.1);padding:6px 12px;border-radius:20px;margin-bottom:15px}
 .row{display:flex;justify-content:space-between;align-items:flex-start}
 .sym{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1}
@@ -195,6 +210,10 @@ input,textarea,select{font-size:16px}
 .setrow{display:flex;align-items:center;gap:14px;background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:15px 15px;margin-bottom:9px}
 .setk{font-weight:700;font-size:14.5px;margin-bottom:4px}
 .setd{color:var(--ash);font-size:12.5px;line-height:1.45}
+.stepper{display:flex;align-items:center;gap:2px;flex-shrink:0;background:var(--void2);border:1px solid var(--line);border-radius:11px;padding:3px}
+.stepper button{width:32px;height:30px;border:none;background:none;color:var(--blue);font-size:19px;font-weight:700;cursor:pointer;border-radius:8px}
+.stepper button:active{background:var(--panel)}
+.stepper span{min-width:44px;text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
 .newbtn{width:100%;border:1px dashed var(--line);background:none;color:var(--ash);border-radius:12px;padding:12px;font-family:'Space Grotesk';font-weight:600;font-size:13px;cursor:pointer;margin-top:2px}
 .hubnote{font-family:'Space Grotesk';font-size:10px;color:var(--dim);text-align:center;padding:14px 10px 4px;line-height:1.7}
 .move{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:29px;font-weight:700;margin:15px 0 4px}
@@ -221,20 +240,20 @@ input,textarea,select{font-size:16px}
 .lbadge img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff;border-radius:inherit;opacity:0;transition:opacity .18s ease}
 .lbadge img.on{opacity:1}
 .rc-info{flex:1;min-width:0}
-.rc-nm{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-nm{font-weight:700;font-size:16.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rc-nm small{font-family:'Space Grotesk';font-size:10px;color:var(--dim);margin-left:6px;font-weight:400}
 .rc-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rc-d{font-family:'Space Grotesk';font-size:10px;color:var(--ash);margin-top:2px}
-.rc-pct{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:15px;text-align:right}
+.rc-d{font-family:'Space Grotesk';font-size:11px;color:var(--ash);margin-top:2px}
+.rc-pct{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:16.5px;text-align:right}
 .rc-pct.sm{font-size:12px;margin-top:1px}
-.rc-px{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:15.5px;color:var(--txt);text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.rc-px{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-weight:700;font-size:17px;color:var(--txt);text-align:right;letter-spacing:-.3px}
 .rc-sig{font-family:'Space Grotesk';font-size:8px;font-weight:700;margin-top:3px;text-align:right}
 /* live price ticker: number updates constantly; a brief highlight flashes on each move */
 [data-px]{border-radius:4px;padding:0 1.5px;transition:none}
 .flg0,.flg1{animation:flpx-g .62s ease-out}
 .flr0,.flr1{animation:flpx-r .62s ease-out}
-@keyframes flpx-g{0%{background:rgba(57,255,20,.45)}100%{background:transparent}}
-@keyframes flpx-r{0%{background:rgba(255,59,48,.45)}100%{background:transparent}}
+@keyframes flpx-g{0%{background:rgba(57,255,20,.26)}100%{background:transparent}}
+@keyframes flpx-r{0%{background:rgba(255,59,48,.26)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){.flg0,.flg1,.flr0,.flr1{animation:none}}
 /* detail chart */
 .chartbox{background:var(--void2);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
@@ -291,7 +310,8 @@ input,textarea,select{font-size:16px}
 .fab .munch .cndl{width:3.5px;height:14px;background:#1a0a00;border-radius:1px}
 .fablbl{font-size:10px;font-weight:700;color:var(--dim)}
 .fablbl.on{color:var(--ai2)}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:60;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:210;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.levtag{font-family:'Space Grotesk';font-size:10px;font-weight:800;letter-spacing:.3px;color:var(--yellow);background:rgba(255,229,0,.14);border:1px solid rgba(255,229,0,.4);padding:1px 5px;border-radius:5px;vertical-align:1px}
 /* ---------- neon big-bang: the platform "powers up" when a live wallet connects ---------- */
 .bang{position:fixed;inset:0;z-index:120;pointer-events:none;display:none;align-items:center;justify-content:center}
 .bang.go{display:flex}
@@ -327,6 +347,8 @@ input,textarea,select{font-size:16px}
 .screen.chat{padding-bottom:0}
 .chat .chips2{padding:6px 0 7px}
 .aihdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.aiback{width:34px;height:34px;flex-shrink:0;border-radius:10px;border:1px solid var(--line);background:var(--void2);color:var(--txt);font-size:19px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.aiback:active{transform:scale(.93)}
 .aihdr .nm{font-weight:700;font-size:16px} .aihdr .on{font-family:'Space Grotesk';font-size:10px;color:var(--green);font-weight:700}
 .chatbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:6px 2px 10px}
 .msg{max-width:87%;font-size:14px;line-height:1.5}
@@ -384,6 +406,31 @@ input,textarea,select{font-size:16px}
 .mrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
 .mrow .k{color:var(--ash);font-size:13px} .mrow .v{font-weight:700;font-size:14px}
 .mbtn{width:100%;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;margin-top:10px;font-family:inherit}
+/* ---------- trade panel (size + leverage before engage) ---------- */
+.tpanel{display:flex;flex-direction:column;gap:14px}
+.tp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.tp-sym{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.tp-side{font-size:13px;font-weight:800;letter-spacing:.5px;margin-left:4px}
+.tp-nm{font-family:'Space Grotesk';font-size:12px;color:var(--ash);margin-top:2px}
+.tp-px{text-align:right} .tp-px .k{font-family:'Space Grotesk';font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ash)} .tp-px .v{font-size:18px;font-weight:700;color:var(--txt)}
+.tp-sec{background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px 13px 14px}
+.tp-lbl{display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Grotesk';font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--txt);margin-bottom:11px}
+.tp-lbl span:last-child{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px}
+.tp-amt{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:11px;padding:9px 13px;background:var(--void)}
+.tp-amt .cur{font-size:20px;font-weight:700;color:var(--ash)}
+.tp-amt input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:22px;font-weight:700;width:100%}
+.tp-slider{width:100%;margin:12px 0 11px;accent-color:var(--blue);height:4px}
+.allocrow,.levrow{display:flex;gap:7px}
+.allocb,.levb{flex:1;border:1px solid var(--line);background:var(--void);color:var(--ash);font-family:'Space Grotesk';font-weight:700;font-size:13px;padding:10px 4px;border-radius:10px;cursor:pointer;transition:.12s}
+.allocb.on{background:rgba(46,123,255,.14);border-color:var(--blue);color:var(--blue)}
+.levb{font-size:15px}
+.levb.on{background:var(--blue);border-color:var(--blue);color:#04122b}
+.tp-summary{border:1px solid var(--line);border-radius:14px;padding:5px 14px}
+.tp-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--ash)}
+.tp-row:last-child{border-bottom:none} .tp-row span:last-child{color:var(--txt);font-weight:600;text-align:right}
+.tp-confirm{width:100%;border:none;border-radius:14px;padding:16px;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit;transition:transform .12s ease}
+.tp-confirm:active{transform:scale(.98)}
+.tp-disc{font-family:'Space Grotesk';font-size:10px;color:var(--dim);text-align:center;line-height:1.5}
 .pxbig{display:flex;align-items:center;justify-content:space-between;background:var(--void2);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:4px 0 9px}
 .pxbig-k{color:var(--green);font-size:9.5px;letter-spacing:1.2px;font-weight:700;margin-bottom:3px}
 .pxbig-p{font-family:'Space Grotesk';font-size:29px;font-weight:700;color:var(--txt);letter-spacing:-1px;font-variant-numeric:tabular-nums}
@@ -547,6 +594,12 @@ function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); }
 function quote(sym){ return BOARD.items.find(i=>i.symbol===sym); }
 // You already hold this asset — it's kept OFF the lineup (manage/add it from the wallet).
 function hasOpenPos(sym){ try{ return paper().positions.some(x=>x.status==='open'&&x.symbol===sym); }catch(e){ return false; } }
+// Position sizing model: MARGIN = cash you put in; LEV = leverage (1x spot .. 3x); NOTIONAL = margin*lev.
+// qty = notional/entry, so P&L = priceMove*qty (leverage already baked into qty). Cash returns MARGIN + pnl on close.
+// Old positions predate this — they were a flat $1,000 at 1x, so margin defaults to qty*entry and lev to 1.
+function posMargin(x){ return x.margin!=null?x.margin:(x.qty*x.entry); }
+function posLev(x){ return x.lev||1; }
+function posNotional(x){ return posMargin(x)*posLev(x); }
 
 function fade(sym){
   if(!requireAccount()) return;
@@ -571,6 +624,86 @@ function fade(sym){
   if(S.screen==='detail'){ go('feed'); } else { render(); }
 }
 function skip(sym){ S.faded[sym]=1; toast('Skipped '+sym+' \u2014 next setup up'); if(S.screen==='detail'){go('feed');} else {render();} }
+
+/* ---------- TRADE PANEL: size + leverage before you engage (retail-exchange style) ---------- */
+let TRADE=null;   // {sym, side, pct, amt, lev}
+const LEVS=[1,2,3];
+function liqPrice(entry,side,lev){ if(!lev||lev<=1)return null; return side==='long'?entry*(1-1/lev):entry*(1+1/lev); }
+function openTradePanel(sym){
+  if(!requireAccount()) return;
+  const a=quote(sym); if(!a) return;
+  if(a.signal==='skip'||a.signal==='no_breach'){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
+  const p=paper();
+  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===sym);
+  // default allocation + leverage come from Settings (Trading defaults)
+  const dpct=lsGet('fade_default_pct',25);
+  const start=existing?Math.min(p.cash,1000):Math.min(p.cash, Math.max(50, Math.round(p.cash*dpct/100)));
+  TRADE={sym:sym, side:isLong(a)?'long':'short', amt:Math.max(0,start), lev:existing?posLev(existing):lsGet('fade_default_lev',1), add:!!existing};
+  openModal(tradePanel());
+}
+function tradeAmt(){ const p=paper(); return Math.max(0,Math.min(TRADE.amt||0, p.cash)); }
+function setTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.round(v), p.cash)); refreshTradePanel(); }
+function setTradePct(pct){ const p=paper(); TRADE.amt=Math.round(p.cash*pct/100); refreshTradePanel(); }
+function setTradeLev(l){ TRADE.lev=l; refreshTradePanel(); }
+function refreshTradePanel(){ const b=document.getElementById('modalbody'); if(b)b.innerHTML=tradePanel(); }
+function tradePanel(){
+  const a=quote(TRADE.sym); if(!a) return '';
+  const p=paper(); const long=TRADE.side==='long'; const col=long?GREEN:RED, ink=long?'#062100':'#2a0000';
+  const margin=tradeAmt(); const lev=TRADE.lev||1; const notional=margin*lev; const qty=a.price?notional/a.price:0;
+  const liq=liqPrice(a.price,TRADE.side,lev);
+  const st=a.setup||{}; const pct=p.cash>0?Math.min(100,Math.round(margin/p.cash*100)):0;
+  const chip=(l)=>`<button class="levb ${lev===l?'on':''}" onclick="setTradeLev(${l})">${l}x</button>`;
+  const pctb=(pp,lbl)=>`<button class="allocb ${pct===pp?'on':''}" onclick="setTradePct(${pp})">${lbl}</button>`;
+  return `<div class="tpanel">
+    <div class="tp-head"><div><div class="tp-sym">${a.symbol} <span class="tp-side" style="color:${col}">${long?'LONG':'SHORT'}</span></div>
+      <div class="tp-nm">${esc(a.name||'')} &#183; grade ${gLet(a.grade,false)}</div></div>
+      <div class="tp-px"><div class="k">Live price</div><div class="v mono">$${pxFmt(a.price)}</div></div></div>
+
+    <div class="tp-sec"><div class="tp-lbl"><span>Allocation${TRADE.add?' to add':''}</span><span class="mono" style="color:var(--ash)">free $${money(p.cash)}</span></div>
+      <div class="tp-amt"><span class="cur">$</span><input id="tp_amt" class="mono" inputmode="numeric" value="${margin}" oninput="setTradeAmt(this.value)"></div>
+      <input class="tp-slider" type="range" min="0" max="${Math.max(1,Math.round(p.cash))}" value="${margin}" oninput="setTradeAmt(this.value)">
+      <div class="allocrow">${pctb(10,'10%')}${pctb(25,'25%')}${pctb(50,'50%')}${pctb(100,'Max')}</div></div>
+
+    <div class="tp-sec"><div class="tp-lbl"><span>Leverage</span><span style="color:var(--ash)">${lev===1?'spot &#183; no leverage':lev+'x &#183; amplifies P&amp;L '+lev+'&#215;'}</span></div>
+      <div class="levrow">${LEVS.map(chip).join('')}</div></div>
+
+    <div class="tp-summary">
+      <div class="tp-row"><span>Position size</span><span class="mono" style="color:var(--txt)">$${money(notional)}</span></div>
+      <div class="tp-row"><span>Margin (cash used)</span><span class="mono">$${money(margin)}</span></div>
+      <div class="tp-row"><span>Quantity</span><span class="mono">${qty?qty.toPrecision(5):'--'} ${a.symbol}</span></div>
+      <div class="tp-row"><span>Entry &#183; Target &#183; Stop</span><span class="mono">${money(a.price)} &#183; <b style="color:${GREEN}">${money(st.target)}</b> &#183; <b style="color:${RED}">${money(st.mental_stop)}</b></span></div>
+      ${liq?`<div class="tp-row"><span>Est. liquidation</span><span class="mono" style="color:${RED}">$${money(liq)}</span></div>`:''}
+    </div>
+
+    <button class="tp-confirm" style="background:${col};color:${ink}" onclick="confirmTrade()">${TRADE.add?'Add':'Confirm'} ${long?'Long &#8599;':'Short &#8600;'} &#183; $${money(margin)}${lev>1?' &#183; '+lev+'x':''}</button>
+    <div class="tp-disc">Paper trade &#183; no real money &#183; leverage amplifies gains and losses</div>
+  </div>`;
+}
+function confirmTrade(){
+  const a=quote(TRADE.sym); if(!a){ closeModal(); return; }
+  const p=paper(); const margin=tradeAmt(); const lev=TRADE.lev||1;
+  if(margin<10){ toast('Set an allocation of at least $10.'); return; }
+  if(margin>p.cash){ toast('That is more than your free cash ($'+money(p.cash)+').'); return; }
+  const long=TRADE.side==='long'; const notional=margin*lev; const addQty=notional/a.price;
+  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===TRADE.sym);
+  if(existing){
+    // add to the open position \u2014 blend entry, sum margin/qty (keep the higher leverage)
+    const nq=existing.qty+addQty; existing.entry=(existing.entry*existing.qty+a.price*addQty)/nq; existing.qty=nq;
+    existing.margin=posMargin(existing)+margin; existing.lev=Math.max(posLev(existing),lev); existing.adds=(existing.adds||0)+1;
+    p.cash-=margin; save(p); closeModal();
+    toast('Added $'+money(margin)+' to '+TRADE.sym+' \u2014 avg '+money(existing.entry)); render(); return;
+  }
+  p.cash-=margin;
+  const g=relGrade(a).l;
+  p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:TRADE.sym,name:a.name,side:long?'long':'short',
+    entry:a.price,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,
+    grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
+  save(p); S.faded[TRADE.sym]=1;
+  if(API&&S.user){ fetch(API+'/api/paper/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:S.user.username,symbol:TRADE.sym,side:long?'long':'short'})}).catch(function(){}); }
+  closeModal();
+  toast((long?'Long ':'Short ')+TRADE.sym+' &#183; $'+money(margin)+(lev>1?' at '+lev+'x':'')+' \u2014 live in your wallet');
+  if(S.screen==='detail'){ go('feed'); } else { render(); }
+}
 function simulate(){
   if(!requireAccount()) return;
   const p=paper(); let opened=p.positions.filter(x=>x.status==='open');
@@ -579,7 +712,7 @@ function simulate(){
     const exit=win?x.target:x.stop;
     const pnl=(x.side==='long'?(exit-x.entry):(x.entry-exit))*x.qty;
     x.status='closed'; x.exit=exit; x.pnl=pnl; x.result=pnl>0?'win':'loss';
-    p.cash+=(x.qty*x.entry)+pnl; });   // return the position's cost + result to cash
+    p.cash+=posMargin(x)+pnl; });   // return the margin you put in + result to cash
   save(p); toast('Simulated '+opened.length+' trade(s) to target/stop  (preview)'); render();
 }
 function resetPaper(){ localStorage.removeItem('fade_paper'); S.faded={}; toast('Paper account reset to $10,000'); render(); }
@@ -603,8 +736,8 @@ function stats(){
     return s+(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; },0);
   // Open positions hold their cost (deducted from cash) + their unrealized P&L.
   const openVal=opens.reduce((s,x)=>{ const q=quote(x.symbol); const cur=q?q.price:x.entry;
-    const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; return s+(x.qty*x.entry)+pnl; },0);
-  const deployed=opens.reduce((s,x)=>s+x.qty*x.entry,0);   // cash cost currently occupied in open trades
+    const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; return s+posMargin(x)+pnl; },0);
+  const deployed=opens.reduce((s,x)=>s+posMargin(x),0);   // cash (margin) currently occupied in open trades
   return {cash:p.cash,equity:p.cash+openVal,unreal,deployed,realized:closed.reduce((s,x)=>s+x.pnl,0),
     wins,losses:closed.length-wins,graded:closed.length,
     winrate:closed.length?Math.round(1000*wins/closed.length)/10:null,opens,closed};
@@ -614,7 +747,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 function toTop(){ try{ const a=document.getElementById('app'); if(a)a.scrollTop=0; window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
 // Persist where you are so a refresh reopens the same screen (not home).
 function saveNav(){ try{ localStorage.setItem('fade_nav',JSON.stringify({screen:S.screen,sel:S.sel,scope:S.scope})); }catch(e){} }
-function go(scr,sel){ S.screen=scr; if(sel!==undefined)S.sel=sel; saveNav(); render();
+function go(scr,sel){ if(scr!==S.screen) S.prevScreen=S.screen; S.screen=scr; if(sel!==undefined)S.sel=sel; saveNav(); render();
   toTop();                                   // immediate
   requestAnimationFrame(toTop);              // after layout
   requestAnimationFrame(()=>requestAnimationFrame(toTop));  // after paint (beats scroll-anchoring)
@@ -641,7 +774,18 @@ let RELG={};
 let RELCOL={'A+':GREEN,'A':GREEN,'B':'#a3e635','C':'#fde047','D':'#eab308','F':ASH};   // rebuilt in applyTheme()
 // Market-cap weight: coins scale by their rank (BTC ~1.0 down to ~0 at rank 50);
 // large-cap stocks sit high (0.85), so they beat small coins but not BTC/ETH.
-function assetWeight(i){ if(!i)return 0; if(i.asset_class==='crypto'){ const r=i.rank||60; return Math.max(0.05,1.05-r*0.02); } return 0.85; }
+// Majors that still deserve to lead over stocks (well-known coins). Everything else in
+// crypto sits BELOW stocks when "prioritize stocks" is on (default) — stocks are the
+// bigger, more reliable market; minor coins only surface if nothing better is around.
+const CRYPTO_MAJORS={BTC:1,ETH:1,XRP:1,SOL:1,ZEC:1,BNB:1,DOGE:1,ADA:1,LTC:1,BCH:1,XMR:1,DASH:1,AVAX:1,LINK:1,DOT:1,TRX:1};
+function assetWeight(i){ if(!i)return 0;
+  if(i.asset_class==='crypto'){
+    const major = !!CRYPTO_MAJORS[(i.symbol||'').toUpperCase()] || (i.rank&&i.rank<=8);
+    if(major){ const r=i.rank||60; return Math.max(0.86,1.06-r*0.02); }   // majors rank at/above stocks
+    return lsGet('fade_prioritize_stocks',true) ? 0.42 : Math.max(0.05,1.05-(i.rank||60)*0.02);  // minor coins fall below stocks
+  }
+  return 0.85;   // large-cap stock
+}
 function relSort(a,b){ return (a.grade-b.grade)||(assetWeight(b)-assetWeight(a))||(Math.abs(b.change_pct||0)-Math.abs(a.change_pct||0)); }
 function computeRel(){ RELG={};
   // Grade EVERY playable setup (even ones you hold or skipped) so grades are stable and
@@ -685,7 +829,7 @@ function feed(){
     ${tourBanner()}
     <div class="hero" onclick="go('detail','${t.symbol}')">
       <span class="flag">&#9889; Today's #1 &#183; always live</span>
-      <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small>${t.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${t.symbol}">${pxFmt(t.price)}</span></b></small></div></div>${gradeMeter(t,true)}</div>
+      <div class="row"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(t,46)}<div class="sym">${t.symbol}<small><span style="font-size:15px;font-weight:600;color:rgba(236,239,245,.85)">${esc(t.name||'')}</span> &#183; <b style="font-size:17px;font-weight:800">$<span data-px="${t.symbol}">${pxFmt(t.price)}</span></b></small></div></div>${gradeMeter(t,true)}</div>
       <div class="move" style="color:${moveCol(t.change_pct)}"><span data-pct="${t.symbol}">${sign(t.change_pct)}</span> <small>${t.vol_ratio?'<span data-vol="'+t.symbol+'">'+t.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
       <div><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
       <div class="setup">
@@ -693,7 +837,7 @@ function feed(){
         <div class="sb"><div class="k">Add</div><div class="v">${money(add0)}</div></div>
         <div class="sb"><div class="k">Target</div><div class="v" style="color:${GREEN}">${money(st.target)}</div></div>
         <div class="sb"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
-      <div class="cta"><button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="event.stopPropagation();fade('${t.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>
+      <div class="cta"><button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="event.stopPropagation();openTradePanel('${t.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>
         <button class="no" onclick="event.stopPropagation();skip('${t.symbol}')">Skip</button></div>
     </div>
     <div class="pair">
@@ -764,7 +908,7 @@ function detail(){
     <div class="row" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:12px;min-width:0">${logoBadge(a,48)}<div class="sym" style="font-size:32px">${a.symbol}<small>${a.name} &#183; <b style="color:var(--txt);font-size:13.5px;font-weight:700">$<span data-px="${a.symbol}">${pxFmt(a.price)}</span></b>${a.rank?' &#183; #'+a.rank:''}</small></div></div>${gradeMeter(a,true)}</div>
     <div class="move" style="color:${moveCol(a.change_pct)};margin-top:0"><span data-pct="${a.symbol}">${sign(a.change_pct)}</span> <small>${a.vol_ratio?'<span data-vol="'+a.symbol+'">'+a.vol_ratio.toFixed(1)+'</span>&#215; vol':''}</small></div>
     <div style="margin:6px 0 10px"><span class="chip" style="background:${rgba(sgc,.14)};color:${sgc}">${sg}</span></div>
-    ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="fade('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; NOW</button>`:''}
+    ${actionable?`<button class="btn-wide" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};margin:0 0 14px;font-size:16px;font-weight:800" onclick="openTradePanel('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'} &#183; set size</button>`:''}
     <div class="chartbox">${chart(a)}
       <div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">45 real daily candles</span></div></div>
     <div class="terms">
@@ -774,7 +918,7 @@ function detail(){
       <div class="tm"><div class="k">Stop</div><div class="v" style="color:${RED}">${money(st.mental_stop)}</div></div></div>
     ${a.pattern_text?`<div class="why"><h3>Pattern <span class="chip" style="background:${rgba(CYAN,.14)};color:${CYAN}">${a.pattern}</span></h3><p>${a.pattern_text}</p></div>`:''}
     ${a.narrative_text?`<div class="why"><h3>Narrative <span class="chip" style="background:${rgba(BLUE,.14)};color:${BLUE}">${a.narrative}</span></h3><p>${a.narrative_text}</p></div>`:''}
-    <div class="cta">${actionable?`<button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="fade('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>`:`<button class="no" style="flex:1">No fade \u2014 ${sg}</button>`}
+    <div class="cta">${actionable?`<button style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'}" onclick="openTradePanel('${a.symbol}')">${long?'Long &#8599;':'Short &#8600;'}</button>`:`<button class="no" style="flex:1">No fade \u2014 ${sg}</button>`}
       <button class="no" onclick="go('markets')">Back</button></div>
     <button class="btn-wide" style="background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;margin-top:10px;font-weight:800" onclick="askSetup('${a.symbol}')"><span class="munch" style="width:16px;height:16px;vertical-align:-2px;display:inline-block;margin-right:7px"><span class="pac"></span></span>Ask Fade AI about this setup</button>
     <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4);margin-top:8px" onclick="shareSetup('${a.symbol}')">&#8593; Share this setup</button></div>`;
@@ -787,17 +931,17 @@ function wallet(){
     const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl;
     const pc=pnl>=0?GREEN:RED;
     return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
-      <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
-      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span> &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
+      <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
+      <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span> &#183; $'+money(posMargin(x))+' &#183; entry '+money(x.entry):x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
       ${open?`<button class="no" style="padding:8px 11px;border-radius:9px;font-size:12px;margin-left:8px;font-weight:700" onclick="event.stopPropagation();closePos('${x.id}')">Close</button>`:''}</div>`; };
   return `<div class="screen">${topbar()}
     <div class="balance">
       <div class="balrow">
-        <div><div class="k">Paper balance</div><div class="big" style="color:${eqCol}">$${money(s.equity)}</div></div>
+        <div><div class="k">Paper balance</div><div class="big" data-eq="1" style="color:${eqCol}">$${money(s.equity)}</div></div>
         <div class="dwrap"><button class="dwbtn dep" onclick="depositPaper()">&#8595; Deposit</button><button class="dwbtn wd" onclick="withdrawPaper()">&#8593; Withdraw</button></div>
       </div>
-      <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)} realized</span></div></div>
+      <div class="sub mono" style="margin-top:8px">cash $${money(s.cash)} &#183; <span style="color:var(--blue)">$${money(s.deployed)} in trades</span> &#183; <span data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)} open P&amp;L</span></div></div>
     <div class="stat3">
       <div class="stat"><div class="v px" style="color:${s.winrate==null?ASH:GREEN};font-size:15px">${s.winrate==null?'--':s.winrate+'%'}</div><div class="k">win rate</div></div>
       <div class="stat"><div class="v">${s.graded}</div><div class="k">closed</div></div>
@@ -812,27 +956,28 @@ function wallet(){
     <div class="disc">Simulation only &#183; no real money &#183; no real execution</div></div>`;
 }
 function closePos(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x||x.status!=='open')return;
+  if(lsGet('fade_confirm_close',false)){ if(!confirm('Close your '+x.symbol+' '+x.side+' position?')) return; }
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const pnl=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty;
-  x.status='closed'; x.exit=cur; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=(x.qty*x.entry)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
+  x.status='closed'; x.exit=cur; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; save(p); closeModal(); toast('Closed '+x.symbol+' @ '+money(cur)); render(); }
 // --- Position modal: open a position to see + modify it (add to it, close it) ---
 function openModal(html){ document.getElementById('modalbody').innerHTML=html; document.getElementById('modal').classList.add('show'); }
 function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); MODALPOS=null; }
 function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return '';
   const q=quote(x.symbol); const cur=q?q.price:x.entry; const open=x.status==='open';
   const pnl=open?(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty:x.pnl; const pc=pnl>=0?GREEN:RED;
-  const notional=x.qty*x.entry; const chg=(q&&q.change_pct!=null)?q.change_pct:0;
+  const notional=posNotional(x); const chg=(q&&q.change_pct!=null)?q.change_pct:0;
   const long=x.side==='long';
   return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${logoBadge(x,46)}
       <div style="flex:1;min-width:0"><div style="font-size:21px;font-weight:800">${x.symbol} <small style="color:${long?GREEN:RED};font-size:12px;font-weight:700">${x.side.toUpperCase()}</small></div>
-      <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; grade ${gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
+      <div style="color:var(--ash);font-size:12.5px">${esc(x.name||'')} &#183; entry grade ${x.gradeEntry||gLet(x.grade,false)}${x.adds?' &#183; '+x.adds+' add'+(x.adds>1?'s':''):''}</div></div>
       <div style="text-align:right"><div ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="font-weight:800;font-size:19px;color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div><div style="color:var(--ash);font-size:11px">${open?'unrealized':(x.result||'').toUpperCase()}</div></div></div>
     ${open?`<div class="pxbig">
       <div><div class="pxbig-k">&#9679; LIVE PRICE</div><div class="pxbig-p">$<span data-px="${x.symbol}">${pxFmt(cur)}</span></div></div>
       <div class="pxbig-c" data-pct="${x.symbol}" style="color:${moveCol(chg)}">${sign(chg)}</div></div>
-    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="addToPos('${x.id}')">+ Add $1,000 to position</button>`:''}
+    <button class="mbtn" style="background:${long?GREEN:RED};color:${long?'#062100':'#2a0000'};font-size:16px;margin-top:0" onclick="closeModal();openTradePanel('${x.symbol}')">+ Add to position</button>`:''}
     ${(function(){ var qa=quote(x.symbol); return qa?`<div class="chartbox" style="margin:6px 0 6px">${chart(qa)}<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>Now</span><span style="color:var(--ash)">live</span></div></div>`:''; })()}
     <div class="mrow"><span class="k">Avg entry</span><span class="v">${money(x.entry)}${open?'':' &#8594; '+money(x.exit)}</span></div>
-    <div class="mrow"><span class="k">Size</span><span class="v">${x.qty.toFixed(4)} &#183; $${money(notional)}</span></div>
+    <div class="mrow"><span class="k">Size</span><span class="v">$${money(notional)}${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''} &#183; <small style="color:var(--ash)">$${money(posMargin(x))} margin</small></span></div>
     ${open?`<div class="mrow"><span class="k">Held</span><span class="v" data-held="${x.opened||0}">${elapsed(x.opened)}</span></div>
     <div class="mrow"><span class="k">Grade now</span><span class="v" style="color:${(q?relGrade(q).c:'var(--ash)')}">${q?relGrade(q).l:(x.gradeEntry||'—')}${(q&&x.gradeEntry&&relGrade(q).l!==x.gradeEntry)?` <small style="color:var(--ash)">was ${x.gradeEntry}</small>`:''}</span></div>`:''}
     <div class="mrow"><span class="k">Target</span><span class="v" style="color:${GREEN}">${money(x.target)}</span></div>
@@ -904,7 +1049,7 @@ function ai(){
   const chips=['Teach me the method','How are setups graded?','What is a mental stop?',"Today's #1?",'Why fade, not chase?']
     .map(c=>`<div class="chip2" onclick="sendChat(this.textContent)">${c}</div>`).join('');
   const tab=S.aitab||'ask';
-  const hdr=`<div class="aihdr"><span class="munch"><span class="pac"></span><span class="cndl"></span></span>
+  const hdr=`<div class="aihdr"><button class="aiback" onclick="backFromAI()" aria-label="Back">&#8592;</button><span class="munch"><span class="pac"></span><span class="cndl"></span></span>
       <div><div class="nm">Fade AI</div><div class="on">&#9679; Online${API?'':' &#183; preview'}</div></div></div>`;
   const seg=`<div class="aiseg">${[['ask','Ask'],['chats','Chats'],['projects','Projects'],['scheduled','Scheduled']]
     .map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="setAiTab('${k}')">${l}</button>`).join('')}</div>`;
@@ -919,6 +1064,13 @@ function ai(){
   </div>`;
 }
 function setAiTab(t){ S.aitab=t; S.proj=null; S.sched=null; render(); if(t==='ask')scrollChat(); }
+// Back button on the AI screen: step out of a detail/subtab first, else return to the previous screen.
+function backFromAI(){
+  if(S.proj){ S.proj=null; render(); return; }
+  if(S.sched){ S.sched=null; render(); return; }
+  if((S.aitab||'ask')!=='ask'){ S.aitab='ask'; render(); return; }
+  go(S.prevScreen&&S.prevScreen!=='ai'?S.prevScreen:'feed');
+}
 // --- on-device persistence ---
 function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -1194,21 +1346,72 @@ async function doLogin(){
 }
 function signOut(){ saveUser(null); AUTHMODE='signup'; go('profile'); toast('Signed out'); }
 /* ---------- SETTINGS ---------- */
+// settings getters/setters (localStorage-backed, safe defaults)
+function defView(){ return lsGet('fade_default_view','stocks'); }
+function setDefView(v){ lsSet('fade_default_view',v); toast('Default view: '+(v==='both'?'Stocks + Crypto':v[0].toUpperCase()+v.slice(1))); render(); }
+function togglePrioritize(){ lsSet('fade_prioritize_stocks',!lsGet('fade_prioritize_stocks',true)); computeRel(); render(); }
+function defSize(){ return lsGet('fade_default_pct',25); }
+function setDefSize(p){ lsSet('fade_default_pct',Math.max(5,Math.min(100,p))); render(); }
+function defLev(){ return lsGet('fade_default_lev',1); }
+function setDefLev(l){ lsSet('fade_default_lev',l); render(); }
+function toggleConfirmClose(){ lsSet('fade_confirm_close',!lsGet('fade_confirm_close',false)); render(); }
 function settings(){
   if(!S.user) return authScreen();
   const ac=lsGet('fade_autoclose',false); const th=getTheme();
+  const prio=lsGet('fade_prioritize_stocks',true); const cc=lsGet('fade_confirm_close',false);
+  const dv=defView(); const dsz=defSize(); const dlv=defLev();
   const setrow=(k,d,on,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><div class="tgl ${on?'on':'off'}" onclick="${fn}"></div></div>`;
+  const segrow=(k,d,opts,cur,fn)=>`<div class="setrow"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div>
+    <div class="seg" style="width:auto;flex-shrink:0">${opts.map(([val,lbl])=>`<button class="${cur===val?'on':''}" onclick="${fn}('${val}')">${lbl}</button>`).join('')}</div></div>`;
+  const linkrow=(k,d,fn)=>`<div class="setrow" onclick="${fn}" style="cursor:pointer"><div style="flex:1;min-width:0"><div class="setk">${k}</div><div class="setd">${d}</div></div><span style="color:var(--ash);font-size:20px">&#8250;</span></div>`;
   return `<div class="screen">${topbar()}
     <div class="back" onclick="go('profile')"><span class="a">&#8592;</span> Profile</div>
     <div class="h1" style="margin:6px 0 6px">Settings</div>
+
     <div class="lbl">Appearance</div>
     <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Theme</div><div class="setd">Switch between dark and light mode.</div></div>
       <div class="seg" style="width:auto;flex-shrink:0"><button class="${th==='dark'?'on':''}" onclick="setTheme('dark')">Dark</button><button class="${th==='light'?'on':''}" onclick="setTheme('light')">Light</button></div></div>
-    <div class="lbl" style="margin-top:16px">Trading</div>
-    ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). When off, you close manually.',ac,'toggleAutoClose()')}
-    <div class="disc" style="text-align:left;margin-top:14px">Paper trading only &#183; no real money &#183; education, not advice. More settings coming soon.</div>
+
+    <div class="lbl" style="margin-top:16px">Markets</div>
+    ${segrow('Default view','Which market opens by default.',[['stocks','Stocks'],['both','Both'],['crypto','Crypto']],dv,'setDefView')}
+    ${setrow('Prioritize stocks over crypto','In the combined view, rank stocks above crypto unless it&#8217;s a major coin (BTC, ETH, XRP, ZEC&#8230;).',prio,'togglePrioritize()')}
+
+    <div class="lbl" style="margin-top:16px">Trading defaults</div>
+    <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default trade size</div><div class="setd">Pre-fills the trade panel with this % of your free cash.</div></div>
+      <div class="stepper"><button onclick="setDefSize(${dsz-5})">&#8722;</button><span>${dsz}%</span><button onclick="setDefSize(${dsz+5})">+</button></div></div>
+    <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">Default leverage</div><div class="setd">Spot is 1x. Panel opens on this by default.</div></div>
+      <div class="seg" style="width:auto;flex-shrink:0">${[1,2,3].map(l=>`<button class="${dlv===l?'on':''}" onclick="setDefLev(${l})">${l}x</button>`).join('')}</div></div>
+    ${setrow('Confirm before closing','Ask for a confirm tap before a position is closed.',cc,'toggleConfirmClose()')}
+    ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss).',ac,'toggleAutoClose()')}
+
+    <div class="lbl" style="margin-top:16px">Learning &amp; about</div>
+    ${linkrow('Replay the tutorial','Walk through the app again, step by step.','coachStart()')}
+    ${linkrow('How grading works','Plain-English glossary of the fade method.','openGlossary()')}
+    ${linkrow('Terms, privacy &amp; risk','How your data is handled and the risk disclosure.','openLegal()')}
+    ${linkrow('Send feedback','Tell us what to build or fix next.','sendFeedback()')}
+    <div class="setrow"><div style="flex:1;min-width:0"><div class="setk">App version</div><div class="setd">fade.markets</div></div><span class="mono" style="color:var(--ash);font-size:13px">v1.2.0</span></div>
+
+    <div class="disc" style="text-align:left;margin-top:14px">Paper trading only &#183; no real money &#183; education, not advice.</div>
   </div>`;
 }
+function openGlossary(){ openModal(`<div style="font-size:19px;font-weight:800;margin-bottom:4px">How grading works</div>
+  <div style="color:var(--ash);font-size:12.5px;margin-bottom:14px">The whole method, in plain English.</div>
+  ${[['Fade','Betting a too-fast move snaps back — like a stretched rubber band letting go. You bet on the bounce, not the chase.'],
+     ['Level','A price the asset reacted strongly to before, so traders watch it again. Fades work best at a level.'],
+     ['Volume','How much is trading. High volume means big players are active — a sign the move is real.'],
+     ['Grade A&#8211;F','A report card for a setup. A = big move, at a real level, on high volume. F = no real setup, skip it. Trade the A&#8217;s.'],
+     ['Entry / Target / Stop','Entry is now. Target is where it may snap back to (take profit). Mental stop is the price that proves you wrong — step aside.'],
+     ['Leverage','Borrowed size that multiplies both gains AND losses. 1x is spot (your cash only). Use it carefully.']]
+    .map(([k,v])=>`<div class="mrow" style="display:block;border-bottom:1px solid var(--line);padding:11px 0"><div style="font-weight:700;font-size:14px;margin-bottom:3px">${k}</div><div style="color:var(--ash);font-size:12.5px;line-height:1.55">${v}</div></div>`).join('')}
+  <button class="mbtn" style="background:none;color:var(--ash);margin-top:8px" onclick="closeModal()">Done</button>`); }
+function openLegal(){ openModal(`<div style="font-size:19px;font-weight:800;margin-bottom:10px">Terms, privacy &amp; risk</div>
+  <div style="color:var(--ashl);font-size:13px;line-height:1.65">
+  <p style="margin-bottom:10px"><b>Paper only.</b> Fade is education and paper trading. No real money moves, no orders are placed, nothing here is financial advice.</p>
+  <p style="margin-bottom:10px"><b>Your data.</b> Your account (username, and email or phone) is stored to run the app and the leaderboard. Your paper trades live on your device. We never sell your data. A connected Hyperliquid wallet is read-only by public address — no keys, no custody.</p>
+  <p style="margin-bottom:10px"><b>Risk.</b> Trading real assets carries substantial risk of loss, especially with leverage. Grades are educational signals, not recommendations. Past performance never guarantees future results. Do your own research.</p>
+  </div>
+  <button class="mbtn" style="background:none;color:var(--ash);margin-top:12px" onclick="closeModal()">Done</button>`); }
+function sendFeedback(){ S.chat=[{role:'assistant',content:"Love that you want to help shape Fade. Tell me what to build or fix next — I&#8217;ll pass it along. What&#8217;s on your mind?"}]; S.chatId=null; S.ctx='User is sending product feedback about the Fade app.'; S.screen='ai'; S.aitab='ask'; render(); }
 function getTheme(){ return lsGet('fade_theme','dark'); }
 function applyTheme(){ const t=getTheme();
   if(t==='light'){ document.documentElement.setAttribute('data-theme','light');
@@ -1227,7 +1430,7 @@ function autoCloseCheck(){ if(!lsGet('fade_autoclose',false)) return;
   p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return; const cur=q.price; let hit=null;
     if(x.side==='long'){ if(x.target&&cur>=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur<=x.stop)hit={p:x.stop,w:0}; }
     else { if(x.target&&cur<=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur>=x.stop)hit={p:x.stop,w:0}; }
-    if(hit){ const pnl=(x.side==='long'?(hit.p-x.entry):(x.entry-hit.p))*x.qty; x.status='closed'; x.exit=hit.p; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=(x.qty*x.entry)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p)); }
+    if(hit){ const pnl=(x.side==='long'?(hit.p-x.entry):(x.entry-hit.p))*x.qty; x.status='closed'; x.exit=hit.p; x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p)); }
   });
   if(changed){ save(p); if(S.screen==='wallet'||S.screen==='profile')render(); }
 }
@@ -1335,6 +1538,15 @@ function tick(){ if(document.hidden) return;
   }
   const hd=document.querySelectorAll('[data-held]');   // live "held Xm" timers
   for(let k=0;k<hd.length;k++){ hd[k].textContent=elapsed(+hd[k].getAttribute('data-held')); }
+  // live paper balance: equity + open P&L retick every frame off the MOVING ticker prices
+  const eqN=document.querySelector('[data-eq]');
+  if(eqN){ try{ const P=paper(); let dep=0,un=0;
+    for(const x of P.positions){ if(x.status!=='open')continue; const a=PXA[x.symbol]; const cur=(a&&a.disp!=null)?a.disp:x.entry;
+      un+=(x.side==='long'?(cur-x.entry):(x.entry-cur))*x.qty; dep+=posMargin(x); }
+    const eq=P.cash+dep+un;
+    eqN.textContent='$'+money(eq); eqN.style.color=eq>=10000?GREEN:RED;
+    const unN=document.querySelector('[data-unreal]'); if(unN){ unN.textContent=(un>=0?'+':'')+un.toFixed(2)+' open P&L'; unN.style.color=un>=0?GREEN:RED; }
+  }catch(e){} }
   updateChartNow();   // live chart NOW-line (detail screen OR the open-position sheet)
 }
 async function hydrate(){ if(!API) return;
@@ -1378,6 +1590,7 @@ async function loadChart(sym,attempt){ if(!API) return; const it=quote(sym); if(
   } }
 function retryChart(sym){ delete CHARTLD[sym]; const it=quote(sym); if(it)it.candles=null; loadChart(sym,1); chartRefresh(sym); }
 S.user=loadUser(); S.hlAddr=localStorage.getItem('fade_hl')||null;
+try{ S.scope=defView(); }catch(e){}   // open to the user's default market view (Settings) — a mid-session refresh restores current scope below
 // Guests get the walkthrough first (live board flashing behind it), then the signup
 // wall — they can look but can't trade until they make an account.
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
@@ -1389,6 +1602,18 @@ applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
+// Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
+// instead of leaving the page. Back closes whatever is open, else steps back a screen.
+try{ history.pushState({fade:1},''); window.addEventListener('popstate',function(){
+  var m=document.getElementById('modal'), sh=document.getElementById('shwrap');
+  if(m&&m.classList.contains('show')){ closeModal(); }
+  else if(sh&&sh.classList.contains('show')){ if(typeof closeShare==='function')closeShare(); }
+  else if(S.coach){ coachEnd(false); }
+  else if(S.screen==='ai'){ backFromAI(); }
+  else if(S.screen==='detail'){ go('markets'); }
+  else if(S.screen!=='feed'){ go('feed'); }
+  history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
+}); }catch(e){}
 </script>
 <style>html{-webkit-text-size-adjust:100%}body{overflow-x:hidden}#app{min-height:100vh;min-height:100dvh}.nav{padding-bottom:calc(13px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}</style>
 </body>
