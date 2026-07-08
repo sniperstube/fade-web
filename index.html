@@ -310,6 +310,14 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
 .tetriswrap{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 22%,rgba(46,123,255,.05),transparent 70%),#05070d}
 #tetris{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+/* pre-market / after-hours movers tape (only shown during extended hours) */
+.pmtape{margin:0 -14px;overflow:hidden;white-space:nowrap;background:#090b12;border-top:1px solid var(--line);border-bottom:1px solid var(--line);flex:none}
+.pmtape:empty{display:none}
+.pmtrack{display:inline-block;padding:6px 0;font-family:'Space Grotesk',ui-monospace,monospace;font-size:11px;font-weight:700;will-change:transform;animation:pmscroll 34s linear infinite}
+.pmtape .pu{color:var(--green)} .pmtape .pd{color:var(--red)}
+.pmtape .lbl{color:var(--yellow);font-weight:800;margin:0 12px 0 4px;letter-spacing:.04em}
+.pmtape .sep{color:#33333f}
+@keyframes pmscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .scanner.cr{background:radial-gradient(ellipse at 50% 30%,rgba(181,123,255,.07),transparent 70%),var(--void)}
 .scanner.shake{animation:scanshake .32s ease}
 @keyframes scanshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,-3px)}80%{transform:translate(3px,2px)}}
@@ -1192,6 +1200,17 @@ function tetInputInit(){ let sx=0,sy=0,moved=0,active=false,acc=0;
     else if(k==='ArrowUp'||k==='x'||k==='X')tetRotate(1); else if(k==='z'||k==='Z')tetRotate(-1);
     else if(k===' '){ if(!tetTapRestart())tetHard(); } else return; e.preventDefault(); }); }
 function tetrisHTML(){ return `<div class="tetriswrap" onclick="tetTapRestart()"><canvas id="tetris"></canvas></div>`; }
+// Pre-market / after-hours movers tape (only shows during extended hours; empty otherwise).
+let PM={ts:0};
+function pmTapeHTML(){ return `<div class="pmtape" id="pmtape"></div>`; }
+function loadPremarket(force){ if(!API)return; const now=Date.now(); if(!force&&PM.ts&&now-PM.ts<30000)return; PM.ts=now;
+  fetch(API+'/api/premarket').then(r=>r.json()).then(function(d){ const el=document.getElementById('pmtape'); if(!el)return;
+    const mv=(d&&d.movers)||[]; const ph=d&&d.phase;
+    if(!mv.length||(ph!=='premarket'&&ph!=='afterhours')){ el.innerHTML=''; return; }
+    const items=mv.map(m=>`<span class="${m.pct>=0?'pu':'pd'}">${esc(m.symbol)} ${m.pct>=0?'+':''}${m.pct}%</span>`).join('<span class="sep">  ·  </span>');
+    const seq=`<span class="lbl">${ph==='premarket'?'● PRE-MARKET':'● AFTER HOURS'}</span>${items}`;
+    el.innerHTML=`<div class="pmtrack">${seq}<span style="display:inline-block;width:30px"></span>${seq}</div>`;
+  }).catch(function(){}); }
 
 function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['crypto','Crypto']];
   return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
@@ -1202,7 +1221,7 @@ function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(
   a.sort(relSort); return a[0]||null; }
 function feed(){
   // STOCKS tab = Fade Blocks (Tetris), full-screen. Crypto keeps the Pac-Man scanner.
-  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetrisHTML()}</div>`;
+  if(S.scope==='stocks') return `<div class="screen scan-screen">${topbar()}${scopeBar()}${pmTapeHTML()}${tetrisHTML()}</div>`;
   const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
@@ -1873,7 +1892,7 @@ function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fad
 function render(){ try{ computeRel(); }catch(e){ RELG={}; }
   const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
   document.getElementById('app').innerHTML = scr() + nav();
-  fitGame(); }
+  fitGame(); if(S.screen==='feed'&&S.scope==='stocks')loadPremarket(); }
 
 // Game screen fills EXACTLY the visible viewport. On iOS Safari the URL toolbar makes
 // 100dvh/100vh unreliable (leaves a dead strip below the field), so we measure the real
@@ -2026,6 +2045,7 @@ applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
+setInterval(function(){ if(document.getElementById('pmtape'))loadPremarket(true); }, 60000);   // pre-market tape refresh
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
