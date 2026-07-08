@@ -1038,6 +1038,21 @@ function scanTick(){ const field=document.getElementById('scanfield'); const pm=
     gel.style.left=g.x+'%'; gel.style.top=g.y+'%';
     if(SCAN.playing&&SCAN.inv<=0&&Math.abs(g.x-SCAN.x)<3.2&&Math.abs(g.y-SCAN.y)<3.2){ scanCaught(field); }
   }
+  // --- Separation: entities never pile up. In idle "attract" mode (the screen-saver)
+  //     ghosts hold a standoff from pac so nothing overlaps; they also never stack on
+  //     each other. While you're actively playing they can still close in to catch you. ---
+  (function(){ const SEP=8.2;
+    for(let pass=0;pass<3;pass++){   // relaxation — resolves 3-way clusters, not just pairs
+      for(let i=0;i<SCAN.ghosts.length;i++){ const g=SCAN.ghosts[i]; if(!g.alive)continue;
+        if(!SCAN.playing){ let dx=g.x-SCAN.x,dy=g.y-SCAN.y,d=Math.hypot(dx,dy)||0.01;
+          if(d<SEP){ g.x=SCAN.x+dx/d*SEP; g.y=SCAN.y+dy/d*SEP; } }
+        for(let j=i+1;j<SCAN.ghosts.length;j++){ const h=SCAN.ghosts[j]; if(!h.alive)continue;
+          let ex=h.x-g.x,ey=h.y-g.y,e=Math.hypot(ex,ey)||0.01;
+          if(e<SEP){ const pp=(SEP-e)/2; ex/=e; ey/=e; g.x-=ex*pp; g.y-=ey*pp; h.x+=ex*pp; h.y+=ey*pp; } } }
+    }
+    for(let i=0;i<SCAN.ghosts.length;i++){ const g=SCAN.ghosts[i]; if(!g.alive)continue;
+      const gel=field.querySelector('.scan-ghost[data-g="'+i+'"]'); if(gel){ gel.style.left=g.x+'%'; gel.style.top=g.y+'%'; } }
+  })();
   // live countdown to open (refresh ~every 2s)
   if(++SCAN.openT>36){ SCAN.openT=0; const o=document.getElementById('scanopen'); if(o)o.textContent=nextMarketOpen(); }
 }
