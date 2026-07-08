@@ -728,7 +728,7 @@ function openTradePanel(sym){
 }
 function tradeAmt(){ const p=paper(); return Math.max(0,Math.min(TRADE.amt||0, p.cash)); }
 function setTradeAmt(v){ const p=paper(); TRADE.amt=Math.max(0,Math.min(Math.round(v), p.cash)); refreshTradePanel(); }
-function setTradePct(pct){ const p=paper(); TRADE.amt=Math.round(p.cash*pct/100); refreshTradePanel(); }
+function setTradePct(pct){ const p=paper(); TRADE.amt=Math.round(p.cash*pct/100); patchTradePanel(); }   // in-place (no rebuild) so Confirm stays instantly clickable
 function setTradeLev(l){ TRADE.lev=l; refreshTradePanel(); }
 function refreshTradePanel(){ const b=document.getElementById('modalbody'); if(b)b.innerHTML=tradePanel(); }
 // Smooth allocation: on slider / number drag, patch the derived values IN PLACE so we
@@ -1222,10 +1222,20 @@ function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','S
 function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal==='fade_short')); }
 function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
+// Stocks with NO live setup: downtime → Fade Blocks (Tetris) waiting room; market open but quiet →
+// a scanning line. NEVER the Pac-Man scanner — that game belongs to crypto only.
+function stocksIdleHTML(){
+  if(stocksClosedView()) return `${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}`;
+  return `<div style="text-align:center;padding:70px 26px;color:var(--dim)">
+    <div style="font-size:15px;font-weight:800;color:var(--ink);letter-spacing:.2px">Scanning stocks for setups&#8230;</div>
+    <div style="font-size:12.5px;color:var(--ash);margin-top:7px;line-height:1.55">Nothing at the extreme right now &#183; the board is live and watching.<br>Fade Blocks returns the moment the market closes.</div></div>`;
+}
 function feed(){
-  // STOCKS tab = Fade Blocks (Tetris), full-screen. Crypto keeps the Pac-Man scanner.
-  if(S.scope==='stocks' && stocksClosedView()) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tetHUDstrip()}${pmTapeHTML()}${tetrisHTML()}</div>`;
-  const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
+  // Live setups always win (trades take priority). Stocks with none → downtime waiting room (never
+  // Pac-Man). Crypto with none → the Pac-Man scanner.
+  const t=topFor();
+  if(S.scope==='stocks' && !t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${stocksIdleHTML()}</div>`;
+  if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
   const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
@@ -1267,7 +1277,7 @@ function markets(){
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')} &#183; <b style="color:${long?GREEN:RED};font-weight:800;letter-spacing:.3px">${long?'LONG':'SHORT'}</b></div></div>
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
-  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${scannerHTML(stocksClosedView())}</div>`;
+  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${S.scope==='stocks'?stocksIdleHTML():scannerHTML(stocksClosedView())}</div>`;   // stocks → Fade Blocks/scanning (never Pac-Man); crypto → Pac-Man scanner
   return `<div class="screen">${topbar()}
     ${scopeBar()}
     ${scanStrip()}
