@@ -308,8 +308,18 @@ input,textarea,select{font-size:16px}
 .scan-dot{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#3d5a80;transition:opacity .2s ease,transform .2s ease}
 .scanner.cr .scan-dot{background:#6b4d8a}
 .scan-dot.eaten{opacity:0;transform:scale(2.4)}
-.scan-dot.near{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:var(--yellow)!important;box-shadow:0 0 13px rgba(255,229,0,.7);animation:dotpulse 1.5s ease-in-out infinite}
-@keyframes dotpulse{0%,100%{opacity:.65;box-shadow:0 0 9px rgba(255,229,0,.5)}50%{opacity:1;box-shadow:0 0 15px rgba(255,229,0,.85)}}
+/* runners = near-trigger tickers: heat colour (yellow->orange->red) + a 3-phase progress ring
+   (lights up in thirds as it nears trigger) + exact %-to-trigger, and they MOVE (pac hunts them) */
+.runcoin{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;z-index:3;will-change:left,top;transition:opacity .25s,transform .25s}
+.runcoin.eaten{opacity:0;transform:scale(2.4)}
+.runcoin .rdot{position:absolute;inset:3px;border-radius:50%;background:var(--h);box-shadow:0 0 11px var(--h)}
+.runcoin .rring{position:absolute;inset:-7px;border-radius:50%;background:conic-gradient(from -90deg,var(--h) var(--fill),rgba(255,255,255,.05) 0);-webkit-mask:radial-gradient(transparent 55%,#000 58%);mask:radial-gradient(transparent 55%,#000 58%)}
+.runcoin .rgeo{position:absolute;inset:-7px;border-radius:50%;border:1px dashed var(--h);opacity:.32;animation:rgeospin 9s linear infinite}
+@keyframes rgeospin{to{transform:rotate(360deg)}}
+.runcoin.p3 .rdot{animation:hotpulse .7s ease-in-out infinite}
+@keyframes hotpulse{0%,100%{box-shadow:0 0 9px var(--h)}50%{box-shadow:0 0 22px var(--h)}}
+.runcoin .rlab{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-family:'Space Grotesk';font-size:9px;font-weight:800;color:var(--h);white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,.78);letter-spacing:.2px}
+.runcoin .rlab i{color:var(--ashl);font-style:normal;margin-left:3px}
 .scan-cap{position:absolute;transform:translate(9px,-50%);font-family:'Space Grotesk';font-size:9px;font-weight:800;color:var(--yellow);white-space:nowrap;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.7);opacity:.92}
 .scan-cap i{color:var(--ashl);font-style:normal;font-weight:600;margin-left:3px}
 .scan-pm{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;z-index:4;pointer-events:none;will-change:left,top,transform}
@@ -337,7 +347,7 @@ input,textarea,select{font-size:16px}
 @keyframes minichomp{0%,100%{clip-path:polygon(50% 50%,100% 0,100% 100%)}50%{clip-path:polygon(50% 50%,100% 38%,100% 62%)}}
 .scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
-@media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.scan-dot.near{animation:none}.scanner.shake{animation:none}}
+@media (prefers-reduced-motion:reduce){.scan-pm,.scan-ghost{transition:none!important}.runcoin .rgeo,.runcoin.p3 .rdot{animation:none}.scanner.shake{animation:none}}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
 .ava{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#123a80);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0a0a0f;flex-shrink:0}
@@ -894,21 +904,24 @@ function marketClosedCard(){ return scannerHTML(true); }
 let SCAN={x:50,y:52,tx:50,ty:52,dir:0,vx:0,vy:0,playing:false,score:0,best:0,combo:1,comboT:0,inv:0,idle:null,dots:null,sig:'',prevPlay:-1,ghosts:null,openT:0};
 try{ SCAN.best=+(localStorage.getItem('fade_hiscore')||0)||0; }catch(e){}
 const GHOST_DEFS=[{c:'#ff3b30',s:0.52},{c:'#ff6ac1',s:0.72},{c:'#00e5ff',s:0.40}];   // chasers at different speeds
+const HEAT={1:'#ffe500',2:'#ff9f0a',3:'#ff3b30'};   // cool -> warm -> red-hot as it nears trigger
 function scanData(){ const items=(BOARD.items||[]);
-  // "Almost there" coins = within 1.9% of triggering. We surface the ticker + its LIVE move %
-  // (public data) — NEVER the distance-to-threshold, so the proprietary trigger can't be reverse-engineered.
+  // "Almost there" coins = within 1.9% of triggering. Exact %-to-trigger IS shown (Naeem's call);
+  // phase 1/2/3 drives the heat colour, ring fill and run speed.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
-    .map(i=>({sym:i.symbol,gap:Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)),chg:i.change_pct}))
-    .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap).slice(0,18);
+    .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
+    .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap).slice(0,12);
   return {total:items.length,near}; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
-  const nd={}; scanData().near.forEach((x,idx)=>nd[x.sym]={chg:x.chg,rank:idx});
+  const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
   const dots=[];
   for(let i=0;i<n;i++){ const r=Math.floor(i/cols),c=i%cols;
     const jx=(((i*37)%11)-5)*0.5, jy=(((i*23)%9)-4)*0.7;   // organic jitter
-    const x=7+(c+0.5)/cols*86+jx, y=9+(r+0.5)/rows*76+jy, sym=items[i].symbol, near=nd[sym];
-    dots.push({x:Math.max(3,Math.min(95,x)),y:Math.max(6,Math.min(88,y)),sym,near:!!near,chg:near?near.chg:items[i].change_pct,rank:near?near.rank:99,eaten:false}); }
+    const gx=7+(c+0.5)/cols*86+jx, gy=9+(r+0.5)/rows*76+jy, sym=items[i].symbol, near=nd[sym];
+    if(near){ const ang=Math.random()*6.283, spd=0.22+near.phase*0.2;   // runners MOVE; faster = closer to trigger
+      dots.push({x:8+Math.random()*84,y:12+Math.random()*70,sym,run:true,phase:near.phase,gap:near.gap,chg:near.chg,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,eaten:false}); }
+    else dots.push({x:Math.max(3,Math.min(95,gx)),y:Math.max(6,Math.min(88,gy)),sym,run:false,eaten:false}); }
   SCAN.dots=dots; SCAN.sig=S.scope+':'+n; }
 function initGhosts(){ SCAN.ghosts=GHOST_DEFS.map(function(d){ return {x:5+Math.random()*90,y:4+Math.random()*16,speed:d.s,color:d.c,alive:true,resp:0,flee:false}; }); }
 // Time until the US market reopens (ET wall-clock, weekend + holiday aware). Returns "8h 23m" etc.
@@ -926,22 +939,25 @@ function scannerHTML(closed){
   if(!SCAN.dots||SCAN.sig!==S.scope+':'+d.total) buildScanField();
   if(!SCAN.ghosts) initGhosts();
   const cls=(S.scope==='crypto')?'cr':'st';
-  const dotsHTML=(SCAN.dots||[]).map((p,i)=>`<i class="scan-dot ${p.near?'near':''} ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`).join('');
-  // labels only on the ~8 closest "almost there" coins: ticker + LIVE move % (never the trigger gap)
-  const caps=(SCAN.dots||[]).filter(p=>p.near&&p.rank<8).map(p=>`<span class="scan-cap" style="left:${p.x}%;top:${p.y}%">${esc(p.sym)}<i>${sign(p.chg||0)}</i></span>`).join('');
+  const dotsHTML=(SCAN.dots||[]).map((p,i)=>{
+    if(p.run){ const h=HEAT[p.phase]||HEAT[1];
+      return `<div class="runcoin p${p.phase}${p.eaten?' eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%;--h:${h};--fill:${p.phase*120}deg">`
+        +`<div class="rring"></div>${p.phase>=2?'<div class="rgeo"></div>':''}<span class="rdot"></span>`
+        +`<span class="rlab">${esc(p.sym)}<i>${(p.gap||0).toFixed(1)}%</i></span></div>`; }
+    return `<i class="scan-dot ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`; }).join('');
   const ghostsHTML=(SCAN.ghosts||[]).map((g,i)=>`<div class="scan-ghost" data-g="${i}" style="left:${g.x}%;top:${g.y}%;color:${g.color};background:${g.color};opacity:${g.alive?1:0}"></div>`).join('');
-  const right=closed?`<span class="open">MARKET CLOSED</span><br>opens <span id="scanopen">${nextMarketOpen()}</span>`:`<span class="live">&#9679; LIVE</span><br>${d.total} ${cls==='cr'?'coins':'stocks'}`;
+  const right=closed?`<span class="open">MARKET CLOSED</span><br>opens <span id="scanopen">${nextMarketOpen()}</span>`:`<span class="live">&#9679; NEARING TRIGGER</span><br>${d.near.length} hot &#183; ${d.total} scanned`;
   return `<div class="scanner ${cls}">
-    <div class="scan-field" id="scanfield">${dotsHTML}${caps}${ghostsHTML}<div class="scan-pm${SCAN.inv>0?' inv':''}" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
+    <div class="scan-field" id="scanfield">${dotsHTML}${ghostsHTML}<div class="scan-pm${SCAN.inv>0?' inv':''}" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
     <div class="scan-hud2"><div class="sc"><span id="scanscore">${SCAN.score}</span><small>BEST <span id="scanbest">${SCAN.best}</span></small></div><div class="rt">${right}</div></div>
     <div class="scan-combo" id="scancombo"></div><div class="scan-caught" id="scancaught">CAUGHT!</div>
   </div>`; }
 function scanStrip(){ const d=scanData(); if(!d.total)return '';
   return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} for setups&#8230;</span>${d.near.length?`<span class="ss-n">${d.near.length} almost there</span>`:''}</div>`; }
-function scanPickTarget(){ if(!SCAN.dots||!SCAN.dots.length)return; let best=null,bd=1e9,bn=null,bnd=1e9;
-  for(const p of SCAN.dots){ if(p.eaten)continue; const dd=Math.hypot(p.x-SCAN.x,p.y-SCAN.y); if(dd<bd){bd=dd;best=p;} if(p.near&&dd<bnd){bnd=dd;bn=p;} }
-  const t=(bn&&Math.random()<0.6)?bn:best;   // prefer the glowing "almost there" coins
-  if(t){SCAN.tx=t.x;SCAN.ty=t.y;} else { SCAN.tx=8+Math.random()*84; SCAN.ty=12+Math.random()*72; } }
+function scanHuntTarget(){ if(!SCAN.dots)return null; let t=null,bs=-1e9;   // hunt the hottest, nearest runner (else nearest pellet)
+  for(const p of SCAN.dots){ if(p.eaten)continue; const dd=Math.hypot(p.x-SCAN.x,p.y-SCAN.y);
+    const s=(p.run?(p.phase*9+26):0)-dd; if(s>bs){bs=s;t=p;} }
+  return t; }
 function scanFlashCombo(n){ const el=document.getElementById('scancombo'); if(!el)return; el.textContent='x'+n; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function scanCaught(field){
   if(SCAN.score>SCAN.best){ SCAN.best=SCAN.score; try{localStorage.setItem('fade_hiscore',SCAN.best)}catch(e){} const b=document.getElementById('scanbest'); if(b)b.textContent=SCAN.best; }
@@ -952,21 +968,32 @@ function scanCaught(field){
 }
 function scanTick(){ const field=document.getElementById('scanfield'); const pm=document.getElementById('scanpm'); if(!field||!pm)return;
   if(!SCAN.dots)buildScanField(); if(!SCAN.ghosts)initGhosts();
-  // --- Pac-Man ---
+  // --- Pac-Man: you steer, or it auto-HUNTS the hottest runner (live chase) ---
   if(SCAN.playing){ SCAN.x=Math.max(3,Math.min(97,SCAN.x+SCAN.vx)); SCAN.y=Math.max(4,Math.min(96,SCAN.y+SCAN.vy)); if(SCAN.vx||SCAN.vy)SCAN.dir=Math.atan2(SCAN.vy,SCAN.vx); }
-  else { if(Math.hypot(SCAN.tx-SCAN.x,SCAN.ty-SCAN.y)<1.6)scanPickTarget(); const dx=SCAN.tx-SCAN.x,dy=SCAN.ty-SCAN.y,dist=Math.hypot(dx,dy)||1,spd=1.05; SCAN.x+=dx/dist*Math.min(spd,dist); SCAN.y+=dy/dist*Math.min(spd,dist); SCAN.dir=Math.atan2(dy,dx); }
+  else { const t=scanHuntTarget(); if(t){SCAN.tx=t.x;SCAN.ty=t.y;} else {SCAN.tx=8+Math.random()*84;SCAN.ty=12+Math.random()*72;}
+    const dx=SCAN.tx-SCAN.x,dy=SCAN.ty-SCAN.y,dist=Math.hypot(dx,dy)||1,spd=1.42; SCAN.x+=dx/dist*Math.min(spd,dist); SCAN.y+=dy/dist*Math.min(spd,dist); SCAN.dir=Math.atan2(dy,dx); }
   pm.style.left=SCAN.x+'%'; pm.style.top=SCAN.y+'%'; pm.style.transform='rotate('+(SCAN.dir*180/Math.PI)+'deg)';
   if(SCAN.inv>0){ SCAN.inv--; if(SCAN.inv===0)pm.classList.remove('inv'); else pm.classList.add('inv'); }
-  // --- eat (combo builds; glowing coins worth 5x; multiplier scales it) ---
+  // --- runners flee (faster = closer to trigger); eat with combo, heat-scaled points ---
   if(SCAN.comboT>0){ SCAN.comboT--; if(SCAN.comboT===0)SCAN.combo=1; }
-  const R=3.7; let ate=false;
-  for(let i=0;i<SCAN.dots.length;i++){ const p=SCAN.dots[i]; if(p.eaten)continue; if(Math.abs(p.x-SCAN.x)<R&&Math.abs(p.y-SCAN.y)<R){
-      p.eaten=true; ate=true; SCAN.combo=SCAN.comboT>0?Math.min(8,SCAN.combo+1):1; SCAN.comboT=26; SCAN.score+=(p.near?5:1)*SCAN.combo;
-      const el=field.querySelector('.scan-dot[data-i="'+i+'"]'); if(el)el.classList.add('eaten');
+  const R=3.9; let ate=false;
+  for(let i=0;i<SCAN.dots.length;i++){ const p=SCAN.dots[i]; if(p.eaten)continue;
+    if(p.run){ const dpx=p.x-SCAN.x,dpy=p.y-SCAN.y,pd=Math.hypot(dpx,dpy)||1;
+      if(pd<15){ p.vx+=dpx/pd*0.28; p.vy+=dpy/pd*0.28; }   // dart away from pac (near-miss tension)
+      p.vx+=(Math.random()-.5)*0.05; p.vy+=(Math.random()-.5)*0.05;
+      const maxs=0.35+p.phase*0.28, sp=Math.hypot(p.vx,p.vy)||1; if(sp>maxs){ p.vx=p.vx/sp*maxs; p.vy=p.vy/sp*maxs; }
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<4){p.x=4;p.vx=Math.abs(p.vx);} if(p.x>96){p.x=96;p.vx=-Math.abs(p.vx);}
+      if(p.y<7){p.y=7;p.vy=Math.abs(p.vy);} if(p.y>91){p.y=91;p.vy=-Math.abs(p.vy);}
+      const rel=field.querySelector('.runcoin[data-i="'+i+'"]'); if(rel){ rel.style.left=p.x+'%'; rel.style.top=p.y+'%'; } }
+    if(Math.abs(p.x-SCAN.x)<R&&Math.abs(p.y-SCAN.y)<R){
+      p.eaten=true; ate=true; SCAN.combo=SCAN.comboT>0?Math.min(8,SCAN.combo+1):1; SCAN.comboT=26;
+      SCAN.score+=(p.run?(p.phase*3+1):1)*SCAN.combo;   // hotter runner (closer to trigger) = more
+      const el=field.querySelector('[data-i="'+i+'"]'); if(el)el.classList.add('eaten');
       if(SCAN.combo>=3)scanFlashCombo(SCAN.combo); } }
   if(ate){ const s=document.getElementById('scanscore'); if(s)s.textContent=SCAN.score; }
   const eaten=SCAN.dots.filter(p=>p.eaten).length;   // swept the field → fresh scan cycle
-  if(SCAN.dots.length&&eaten>=SCAN.dots.length*0.9){ for(const p of SCAN.dots)p.eaten=false; field.querySelectorAll('.scan-dot.eaten').forEach(e=>e.classList.remove('eaten')); }
+  if(SCAN.dots.length&&eaten>=SCAN.dots.length*0.9){ for(const p of SCAN.dots)p.eaten=false; field.querySelectorAll('.eaten').forEach(e=>e.classList.remove('eaten')); }
   // --- ghosts: chase at varying speed, drift off-screen (despawn), respawn; escalate with score ---
   const esc2=1+Math.min(1.3,SCAN.score/400);
   for(let i=0;i<SCAN.ghosts.length;i++){ const g=SCAN.ghosts[i]; const gel=field.querySelector('.scan-ghost[data-g="'+i+'"]'); if(!gel)continue;
