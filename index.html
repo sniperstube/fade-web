@@ -299,14 +299,12 @@ input,textarea,select{font-size:16px}
 /* ---------- Pac-Man Hunt live scanner (fills the empty state; ambient + secretly playable) ---------- */
 .scan-screen{display:flex;flex-direction:column;padding:14px 14px 12px;height:calc(100vh - 60px);height:calc(100dvh - 60px)}
 .scanner{position:relative;flex:1;min-height:300px;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 32%,rgba(46,123,255,.08),transparent 68%),var(--void2);border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.scan-hud{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;border-bottom:1px solid var(--line);flex-shrink:0;font-family:'Space Grotesk';font-size:10.5px;letter-spacing:.5px;color:var(--ash)}
-.scan-hud .sh-live{display:flex;align-items:center;gap:7px;font-weight:800;text-transform:uppercase}
-.scan-hud .sh-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:livepulse 2.4s ease-in-out infinite}
-.scan-hud .sh-count{font-family:'Press Start 2P';font-size:7.5px;color:var(--dim)}
+.scan-mini{position:absolute;top:12px;right:15px;display:flex;align-items:center;gap:8px;z-index:4;pointer-events:none;font-family:'Press Start 2P';font-size:10px;color:var(--yellow);opacity:.9}
+.scan-mini .sm-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:livepulse 2.4s ease-in-out infinite}
 .scan-field{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:crosshair}
-.scan-dot{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--dim);transition:opacity .3s ease,transform .3s ease}
+.scan-dot{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--dim);transition:opacity .25s ease,transform .25s ease}
 .scan-dot.eaten{opacity:0;transform:scale(0)}
-.scan-dot.near{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--yellow);box-shadow:0 0 10px rgba(255,229,0,.55);animation:dotpulse 1.8s ease-in-out infinite}
+.scan-dot.near{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:var(--yellow);box-shadow:0 0 12px rgba(255,229,0,.65);animation:dotpulse 1.6s ease-in-out infinite}
 .scan-label{position:absolute;transform:translate(11px,-50%);font-family:'Space Grotesk';font-size:9.5px;font-weight:700;color:var(--ashl);white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.55)}
 .scan-label b{color:var(--yellow)}
 .scan-pm{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;z-index:3;pointer-events:none;will-change:left,top,transform}
@@ -887,9 +885,10 @@ const SCAN_LESSONS=[
   "Never fade a collapse &#8212; that's a falling knife, not a bounce.",
   "Patience is the edge. The sniper waits; he doesn't chase."];
 function scanData(){ const items=(BOARD.items||[]);
+  // "Almost there" coins = anything within 1.9% of triggering a setup. These glow — the crumbs worth watching.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>({sym:i.symbol,gap:Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0))}))
-    .sort((a,b)=>a.gap-b.gap).slice(0,3);
+    .filter(x=>x.gap<=1.9).sort((a,b)=>a.gap-b.gap).slice(0,18);
   return {total:items.length,near}; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach(x=>nd[x.sym]=x);
@@ -908,16 +907,11 @@ function scanLesson(){ return SCAN_LESSONS[Math.floor(Date.now()/6500)%SCAN_LESS
 function scannerHTML(closed){
   const d=scanData();
   if(!SCAN.dots||SCAN.sig!==S.scope+':'+d.total) buildScanField();
-  const streak=patienceStreak();
   const dotsHTML=(SCAN.dots||[]).map((p,i)=>`<i class="scan-dot ${p.near?'near':''} ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`).join('');
-  const labels=(SCAN.dots||[]).filter(p=>p.near).map(p=>`<span class="scan-label" style="left:${p.x}%;top:${p.y}%"><b>${esc(p.sym)}</b> ${(p.gap||0).toFixed(1)}% away</span>`).join('');
-  const foot=closed
-    ? `<div class="scan-lesson">Stocks reopen <b>6:30am PST</b>, Mon&#8211;Fri. Crypto never closes &#8212; the hunt continues.</div>`
-    : `${streak>1?`<div class="scan-streak">You've patiently skipped <b>${streak}</b> no-setup days</div>`:''}<div class="scan-lesson">${scanLesson()}</div>`;
+  // Least text possible — just the game. A live dot + score, nothing else.
   return `<div class="scanner">
-    <div class="scan-hud"><span class="sh-live"><span class="sh-dot"${closed?' style="background:var(--ash);box-shadow:none"':''}></span>${closed?'Market closed':'Hunting'}</span><span class="sh-count">${closed?'CRYPTO HUNT LIVE':'SCANNING '+d.total+' ASSETS'}</span></div>
-    <div class="scan-field" id="scanfield">${dotsHTML}${labels}<div class="scan-pm" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
-    <div class="scan-foot">${foot}<div class="scan-score${SCAN.playing?' on':''}" id="scanscore">CRUMBS ${SCAN.score}</div></div>
+    <div class="scan-field" id="scanfield">${dotsHTML}<div class="scan-pm" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
+    <div class="scan-mini"><span class="sm-dot"${closed?' style="background:var(--ash);box-shadow:none"':''}></span><span id="scanscore">${SCAN.score}</span></div>
   </div>`; }
 function scanStrip(){ const d=scanData(); if(!d.total)return '';
   return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} assets for setups&#8230;</span>${d.near.length?`<span class="ss-n">closest ${esc(d.near[0].sym)} ${d.near[0].gap.toFixed(1)}%</span>`:''}</div>`; }
@@ -927,17 +921,17 @@ function scanPickTarget(){ if(!SCAN.dots||!SCAN.dots.length)return; let best=nul
 function scanTick(){ const field=document.getElementById('scanfield'); const pm=document.getElementById('scanpm'); if(!field||!pm)return;
   if(!SCAN.dots)buildScanField();
   if(SCAN.playing){ SCAN.x=Math.max(3,Math.min(96,SCAN.x+SCAN.vx)); SCAN.y=Math.max(4,Math.min(95,SCAN.y+SCAN.vy)); if(SCAN.vx||SCAN.vy)SCAN.dir=Math.atan2(SCAN.vy,SCAN.vx); }
-  else { if(Math.hypot(SCAN.tx-SCAN.x,SCAN.ty-SCAN.y)<1.6)scanPickTarget(); const dx=SCAN.tx-SCAN.x,dy=SCAN.ty-SCAN.y,dist=Math.hypot(dx,dy)||1,spd=0.85; SCAN.x+=dx/dist*Math.min(spd,dist); SCAN.y+=dy/dist*Math.min(spd,dist); SCAN.dir=Math.atan2(dy,dx); }
+  else { if(Math.hypot(SCAN.tx-SCAN.x,SCAN.ty-SCAN.y)<1.6)scanPickTarget(); const dx=SCAN.tx-SCAN.x,dy=SCAN.ty-SCAN.y,dist=Math.hypot(dx,dy)||1,spd=1.0; SCAN.x+=dx/dist*Math.min(spd,dist); SCAN.y+=dy/dist*Math.min(spd,dist); SCAN.dir=Math.atan2(dy,dx); }
   pm.style.left=SCAN.x+'%'; pm.style.top=SCAN.y+'%'; pm.style.transform='rotate('+(SCAN.dir*180/Math.PI)+'deg)';
-  const R=3.4; let ate=false;
-  for(let i=0;i<SCAN.dots.length;i++){ const p=SCAN.dots[i]; if(p.eaten)continue; if(Math.abs(p.x-SCAN.x)<R&&Math.abs(p.y-SCAN.y)<R){ p.eaten=true; SCAN.score++; ate=true; const el=field.querySelector('.scan-dot[data-i="'+i+'"]'); if(el)el.classList.add('eaten'); } }
-  if(ate){ const s=document.getElementById('scanscore'); if(s)s.textContent='CRUMBS '+SCAN.score; }
+  const R=3.6; let ate=false;
+  for(let i=0;i<SCAN.dots.length;i++){ const p=SCAN.dots[i]; if(p.eaten)continue; if(Math.abs(p.x-SCAN.x)<R&&Math.abs(p.y-SCAN.y)<R){ p.eaten=true; SCAN.score+=(p.near?5:1); ate=true; const el=field.querySelector('.scan-dot[data-i="'+i+'"]'); if(el)el.classList.add('eaten'); } }
+  if(ate){ const s=document.getElementById('scanscore'); if(s)s.textContent=SCAN.score; }
   const eaten=SCAN.dots.filter(p=>p.eaten).length;   // full sweep done → new scan cycle
   if(SCAN.dots.length&&eaten>=SCAN.dots.length*0.88){ for(const p of SCAN.dots)p.eaten=false; field.querySelectorAll('.scan-dot.eaten').forEach(e=>e.classList.remove('eaten')); }
 }
-function scanSteer(dx,dy){ const spd=1.15; if(Math.abs(dx)>Math.abs(dy)){SCAN.vx=dx>0?spd:-spd;SCAN.vy=0;}else{SCAN.vy=dy>0?spd:-spd;SCAN.vx=0;}
-  SCAN.playing=true; const sc=document.getElementById('scanscore'); if(sc)sc.classList.add('on');
-  clearTimeout(SCAN.idle); SCAN.idle=setTimeout(function(){SCAN.playing=false;SCAN.vx=SCAN.vy=0;const s=document.getElementById('scanscore');if(s)s.classList.remove('on');},2800); }
+function scanSteer(dx,dy){ const spd=1.5; if(Math.abs(dx)>Math.abs(dy)){SCAN.vx=dx>0?spd:-spd;SCAN.vy=0;}else{SCAN.vy=dy>0?spd:-spd;SCAN.vx=0;}
+  SCAN.playing=true; clearTimeout(SCAN.idle);
+  SCAN.idle=setTimeout(function(){SCAN.playing=false;SCAN.vx=SCAN.vy=0;},3200); }
 // Easter egg (undocumented): swipe / arrow keys steer Pac-Man. Scoped to the scan field so it
 // never hijacks normal scrolling or the browser back-swipe trap.
 function scanInputInit(){ let sx=0,sy=0,active=false;
