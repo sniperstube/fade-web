@@ -1134,8 +1134,8 @@ function tetFit(){ const cv=TET.cv; if(!cv)return; const wrap=cv.parentElement; 
   TET.ctx.setTransform(dpr,0,0,dpr,0,0); TET.W=w; TET.H=h; }
 function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,H=TET.H;
   ctx.clearRect(0,0,W,H);
-  const HUD=64; const cell=Math.min(Math.floor((W-14)/10), Math.floor((H-HUD-12)/20));
-  const wW=cell*10, wH=cell*20; const wx=Math.round((W-wW)/2), wy=HUD+Math.round((H-HUD-wH)/2);
+  const M=3; const cell=Math.min(Math.floor((W-M*2)/10), Math.floor((H-M*2)/20));
+  const wW=cell*10, wH=cell*20; const wx=Math.round((W-wW)/2), wy=Math.round((H-wH)/2);
   // well bg + grid
   ctx.fillStyle='#0a0c12'; ctx.fillRect(wx-2,wy-2,wW+4,wH+4);
   ctx.strokeStyle='#1a2030'; ctx.lineWidth=1;
@@ -1147,15 +1147,17 @@ function tetDraw(){ const ctx=TET.ctx; if(!ctx||!TET.grid)return; const W=TET.W,
   if(!TET.over){ const gy=tetGhostY(); const col=TET_COL[TET.piece];
     for(const [cx,cy] of tetCells(TET.x,gy,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col,true); }
     for(const [cx,cy] of tetCells(TET.x,TET.y,TET.rot)){ if(cy>=0)tetBlock(ctx,wx+cx*cell,wy+cy*cell,cell,col); } }
-  // HUD
-  ctx.textAlign='left'; ctx.fillStyle='#ffe500'; ctx.font='900 22px -apple-system,Arial'; ctx.fillText(String(TET.score),14,30);
-  ctx.fillStyle='#5a5a6a'; ctx.font='8px ui-monospace,Menlo,monospace'; ctx.fillText('BEST '+TET.best+'  ·  LINES '+TET.lines+'  ·  LV '+TET.level,14,46);
-  ctx.textAlign='center'; ctx.fillStyle=TET_COL[TET.piece]||'#fff'; ctx.font='900 12px -apple-system,Arial';
-  ctx.fillText('▾ '+TET.sym, W/2, 26);
-  ctx.fillStyle='#7a7a8a'; ctx.font='8px ui-monospace,Menlo,monospace'; ctx.fillText('NEXT '+TET.nsym, W/2, 42);
-  // next preview mini (top-right)
-  const nk=TET.next; if(nk){ const ns=9; const nx=W-58, ny=16; ctx.fillStyle='rgba(255,255,255,.03)'; ctx.fillRect(nx-4,ny-4,ns*4+8,ns*4+8);
+  // HUD — overlaid on the top of the board (kept compact so the well is as large as possible)
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.9)'; ctx.shadowBlur=4;
+  ctx.textAlign='left'; ctx.fillStyle='#ffe500'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(String(TET.score),wx+6,wy+21);
+  ctx.fillStyle='#c7c7d0'; ctx.font='800 8px ui-monospace,Menlo,monospace'; ctx.fillText('BEST '+TET.best+' · L'+TET.lines+' · LV'+TET.level,wx+6,wy+35);
+  ctx.fillStyle=TET_COL[TET.piece]||'#fff'; ctx.font='900 11px -apple-system,Arial'; ctx.fillText('▾ '+TET.sym, wx+6, wy+51);
+  // next preview mini (top-right, over the well)
+  const nk=TET.next; if(nk){ const ns=Math.max(7,Math.floor(cell*0.42));
+    ctx.textAlign='right'; ctx.fillStyle='#9a9aac'; ctx.font='800 7px ui-monospace,Menlo,monospace'; ctx.fillText('NEXT', wx+wW-6, wy+13);
+    const nx=wx+wW-ns*4-6, ny=wy+17; ctx.shadowBlur=0;
     for(const [cx,cy] of TET_PIECES[nk][0]){ tetBlock(ctx,nx+cx*ns,ny+cy*ns,ns,TET_COL[nk]); } }
+  ctx.restore();
   // flash
   if(TET.flash>0){ ctx.globalAlpha=Math.min(1,TET.flash/12); ctx.textAlign='center'; ctx.fillStyle='#39ff14'; ctx.font='900 20px -apple-system,Arial'; ctx.fillText(TET.flashTxt, W/2, wy+wH/2); ctx.globalAlpha=1; }
   if(TET.over){ ctx.fillStyle='rgba(0,0,0,.72)'; ctx.fillRect(0,0,W,H); ctx.textAlign='center';
