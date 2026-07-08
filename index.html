@@ -296,6 +296,35 @@ input,textarea,select{font-size:16px}
 .pos-open{box-shadow:inset 3px 0 0 rgba(57,255,20,.55)}   /* live: subtle green edge */
 .pos-closed{opacity:.5;background:transparent}            /* history: muted + flat */
 .empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
+/* ---------- Pac-Man Hunt live scanner (fills the empty state; ambient + secretly playable) ---------- */
+.scan-screen{display:flex;flex-direction:column;padding:14px 14px 12px;height:calc(100vh - 60px);height:calc(100dvh - 60px)}
+.scanner{position:relative;flex:1;min-height:300px;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 32%,rgba(46,123,255,.08),transparent 68%),var(--void2);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.scan-hud{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;border-bottom:1px solid var(--line);flex-shrink:0;font-family:'Space Grotesk';font-size:10.5px;letter-spacing:.5px;color:var(--ash)}
+.scan-hud .sh-live{display:flex;align-items:center;gap:7px;font-weight:800;text-transform:uppercase}
+.scan-hud .sh-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:livepulse 2.4s ease-in-out infinite}
+.scan-hud .sh-count{font-family:'Press Start 2P';font-size:7.5px;color:var(--dim)}
+.scan-field{position:relative;flex:1;overflow:hidden;touch-action:none;cursor:crosshair}
+.scan-dot{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--dim);transition:opacity .3s ease,transform .3s ease}
+.scan-dot.eaten{opacity:0;transform:scale(0)}
+.scan-dot.near{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--yellow);box-shadow:0 0 10px rgba(255,229,0,.55);animation:dotpulse 1.8s ease-in-out infinite}
+.scan-label{position:absolute;transform:translate(11px,-50%);font-family:'Space Grotesk';font-size:9.5px;font-weight:700;color:var(--ashl);white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+.scan-label b{color:var(--yellow)}
+.scan-pm{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;z-index:3;pointer-events:none;will-change:left,top,transform}
+.scan-pm .pac-body{width:24px;height:24px;border-radius:50%;background:conic-gradient(var(--yellow) 0 54deg,transparent 54deg 126deg,var(--yellow) 126deg);filter:drop-shadow(0 0 6px rgba(255,229,0,.45))}
+@keyframes dotpulse{0%,100%{opacity:.6}50%{opacity:1}}
+.scan-foot{flex-shrink:0;border-top:1px solid var(--line);padding:12px 14px 13px;text-align:center;background:var(--void)}
+.scan-streak{font-family:'Space Grotesk';font-size:11px;color:var(--ash);font-weight:600;margin-bottom:6px}
+.scan-streak b{color:var(--green)}
+.scan-lesson{font-family:'Space Grotesk';font-size:11.5px;color:var(--ashl);line-height:1.5;min-height:17px}
+.scan-lesson b{color:var(--txt)}
+.scan-score{font-family:'Press Start 2P';font-size:8px;color:var(--yellow);margin-top:9px;opacity:0;transition:opacity .3s;letter-spacing:1px}
+.scan-score.on{opacity:1}
+.scan-strip{display:flex;align-items:center;gap:9px;padding:8px 12px;background:var(--void2);border:1px solid var(--line);border-radius:11px;margin-bottom:11px;font-family:'Space Grotesk';font-size:11px;color:var(--ash);overflow:hidden}
+.scan-strip .mini-pac{width:15px;height:15px;flex-shrink:0;border-radius:50%;background:conic-gradient(var(--yellow) 0 54deg,transparent 54deg 126deg,var(--yellow) 126deg);animation:minichomp .6s ease-in-out infinite}
+@keyframes minichomp{0%,100%{clip-path:polygon(50% 50%,100% 0,100% 100%)}50%{clip-path:polygon(50% 50%,100% 38%,100% 62%)}}
+.scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
+@media (prefers-reduced-motion:reduce){.scan-pm{transition:none!important}.scan-dot.near{animation:none}.scan-strip .mini-pac{animation:none}.scan-hud .sh-dot{animation:none}}
 /* social */
 .house{background:radial-gradient(400px 200px at 80% 0,rgba(46,123,255,.14),transparent 60%),linear-gradient(160deg,#161019,var(--panel));border:1.5px solid rgba(46,123,255,.4);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
 .ava{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue),#123a80);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0a0a0f;flex-shrink:0}
@@ -846,7 +875,77 @@ function inScope(i){
 }
 // True when the current view is a stocks-only view AND the market is closed (→ show the closed card).
 function stocksClosedView(){ return (stocksOnly()||S.scope==='stocks') && !stockMarketOpen(); }
-function marketClosedCard(){ return `<div class="empty" style="padding:32px 18px;line-height:1.6"><div style="font-size:32px;margin-bottom:8px">&#128564;</div><b style="color:var(--txt);font-size:15px">US market closed</b><br><span style="font-size:12.5px">Stock fades open at <b>6:30am PST</b> (9:30am ET), Mon&#8211;Fri.<br>Crypto is live 24/7 &#8212; switch to Crypto or Stocks + Crypto.</span></div>`; }
+function marketClosedCard(){ return scannerHTML(true); }
+
+/* ---------- Pac-Man Hunt scanner: ambient auto-hunt over real scan data; secretly playable ---------- */
+let SCAN={x:50,y:46,tx:50,ty:46,dir:0,vx:0,vy:0,playing:false,score:0,idle:null,dots:null,sig:'',prevPlay:-1};
+const SCAN_LESSONS=[
+  "The best trade is often no trade &#8212; we wait for the right crumb.",
+  "A fade needs a big move, at a real level, on volume. No shortcuts.",
+  "We eat the crumbs institutions leave when they de-risk a crowded trade.",
+  "Large-caps only. Small-caps are too wild to fade.",
+  "Never fade a collapse &#8212; that's a falling knife, not a bounce.",
+  "Patience is the edge. The sniper waits; he doesn't chase."];
+function scanData(){ const items=(BOARD.items||[]);
+  const near=items.filter(i=>!i.breached&&i.change_pct!=null)
+    .map(i=>({sym:i.symbol,gap:Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0))}))
+    .sort((a,b)=>a.gap-b.gap).slice(0,3);
+  return {total:items.length,near}; }
+function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
+  const nd={}; scanData().near.forEach(x=>nd[x.sym]=x);
+  const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
+  const dots=[];
+  for(let i=0;i<n;i++){ const r=Math.floor(i/cols),c=i%cols;
+    const jx=(((i*37)%11)-5)*0.5, jy=(((i*23)%9)-4)*0.7;   // organic jitter
+    const x=7+(c+0.5)/cols*86+jx, y=9+(r+0.5)/rows*78+jy, sym=items[i].symbol;
+    dots.push({x:Math.max(3,Math.min(95,x)),y:Math.max(5,Math.min(90,y)),sym,near:!!nd[sym],gap:nd[sym]?nd[sym].gap:null,eaten:false}); }
+  SCAN.dots=dots; SCAN.sig=S.scope+':'+n; }
+function patienceStreak(){ let today; try{today=new Date().toISOString().slice(0,10);}catch(e){return 0;}
+  let st={}; try{st=JSON.parse(localStorage.getItem('fade_patience')||'{}')}catch(e){}
+  if(st.last!==today){ st.days=(st.days||0)+1; st.last=today; try{localStorage.setItem('fade_patience',JSON.stringify(st))}catch(e){} }
+  return st.days||0; }
+function scanLesson(){ return SCAN_LESSONS[Math.floor(Date.now()/6500)%SCAN_LESSONS.length]; }
+function scannerHTML(closed){
+  const d=scanData();
+  if(!SCAN.dots||SCAN.sig!==S.scope+':'+d.total) buildScanField();
+  const streak=patienceStreak();
+  const dotsHTML=(SCAN.dots||[]).map((p,i)=>`<i class="scan-dot ${p.near?'near':''} ${p.eaten?'eaten':''}" data-i="${i}" style="left:${p.x}%;top:${p.y}%"></i>`).join('');
+  const labels=(SCAN.dots||[]).filter(p=>p.near).map(p=>`<span class="scan-label" style="left:${p.x}%;top:${p.y}%"><b>${esc(p.sym)}</b> ${(p.gap||0).toFixed(1)}% away</span>`).join('');
+  const foot=closed
+    ? `<div class="scan-lesson">Stocks reopen <b>6:30am PST</b>, Mon&#8211;Fri. Crypto never closes &#8212; the hunt continues.</div>`
+    : `${streak>1?`<div class="scan-streak">You've patiently skipped <b>${streak}</b> no-setup days</div>`:''}<div class="scan-lesson">${scanLesson()}</div>`;
+  return `<div class="scanner">
+    <div class="scan-hud"><span class="sh-live"><span class="sh-dot"${closed?' style="background:var(--ash);box-shadow:none"':''}></span>${closed?'Market closed':'Hunting'}</span><span class="sh-count">${closed?'CRYPTO HUNT LIVE':'SCANNING '+d.total+' ASSETS'}</span></div>
+    <div class="scan-field" id="scanfield">${dotsHTML}${labels}<div class="scan-pm" id="scanpm" style="left:${SCAN.x}%;top:${SCAN.y}%"><div class="pac-body"></div></div></div>
+    <div class="scan-foot">${foot}<div class="scan-score${SCAN.playing?' on':''}" id="scanscore">CRUMBS ${SCAN.score}</div></div>
+  </div>`; }
+function scanStrip(){ const d=scanData(); if(!d.total)return '';
+  return `<div class="scan-strip"><span class="mini-pac"></span><span class="ss-t">Scanning ${d.total} assets for setups&#8230;</span>${d.near.length?`<span class="ss-n">closest ${esc(d.near[0].sym)} ${d.near[0].gap.toFixed(1)}%</span>`:''}</div>`; }
+function scanPickTarget(){ if(!SCAN.dots||!SCAN.dots.length)return; let best=null,bd=1e9;
+  for(const p of SCAN.dots){ if(p.eaten)continue; const dd=Math.hypot(p.x-SCAN.x,p.y-SCAN.y); if(dd<bd){bd=dd;best=p;} }
+  if(best){SCAN.tx=best.x;SCAN.ty=best.y;} else { SCAN.tx=8+Math.random()*84; SCAN.ty=10+Math.random()*76; } }
+function scanTick(){ const field=document.getElementById('scanfield'); const pm=document.getElementById('scanpm'); if(!field||!pm)return;
+  if(!SCAN.dots)buildScanField();
+  if(SCAN.playing){ SCAN.x=Math.max(3,Math.min(96,SCAN.x+SCAN.vx)); SCAN.y=Math.max(4,Math.min(95,SCAN.y+SCAN.vy)); if(SCAN.vx||SCAN.vy)SCAN.dir=Math.atan2(SCAN.vy,SCAN.vx); }
+  else { if(Math.hypot(SCAN.tx-SCAN.x,SCAN.ty-SCAN.y)<1.6)scanPickTarget(); const dx=SCAN.tx-SCAN.x,dy=SCAN.ty-SCAN.y,dist=Math.hypot(dx,dy)||1,spd=0.85; SCAN.x+=dx/dist*Math.min(spd,dist); SCAN.y+=dy/dist*Math.min(spd,dist); SCAN.dir=Math.atan2(dy,dx); }
+  pm.style.left=SCAN.x+'%'; pm.style.top=SCAN.y+'%'; pm.style.transform='rotate('+(SCAN.dir*180/Math.PI)+'deg)';
+  const R=3.4; let ate=false;
+  for(let i=0;i<SCAN.dots.length;i++){ const p=SCAN.dots[i]; if(p.eaten)continue; if(Math.abs(p.x-SCAN.x)<R&&Math.abs(p.y-SCAN.y)<R){ p.eaten=true; SCAN.score++; ate=true; const el=field.querySelector('.scan-dot[data-i="'+i+'"]'); if(el)el.classList.add('eaten'); } }
+  if(ate){ const s=document.getElementById('scanscore'); if(s)s.textContent='CRUMBS '+SCAN.score; }
+  const eaten=SCAN.dots.filter(p=>p.eaten).length;   // full sweep done → new scan cycle
+  if(SCAN.dots.length&&eaten>=SCAN.dots.length*0.88){ for(const p of SCAN.dots)p.eaten=false; field.querySelectorAll('.scan-dot.eaten').forEach(e=>e.classList.remove('eaten')); }
+}
+function scanSteer(dx,dy){ const spd=1.15; if(Math.abs(dx)>Math.abs(dy)){SCAN.vx=dx>0?spd:-spd;SCAN.vy=0;}else{SCAN.vy=dy>0?spd:-spd;SCAN.vx=0;}
+  SCAN.playing=true; const sc=document.getElementById('scanscore'); if(sc)sc.classList.add('on');
+  clearTimeout(SCAN.idle); SCAN.idle=setTimeout(function(){SCAN.playing=false;SCAN.vx=SCAN.vy=0;const s=document.getElementById('scanscore');if(s)s.classList.remove('on');},2800); }
+// Easter egg (undocumented): swipe / arrow keys steer Pac-Man. Scoped to the scan field so it
+// never hijacks normal scrolling or the browser back-swipe trap.
+function scanInputInit(){ let sx=0,sy=0,active=false;
+  document.addEventListener('touchstart',function(e){ const f=document.getElementById('scanfield'); if(!f||!f.contains(e.target)){active=false;return;} active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+  document.addEventListener('touchmove',function(e){ if(!active)return; const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy; if(Math.abs(dx)<10&&Math.abs(dy)<10)return; scanSteer(dx,dy); sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+  document.addEventListener('touchend',function(){active=false;},{passive:true});
+  document.addEventListener('keydown',function(e){ if(!document.getElementById('scanfield'))return; const k=e.key;
+    if(k==='ArrowRight')scanSteer(1,0); else if(k==='ArrowLeft')scanSteer(-1,0); else if(k==='ArrowDown')scanSteer(0,1); else if(k==='ArrowUp')scanSteer(0,-1); else return; e.preventDefault(); }); }
 function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['both','Stocks + Crypto'],['crypto','Crypto']];
   return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
 // Only setups you can actually act on: a real breach with a long/short fade signal.
@@ -855,7 +954,7 @@ function playable(i){ return !!(i&&i.breached&&(i.signal==='fade_long'||i.signal
 function topFor(){ let a=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol));
   a.sort(relSort); return a[0]||null; }
 function feed(){
-  const t=topFor(); if(!t) return `<div class="screen">${topbar()}${scopeBar()}${tourBanner()}${stocksClosedView()?marketClosedCard():'<div class="empty">You\'ve actioned every playable setup in this scope.<br><br>New setups appear as the market moves &#8212; check back soon, or switch scope.</div>'}</div>`;
+  const t=topFor(); if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${tourBanner()}${scannerHTML(stocksClosedView())}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
   const nexts=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)&&i.symbol!==t.symbol).slice(0,3).map(i=>{
@@ -897,10 +996,12 @@ function markets(){
       <div class="rc-info"><div class="rc-nm">${i.symbol}${i.rank?`<small>#${i.rank}</small>`:''}</div><div class="rc-d">${esc(i.name||'')} &#183; <b style="color:${long?GREEN:RED};font-weight:800;letter-spacing:.3px">${long?'LONG':'SHORT'}</b></div></div>
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
+  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${scannerHTML(stocksClosedView())}</div>`;
   return `<div class="screen">${topbar()}
     ${scopeBar()}
+    ${scanStrip()}
     <div class="sub" style="margin:0 2px 11px">Markets &#183; ${nb} live setup${nb===1?'':'s'} &#183; ${scanned} scanned</div>
-    ${nb?rows:(stocksClosedView()?marketClosedCard():'<div class="empty">No playable setups in this scope right now &#183; nothing is stretched enough to fade. Check back soon.</div>')}</div>`;
+    ${rows}</div>`;
 }
 
 /* ---------- DETAIL ---------- */
@@ -1607,6 +1708,10 @@ async function livePoll(){ if(!API||document.hidden) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
     if(!b||!b.items) return;
     BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; LIVE_AT=Date.now(); pxReanchor();
+    // "Catch": Pac-Man snags a new setup — fire a toast when a fresh playable setup appears in view.
+    try{ const npl=BOARD.items.filter(i=>playable(i)&&inScope(i)&&gradeOK(i)&&!S.faded[i.symbol]&&!hasOpenPos(i.symbol)).length;
+      if(SCAN.prevPlay>=0 && npl>SCAN.prevPlay && (S.screen==='feed'||S.screen==='markets')) toast('&#9889; New setup caught &#8212; the hunt paid off');
+      SCAN.prevPlay=npl; }catch(e){}
     autoCloseCheck();   // auto take-profit / stop-loss on the fresh real prices
     if(S.screen==='social'&&typeof loadLB==='function') loadLB();   // keep the leaderboard current
     const m=document.getElementById('modal'), sh=document.getElementById('shwrap');
@@ -1650,6 +1755,7 @@ else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // 
 applyTheme(); pxReanchor(); render(); hydrate(); if(S.hlAddr) loadHL();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
+setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
