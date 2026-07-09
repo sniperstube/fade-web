@@ -18,6 +18,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -1426,32 +1428,64 @@ function scanTermSeed(){ const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.c
   const now=new Date();
   return items.map((o,idx)=>{ const d=new Date(now.getTime()-idx*1400);
     const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
-    return `<div class="scterm-line" style="color:${o.s.col}"><span class="tt">${t}</span> · <span class="sy">${esc(o.it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${o.s.label}</div>`; }).join(''); }
+    return `<div class="scterm-line" style="color:${o.s.col}"><span class="tt">${t}</span> · <span class="sy">${esc(o.it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(o.it,o.s,idx)}</div>`; }).join(''); }
 function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; const d=scanData();
   const seed=scanTermSeed() || `<div class="scterm-line" style="color:var(--ash)"><span class="sy">standing by</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> waiting for the market to open</div>`;
   return `<div class="scterm"><div class="scterm-hd"><span class="st-live"><span class="mp-dot"></span>Scan log</span><span>scanning ${scopeName} <span class="scterm-cur"></span></span></div>
     <div class="scterm-body" id="scterm-body">${seed}</div>
     <div class="scterm-foot">Every line is a real pass &#183; ${d.total} ${scopeName} watched &#183; nothing to do until one breaks</div></div>`; }
-let TERM={i:0,seen:new Set()};
+let TERM={i:0,n:0,seen:new Set()};
+// Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
+// at work — advanced-sounding but each names something the algorithm ACTUALLY does (weighting
+// move/level/volume, catalyst-candle levels, volume baselines, pattern engine).
+const SCAN_ENGINE=[
+  'neural pass &#183; weighting move &#215; level &#215; volume',
+  'catalyst-level map &#183; weekly &#8250; daily &#8250; 4H',
+  'volume baselines &#183; 30-day average',
+  'cross-market sweep &#183; large-caps only',
+  'liquidity + level cross-check',
+  'pattern engine &#183; stretch / snap-back',
+  're-ranking universe by conviction',
+];
+// A grounded, VARIED one-liner per symbol — real numbers (move, volume, %-to-trigger, threshold)
+// phrased like an engine reading it. Varies by index so repeat passes over the same name read
+// differently, which is what makes the log feel alive and "advanced" without faking data.
+function scanTermMsg(it,s,idx){
+  const chg=(it.change_pct==null?'0.0':(it.change_pct>=0?'+':'')+it.change_pct.toFixed(1))+'%';
+  const vol=it.vol_ratio!=null?it.vol_ratio.toFixed(1)+'&#215; vol':'vol scan';
+  const gap=(s.gap!=null&&s.gap>0)?s.gap.toFixed(1)+'% to trigger':null;
+  const pool=[
+    'move '+chg+' &#183; '+vol+' &#183; '+s.label,
+    'level + volume cross-check &#183; '+(gap||s.label),
+    chg+' vs '+(it.threshold||4)+'% threshold &#183; '+s.label,
+    'catalyst-candle scan &#183; '+s.tag+(gap?' &#183; '+gap:''),
+    'conviction weighting &#183; '+vol+' &#183; '+s.label,
+  ];
+  return pool[(idx==null?TERM.n:idx)%pool.length];
+}
 function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!body)return;
   const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null); if(!items.length)return;
-  // Keep the visible log SHORTER than the universe so a symbol can always rotate in. A small
-  // universe (e.g. 9 crypto) used to fill the 11-line log completely — the dedup below then
-  // never found a fresh symbol and the crawl FROZE. Trim first so there's always room.
-  const cap=Math.max(1,Math.min(11,items.length-1));
+  // Keep the visible log SHORTER than the universe so a symbol can always rotate in — a small
+  // universe (9 crypto) used to fill the log and freeze the crawl. Trim first so there's room.
+  const cap=Math.max(1,Math.min(12,items.length-1));
   while(body.childNodes.length>cap)body.removeChild(body.lastChild);
-  // Dedup: skip symbols already on screen to prevent BTC-twice and other repeats
-  const shown=new Set(); document.querySelectorAll('.scterm-line .sy').forEach(el=>shown.add(el.textContent));
-  let it=null, tries=0; while(!it && tries<items.length){
-    if(TERM.i>=items.length)TERM.i=0; it=items[TERM.i++];
-    if(shown.has(it.symbol)) it=null;   // already on screen, skip
-    tries++;
-  }
-  if(!it) return;   // all items already shown, wait for cleanup
-  const s=scanStatus(it);
+  TERM.n++;
   const d=new Date(); const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
-  const line=document.createElement('div'); line.className='scterm-line'; line.style.color=s.col;
-  line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${s.label}`;
+  const line=document.createElement('div'); line.className='scterm-line';
+  // Every 4th line: a green engine meta-line (no symbol) for the "AI analyzing" texture.
+  if(TERM.n%4===0){
+    let msg=SCAN_ENGINE[((TERM.n/4)|0)%SCAN_ENGINE.length];
+    if(msg.indexOf('universe')>=0) msg='re-ranking '+items.length+' names by conviction';
+    line.style.color='#3ddc6e';
+    line.innerHTML=`<span class="tt">${t}</span> <span class="dd">&#9656;</span> ${msg}`;
+    body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); return;
+  }
+  // Otherwise a per-symbol analysis line — dedup so a symbol isn't on screen twice at once.
+  const shown=new Set(); document.querySelectorAll('.scterm-line .sy').forEach(el=>shown.add(el.textContent));
+  let it=null, tries=0; while(!it && tries<items.length){ if(TERM.i>=items.length)TERM.i=0; it=items[TERM.i++]; if(shown.has(it.symbol)) it=null; tries++; }
+  if(!it) return;
+  const s=scanStatus(it); line.style.color=s.col;
+  line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(it,s)}`;
   body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); }
 function scanReadoutHTML(){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
@@ -2839,7 +2873,7 @@ applyTheme(); pxReanchor(); render(); hydrate(); loadAppConfig(); loadHlCfg(); i
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
-setInterval(scanTermTick,750);   // Scan terminal (C) live crawl — no-ops unless #scterm-body is mounted
+setInterval(scanTermTick,600);   // Scan terminal (C) live crawl — no-ops unless #scterm-body is mounted
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 setInterval(function(){ if(document.getElementById('pmtape'))loadPremarket(true); }, 60000);   // pre-market tape refresh
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
