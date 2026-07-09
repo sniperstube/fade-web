@@ -3261,18 +3261,37 @@ setInterval(scanTermTick,600);   // Scan terminal (C) live crawl — no-ops unle
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 setInterval(function(){ if(document.getElementById('pmtape')||document.getElementById('dialproj'))loadPremarket(true); }, 60000);   // pre-market tape + session-dial refresh
 setInterval(slRotTick, 3200);   // live-strip stat rotation (scanned → eligible → closest → radar) — no-ops when the bar isn't mounted
-// LIVE POSITION MARKS: while you hold open CRYPTO positions, their mark refreshes every
-// ~10s from a real-time Coinbase print (not the 2-min scan) — so open P&L actually moves
-// with the market. 3 consecutive misses on a symbol = stop trying (board price covers it).
+// LIVE QUOTES (~10s): every symbol on screen + every open position re-marks from the
+// backend's live-quote layer — crypto = real-time Coinbase prints; stocks = real-time
+// Alpaca snapshots the moment ALPACA keys are set on the server (IEX free / SIP paid).
+// The 2-min scan now only decides GRADES; prices are live. No API (static preview) =
+// direct-Coinbase fallback for open crypto positions.
 let SPOTFAIL={};
-async function spotPoll(){ if(document.hidden)return; try{
-  const p=paper(); const syms=Array.from(new Set(p.positions.filter(x=>x.status==='open'&&x.asset_class==='crypto').map(x=>x.symbol))).slice(0,6);
-  for(const sym of syms){ if((SPOTFAIL[sym]||0)>=3)continue;
+async function quotePoll(){ if(document.hidden)return; try{
+  const p=paper();
+  const posSyms=p.positions.filter(x=>x.status==='open').map(x=>x.symbol);
+  const boardSyms=(BOARD.items||[]).filter(i=>inScope(i)&&i.price!=null).map(i=>i.symbol);
+  const syms=Array.from(new Set(posSyms.concat(boardSyms))).slice(0,120);
+  if(!syms.length)return;
+  if(API){
+    const r=await fetch(API+'/api/quotes?syms='+encodeURIComponent(syms.join(',')));
+    const d=await r.json(); if(!d||!d.ok||!d.quotes)return;
+    const now=Date.now();
+    for(const sym in d.quotes){ const q=d.quotes[sym]; if(!q||q.price==null)continue;
+      const a=PXA[sym]||(PXA[sym]={disp:q.price,chg:0});
+      a.real=q.price; a.spotts=now; if(a.disp==null)a.disp=q.price;
+      if(q.chg_pct!=null)a.chg=q.chg_pct;   // stocks-live: exchange-true intraday %
+    }
+    return;
+  }
+  // no backend: direct Coinbase for open crypto positions only
+  const cs=Array.from(new Set(p.positions.filter(x=>x.status==='open'&&x.asset_class==='crypto').map(x=>x.symbol))).slice(0,6);
+  for(const sym of cs){ if((SPOTFAIL[sym]||0)>=3)continue;
     const px=await freshSpot(sym);
     if(px){ SPOTFAIL[sym]=0; const a=PXA[sym]||(PXA[sym]={disp:px,chg:0}); a.real=px; a.spotts=Date.now(); if(a.disp==null)a.disp=px; }
     else SPOTFAIL[sym]=(SPOTFAIL[sym]||0)+1; }
 }catch(e){} }
-setInterval(spotPoll, 10000);
+setInterval(quotePoll, 10000);
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
