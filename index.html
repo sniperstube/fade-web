@@ -16,6 +16,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -1126,9 +1128,9 @@ function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
 // Readout for the scan strip. `near` = the REAL count nearing a trigger (capped at 9 so it
 // stays single-digit and matches the dots the user actually sees). `scan` = curated universe size.
 function scanShow(){ const d=scanData();
-  const near=Math.min(9,d.nearCount||0);
-  const scan=Math.min(48,Math.max(near+9,15+near*4));
-  return {scan:scan,near:near}; }
+  // "scanning" mirrors the REAL in-scope count — the same number the footer shows ("N crypto
+  // watched"). The old fabricated 15+near*4 disagreed with it and looked like a bug.
+  return {scan:d.total,near:Math.min(9,d.nearCount||0)}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   const gameToggle=gamesOn()?`<span class="sl-games" onclick="event.stopPropagation();lsSet('fade_games',false);render()" title="Disable games">◎</span>`:'';
@@ -1433,6 +1435,11 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
 let TERM={i:0,seen:new Set()};
 function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!body)return;
   const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null); if(!items.length)return;
+  // Keep the visible log SHORTER than the universe so a symbol can always rotate in. A small
+  // universe (e.g. 9 crypto) used to fill the 11-line log completely — the dedup below then
+  // never found a fresh symbol and the crawl FROZE. Trim first so there's always room.
+  const cap=Math.max(1,Math.min(11,items.length-1));
+  while(body.childNodes.length>cap)body.removeChild(body.lastChild);
   // Dedup: skip symbols already on screen to prevent BTC-twice and other repeats
   const shown=new Set(); document.querySelectorAll('.scterm-line .sy').forEach(el=>shown.add(el.textContent));
   let it=null, tries=0; while(!it && tries<items.length){
@@ -1445,7 +1452,7 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
   const d=new Date(); const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
   const line=document.createElement('div'); line.className='scterm-line'; line.style.color=s.col;
   line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${s.label}`;
-  body.insertBefore(line,body.firstChild); while(body.childNodes.length>11)body.removeChild(body.lastChild); }
+  body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); }
 function scanReadoutHTML(){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
