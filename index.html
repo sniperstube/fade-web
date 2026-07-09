@@ -87,8 +87,8 @@
  --herobd:rgba(20,30,50,.5); --heroglow:rgba(46,123,255,.28); --herotint:#f5f7fb;
 }
 *{margin:0;padding:0;box-sizing:border-box;touch-action:manipulation}
-html{overflow-anchor:none;touch-action:manipulation;overscroll-behavior-x:none}   /* no double-tap zoom, no horizontal swipe-nav */
-body{overscroll-behavior-x:none}
+html{overflow-anchor:none;touch-action:none;overscroll-behavior:none;overscroll-behavior-x:none}   /* no double-tap zoom, no horizontal swipe-nav, block vertical swipe-to-close */
+body{overscroll-behavior:none;overscroll-behavior-x:none}
 body{background:var(--bg);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
 .mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',monospace} .px{font-family:'Press Start 2P',monospace}
 #app{width:100%;max-width:430px;min-height:100vh;background:radial-gradient(640px 420px at 82% -8%,var(--glow),transparent 60%),var(--void);color:var(--txt);position:relative;overflow-x:hidden}
@@ -2752,6 +2752,8 @@ if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live fe
 else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same SCREEN (scope stays market-driven above)
   if(nv&&['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } }catch(e){} }
 if(isTWA())tgBoot();   // Telegram Mini App: expand + theme + auto-auth via initData (no-op on web)
+// Block Telegram swipe-to-close globally (prevent vertical overscroll/bounce)
+document.addEventListener('touchmove',function(e){ if(e.cancelable) e.preventDefault(); },{passive:false});
 applyTheme(); pxReanchor(); render(); hydrate(); loadAppConfig(); loadHlCfg(); if(S.hlAddr) loadHL(); restoreSession();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
