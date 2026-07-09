@@ -368,7 +368,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
 /* LIVE MARKET SCAN readout — real data, deliberately OUTSIDE the arcade (own font + green live dot) */
-.scan-live{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;height:40px;flex-shrink:0;padding:0 12px;margin-bottom:9px;overflow:hidden;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
+.scan-live{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;height:40px;flex-shrink:0;padding:0 12px;margin-bottom:9px;overflow:hidden;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums;cursor:pointer}
 .scan-live.closed{background:linear-gradient(90deg,rgba(255,59,48,.10),transparent 82%);border-color:rgba(255,59,48,.26)}
 .sl-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3ddc6e;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .scan-live.closed .sl-badge{color:#ff3b30}
@@ -1098,8 +1098,8 @@ function scanShow(){ const d=scanData();
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   return stocksClosedView()
-    ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span></div>`; }
+    ? `<div class="scan-live closed" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
+    : `<div class="scan-live" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span></div>`; }
 function scanDiscHTML(){ return `<div class="scan-disc">Patience is more profitable than action — wait for real setups</div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
