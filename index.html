@@ -10,6 +10,8 @@
 </head><body><script>window.FADE_API="https://fade-app.onrender.com";</script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -689,10 +691,10 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
 <div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="modalcard" id="modalbody"></div></div>
 <div class="sheetwrap" id="sheetwrap" onclick="if(event.target===this)sheetCancel()"><div class="sheet" id="sheetpanel" role="dialog" aria-modal="true"></div></div>
 <div class="shwrap" id="shwrap">
-  <div class="sc-hint">Screenshot this card &amp; post it &#183; tag <b>@fade.markets</b></div>
+  <div class="sc-hint">Send the link &#183; it opens as a live card. Or screenshot to post &#183; tag <b>@fade.markets</b></div>
   <div class="shcard" id="shcard"></div>
   <div class="shbar">
-    <button class="shbtn" style="background:var(--blue);color:#04122b" onclick="shareNative()">Share / copy caption</button>
+    <button class="shbtn" style="background:var(--blue);color:#04122b" onclick="shareNative()">Share link</button>
     <button class="shbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line)" onclick="closeShare()">Close</button>
   </div>
 </div>
@@ -1419,10 +1421,18 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
   return `<div class="scterm"><div class="scterm-hd"><span class="st-live"><span class="mp-dot"></span>Scan log</span><span>scanning ${scopeName} <span class="scterm-cur"></span></span></div>
     <div class="scterm-body" id="scterm-body">${seed}</div>
     <div class="scterm-foot">Every line is a real pass &#183; ${d.total} ${scopeName} watched &#183; nothing to do until one breaks</div></div>`; }
-let TERM={i:0};
+let TERM={i:0,seen:new Set()};
 function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!body)return;
   const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null); if(!items.length)return;
-  if(TERM.i>=items.length)TERM.i=0; const it=items[TERM.i++]; const s=scanStatus(it);
+  // Dedup: skip symbols already on screen to prevent BTC-twice and other repeats
+  const shown=new Set(); document.querySelectorAll('.scterm-line .sy').forEach(el=>shown.add(el.textContent));
+  let it=null, tries=0; while(!it && tries<items.length){
+    if(TERM.i>=items.length)TERM.i=0; it=items[TERM.i++];
+    if(shown.has(it.symbol)) it=null;   // already on screen, skip
+    tries++;
+  }
+  if(!it) return;   // all items already shown, wait for cleanup
+  const s=scanStatus(it);
   const d=new Date(); const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
   const line=document.createElement('div'); line.className='scterm-line'; line.style.color=s.col;
   line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${s.label}`;
@@ -2577,8 +2587,10 @@ function shareStats(){ const s=stats(); const wr=s.winrate==null?'--':s.winrate+
 }
 function openShare(cardHTML, caption){ SHARECAP=caption; document.getElementById('shcard').innerHTML=cardHTML; document.getElementById('shwrap').classList.add('show'); }
 function closeShare(){ document.getElementById('shwrap').classList.remove('show'); }
-function shareNative(){ const url='https://fade.markets'; if(navigator.share){ navigator.share({title:'fade.markets',text:SHARECAP,url:url}).catch(()=>{}); } else { copyCap(); } }
-function copyCap(){ try{ navigator.clipboard.writeText(SHARECAP+' '+'https://fade.markets'); toast('Caption copied \u2014 screenshot the card & post'); }catch(e){ toast('Screenshot the card to share'); } }
+// Share the bare link, not a caption — fade.markets unfurls into the branded OG card
+// (image + headline) in iMessage / Telegram / X, so a share is a tappable preview, not a text blob.
+function shareNative(){ const url='https://fade.markets'; if(navigator.share){ navigator.share({title:'fade.markets — trade the fade',url:url}).catch(()=>{}); } else { copyCap(); } }
+function copyCap(){ try{ navigator.clipboard.writeText('https://fade.markets'); toast('Link copied \u2014 it opens as a card wherever you paste it'); }catch(e){ toast('Screenshot the card to share'); } }
 
 function render(){ try{ computeRel(); }catch(e){ RELG={}; }
   const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
