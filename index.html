@@ -12,6 +12,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -312,7 +314,7 @@ input,textarea,select{font-size:16px}
 body.gamelock{overflow:hidden;overscroll-behavior:none}
 #app.gamefit{min-height:0;overflow:hidden;display:flex;flex-direction:column}   /* height px set by fitGame() */
 #app.gamefit .nav{position:static;max-width:none;width:100%;margin:0}
-.scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
+.scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void)}
 .tetriswrap{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 22%,rgba(46,123,255,.05),transparent 70%),#05070d}
 #tetris{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 /* Tetris HUD strip — score + market countdown ABOVE the board (text off the play field) */
@@ -1222,7 +1224,7 @@ function scanSteer(dx,dy){ const spd=1.7; if(Math.abs(dx)>Math.abs(dy)){SCAN.vx=
 // never hijacks normal scrolling or the browser back-swipe trap.
 function scanInputInit(){ let sx=0,sy=0,active=false;
   document.addEventListener('touchstart',function(e){ const f=document.getElementById('scanfield'); if(!f||!f.contains(e.target)){active=false;return;} active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
-  document.addEventListener('touchmove',function(e){ if(!active)return; const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy; if(Math.abs(dx)<9&&Math.abs(dy)<9)return; scanSteer(dx,dy); sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+  document.addEventListener('touchmove',function(e){ if(!active)return; e.preventDefault(); const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy; if(Math.abs(dx)<9&&Math.abs(dy)<9)return; scanSteer(dx,dy); sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:false});
   document.addEventListener('touchend',function(){active=false;},{passive:true});
   document.addEventListener('keydown',function(e){ if(!document.getElementById('scanfield'))return; const k=e.key;
     if(k==='ArrowRight')scanSteer(1,0); else if(k==='ArrowLeft')scanSteer(-1,0); else if(k==='ArrowDown')scanSteer(0,1); else if(k==='ArrowUp')scanSteer(0,-1); else return; e.preventDefault(); }); }
@@ -1364,7 +1366,7 @@ function rowHead(i,size,d){ return `${logoBadge(i,size)}<div class="rc-info"><di
 function chartLegend(nowLbl,note){ return `<div class="legend"><span><i style="border-color:${GREEN}"></i>Target</span><span><i style="border-color:${RED}"></i>Stop</span><span><i style="border-color:${BLUE}"></i>${nowLbl}</span><span style="color:var(--ash)">${note}</span></div>`; }
 // Stocks with NO live setup: downtime → Fade Blocks (Tetris) waiting room; market open but quiet →
 // a scanning line. NEVER the Pac-Man scanner — that game belongs to crypto only.
-function gamesOn(){ return lsGet('fade_games',ACFG.games!==false); }   // waiting-room mini-games (default from ACFG)
+function gamesOn(){ return lsGet('fade_games',false); }   // waiting-room mini-games OFF by default (clean live-scan readout)
 // Games OFF: MARKET PULSE — the no-noise waiting screen (both scopes). HEAT GRID: a tile per
 // asset in scope, heating orange as it nears a trigger; brightest = about to snap. Scope-clear:
 // the header says exactly which market (Stocks / Crypto) we're waiting on.
@@ -2425,7 +2427,7 @@ function settings(){
     ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). On by default.',ac,'toggleAutoClose()')}
 
     <div class="lbl" style="margin-top:16px">Waiting room</div>
-    ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto). Turn off for a clean live-scan readout instead. On by default.',lsGet('fade_games',true),'toggleGames()')}
+    ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto). Off by default — turn on to pass the wait with a game.',lsGet('fade_games',false),'toggleGames()')}
 
     <div class="lbl" style="margin-top:16px">Alerts</div>
     ${setrow('After-hours crypto alerts','Get a phone notification when a fresh high-grade crypto fade sets up while the stock market is closed. Needs notification permission.',alertsOn(),'toggleAlerts()')}
@@ -2478,7 +2480,7 @@ function applyTheme(){ const t=getTheme();
   } }
 function setTheme(t){ lsSet('fade_theme',t); TG_THEME_LOCK=true; applyTheme(); render(); if(isTWA())tgSyncColors(); toast(t==='light'?'Light mode':'Dark mode'); }
 function toggleAutoClose(){ const v=!lsGet('fade_autoclose',ACFG.autoclose!==false); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
-function toggleGames(){ const v=!lsGet('fade_games',true); lsSet('fade_games',v); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
+function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
 // Auto-close open positions at their target/stop when enabled. Checked on each live poll
 // against the REAL board price (not the jittered ticker).
 function autoCloseCheck(){ if(!lsGet('fade_autoclose',ACFG.autoclose!==false)) return;
@@ -2583,11 +2585,12 @@ function tgSyncColors(){ const w=tg(); if(!w)return; try{
   const bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if(bg){ if(w.setBackgroundColor)w.setBackgroundColor(bg); if(w.setHeaderColor)w.setHeaderColor(bg); } }catch(e){} }
 
-// Telegram theme -> app theme. On boot (and on Telegram's themeChanged) Telegram wins, UNLESS
-// the user has manually toggled in-app since (TG_THEME_LOCK) — then keep their choice and only
-// re-sync the chrome colors. Never fights the in-app toggle.
+// Telegram theme -> app theme. Fade DEFAULTS TO DARK in Telegram — we do NOT follow Telegram's
+// light theme (opening white was wrong for the brand). On boot / themeChanged we force dark,
+// UNLESS the user manually toggled in-app this session (TG_THEME_LOCK) — then keep their choice.
+// Either way we sync Telegram's chrome colors to match the app.
 function tgApplyTheme(){ const w=tg(); if(!w)return;
-  if(!TG_THEME_LOCK){ try{ lsSet('fade_theme',(w.colorScheme==='light')?'light':'dark'); applyTheme(); }catch(e){} }
+  if(!TG_THEME_LOCK){ try{ lsSet('fade_theme','dark'); applyTheme(); }catch(e){} }
   tgSyncColors(); }
 
 // BackButton callback — SAME rules as the web popstate handler, routed through go()/history logic.
