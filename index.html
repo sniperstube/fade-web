@@ -1017,7 +1017,7 @@ async function freshSpot(sym){ try{
 async function confirmTrade(){
   if(TRADE.busy)return; TRADE.busy=true;
   try{
-  const a=quote(TRADE.sym); if(!a){ closeModal(); return; }
+  const a=quote(TRADE.sym); if(!a){ closeModal(); toast(TRADE.sym+' left the board on the last data refresh — the setup is no longer live.','error'); render(); return; }
   const p=paper(); const margin=tradeAmt(); const lev=TRADE.lev||1;
   if(margin<10){ toast('Set an allocation of at least $10.'); return; }
   if(margin>p.cash){ toast('That is more than your free cash ($'+money(p.cash)+').'); return; }
@@ -2961,7 +2961,8 @@ function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v
 // against the REAL board price (not the jittered ticker).
 function autoCloseCheck(){ if(!lsGet('fade_autoclose',ACFG.autoclose!==false)) return;
   const p=paper(); let changed=false;
-  p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return; const cur=q.price; let hit=null;
+  p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return;
+    const ax=PXA[x.symbol]; const cur=(ax&&ax.spotts&&Date.now()-ax.spotts<30000&&ax.real!=null)?ax.real:q.price; let hit=null;
     // Money-path guards: (1) never auto-close inside the first poll cycle — the price that
     // crosses must be one the market printed AFTER the open, not the same stale quote the
     // trade was born on; (2) a STOCK can't hit target/stop while the market is closed —
@@ -3127,7 +3128,10 @@ function loadAppConfig(){ if(!API)return; try{ fetch(API+'/api/app_config').then
 const PXA={};
 function pxReanchor(){ (BOARD.items||[]).forEach(function(i){ if(i.price==null)return;
   let a=PXA[i.symbol]||(PXA[i.symbol]={disp:i.price});
-  a.real=i.price; a.chg=(i.change_pct==null?0:i.change_pct);
+  // Live-spot marks (spotPoll) are FRESHER than the scanned board price — a poll must
+  // never regress an open position's mark backwards onto a staler quote.
+  if(!(a.spotts&&Date.now()-a.spotts<30000)) a.real=i.price;
+  a.chg=(i.change_pct==null?0:i.change_pct);
   a.vol=(i.vol_ratio==null?null:i.vol_ratio);
   if(a.voldisp==null&&a.vol!=null) a.voldisp=a.vol;
   if(a.disp==null||Math.abs(a.disp-i.price)/Math.max(Math.abs(i.price),1e-9)>=0.02) a.disp=i.price;
@@ -3257,6 +3261,18 @@ setInterval(scanTermTick,600);   // Scan terminal (C) live crawl — no-ops unle
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 setInterval(function(){ if(document.getElementById('pmtape')||document.getElementById('dialproj'))loadPremarket(true); }, 60000);   // pre-market tape + session-dial refresh
 setInterval(slRotTick, 3200);   // live-strip stat rotation (scanned → eligible → closest → radar) — no-ops when the bar isn't mounted
+// LIVE POSITION MARKS: while you hold open CRYPTO positions, their mark refreshes every
+// ~10s from a real-time Coinbase print (not the 2-min scan) — so open P&L actually moves
+// with the market. 3 consecutive misses on a symbol = stop trying (board price covers it).
+let SPOTFAIL={};
+async function spotPoll(){ if(document.hidden)return; try{
+  const p=paper(); const syms=Array.from(new Set(p.positions.filter(x=>x.status==='open'&&x.asset_class==='crypto').map(x=>x.symbol))).slice(0,6);
+  for(const sym of syms){ if((SPOTFAIL[sym]||0)>=3)continue;
+    const px=await freshSpot(sym);
+    if(px){ SPOTFAIL[sym]=0; const a=PXA[sym]||(PXA[sym]={disp:px,chg:0}); a.real=px; a.spotts=Date.now(); if(a.disp==null)a.disp=px; }
+    else SPOTFAIL[sym]=(SPOTFAIL[sym]||0)+1; }
+}catch(e){} }
+setInterval(spotPoll, 10000);
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
