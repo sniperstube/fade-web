@@ -1060,7 +1060,9 @@ function afterHoursWatch(){ try{
 
 /* ---------- Pac-Man Hunt scanner: ambient auto-hunt over real scan data; secretly playable ---------- */
 let SCAN={x:50,y:52,tx:50,ty:52,dir:0,vx:0,vy:0,playing:false,score:0,best:0,combo:1,comboT:0,inv:0,idle:null,dots:null,sig:'',prevPlay:-1,ghosts:null,openT:0};
-try{ SCAN.best=+(localStorage.getItem('fade_hiscore')||0)||0; }catch(e){}
+// Best score is stored on the profile (in the synced paper state) so it follows the
+// account across devices; localStorage is just the offline/logged-out fallback.
+try{ SCAN.best=Math.max(+(localStorage.getItem('fade_hiscore')||0)||0, +((paper()||{}).hiscore||0)||0); }catch(e){}
 const GHOST_DEFS=[{c:'#ff3b30',s:0.52},{c:'#ff6ac1',s:0.72},{c:'#00e5ff',s:0.40}];   // chasers at different speeds
 const HEAT={1:'#ffe500',2:'#ff9f0a',3:'#ff3b30'};   // cool -> warm -> red-hot as it nears trigger
 function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
@@ -1132,7 +1134,7 @@ function scanHuntTarget(){ if(!SCAN.dots)return null; let t=null,bs=-1e9;   // h
   return t; }
 function scanFlashCombo(n){ const el=document.getElementById('scancombo'); if(!el)return; el.textContent='x'+n; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function scanCaught(field){
-  if(SCAN.score>SCAN.best){ SCAN.best=SCAN.score; try{localStorage.setItem('fade_hiscore',SCAN.best)}catch(e){} const b=document.getElementById('scanbest'); if(b)b.textContent=SCAN.best; }
+  if(SCAN.score>SCAN.best){ SCAN.best=SCAN.score; try{localStorage.setItem('fade_hiscore',SCAN.best); const pp=paper(); pp.hiscore=SCAN.best; save(pp);}catch(e){} const b=document.getElementById('scanbest'); if(b)b.textContent=SCAN.best; }
   SCAN.score=0; SCAN.combo=1; SCAN.comboT=0; SCAN.inv=36; SCAN.x=50; SCAN.y=52; SCAN.vx=SCAN.vy=0;
   const s=document.getElementById('scanscore'); if(s)s.textContent=0;
   const sc=field.parentElement; if(sc){ sc.classList.remove('shake'); void sc.offsetWidth; sc.classList.add('shake'); }
@@ -2284,6 +2286,7 @@ try{ history.pushState({fade:1},''); window.addEventListener('popstate',function
   history.pushState({fade:1},'');   // re-arm so the app never falls off the history stack
 }); }catch(e){}
 </script>
+
 
 
 
