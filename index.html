@@ -1004,16 +1004,43 @@ function tradePanel(){
     <div class="tp-disc">Paper trade &#183; no real money &#183; leverage amplifies gains and losses</div>
   </div>`;
 }
-function confirmTrade(){
+// Real-time crypto print for EXECUTION (Coinbase spot, CORS-open, no key). Hard 1.5s
+// timeout — a slow API must never hang a fill. null => caller uses the board price.
+async function freshSpot(sym){ try{
+  const ctl=('AbortController' in window)?new AbortController():null;
+  const to=ctl?setTimeout(function(){ctl.abort();},1500):null;
+  const r=await fetch('https://api.coinbase.com/v2/prices/'+encodeURIComponent(sym)+'-USD/spot',ctl?{signal:ctl.signal}:{});
+  if(to)clearTimeout(to);
+  const j=await r.json(); const px=parseFloat(j&&j.data&&j.data.amount);
+  return (px>0)?px:null;
+}catch(e){ return null; } }
+async function confirmTrade(){
+  if(TRADE.busy)return; TRADE.busy=true;
+  try{
   const a=quote(TRADE.sym); if(!a){ closeModal(); return; }
   const p=paper(); const margin=tradeAmt(); const lev=TRADE.lev||1;
   if(margin<10){ toast('Set an allocation of at least $10.'); return; }
   if(margin>p.cash){ toast('That is more than your free cash ($'+money(p.cash)+').'); return; }
-  const long=TRADE.side==='long'; const notional=margin*lev; const addQty=notional/a.price;
+  const long=TRADE.side==='long';
+  // EXECUTION PRICE: crypto fills at a real-time print when available (the board price
+  // can be ~2 min old — a fast tape moves a lot in 2 minutes). Board price = fallback.
+  let fill=a.price;
+  if(a.asset_class==='crypto'){ const sp=await freshSpot(TRADE.sym); if(sp)fill=sp; }
+  // ENTRY SANITY (money-path guard): a setup card can be minutes old while the market
+  // moves. If the CURRENT price has already crossed the setup's target or stop, the
+  // position would be born pre-won/pre-lost and auto-close instantly — a fake trade.
+  // Refuse it honestly instead of booking a phantom win.
+  const st0=a.setup||{};
+  if(st0.target!=null&&st0.mental_stop!=null){
+    const crossed=long?(fill>=st0.target||fill<=st0.mental_stop)
+                      :(fill<=st0.target||fill>=st0.mental_stop);
+    if(crossed){ closeModal(); toast(TRADE.sym+' already moved through this setup&#39;s target/stop — it&#39;s gone. Wait for a fresh one.','error'); render(); return; }
+  }
+  const notional=margin*lev; const addQty=notional/fill;
   const existing=p.positions.find(x=>x.status==='open'&&x.symbol===TRADE.sym);
   if(existing){
     // add to the open position \u2014 blend entry, sum margin/qty (keep the higher leverage)
-    const nq=existing.qty+addQty; existing.entry=(existing.entry*existing.qty+a.price*addQty)/nq; existing.qty=nq;
+    const nq=existing.qty+addQty; existing.entry=(existing.entry*existing.qty+fill*addQty)/nq; existing.qty=nq;
     existing.margin=posMargin(existing)+margin; existing.lev=Math.max(posLev(existing),lev); existing.adds=(existing.adds||0)+1;
     p.cash-=margin; save(p); closeModal();
     toast('Added $'+money(margin)+' to '+TRADE.sym+' \u2014 avg '+money(existing.entry),'success'); render(); return;
@@ -1021,13 +1048,14 @@ function confirmTrade(){
   p.cash-=margin;
   const g=relGrade(a).l;
   p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:TRADE.sym,name:a.name,side:long?'long':'short',
-    entry:a.price,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,asset_class:a.asset_class,
+    entry:fill,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,asset_class:a.asset_class,
     grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
   save(p); S.faded[TRADE.sym]=1;
   if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:TRADE.sym,side:long?'long':'short',notional:margin,lev:lev})}).catch(function(){}); }
   closeModal();
   toast((long?'Long ':'Short ')+TRADE.sym+' \u00b7 $'+money(margin)+(lev>1?' at '+lev+'x':'')+' \u2014 live in your wallet','success');
   if(S.screen==='detail'){ go('feed'); } else { render(); }
+  }finally{ TRADE.busy=false; }
 }
 function resetPaper(){ localStorage.removeItem('fade_paper'); S.faded={}; toast('Paper account reset to $10,000'); render(); }
 async function depositPaper(){ const v=await promptSheet('Deposit paper cash',{label:'Amount (USD)',placeholder:'1000',value:'1000',okLabel:'Deposit'}); if(v==null)return;
@@ -2934,6 +2962,12 @@ function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v
 function autoCloseCheck(){ if(!lsGet('fade_autoclose',ACFG.autoclose!==false)) return;
   const p=paper(); let changed=false;
   p.positions.filter(x=>x.status==='open').forEach(function(x){ const q=quote(x.symbol); if(!q||q.price==null)return; const cur=q.price; let hit=null;
+    // Money-path guards: (1) never auto-close inside the first poll cycle — the price that
+    // crosses must be one the market printed AFTER the open, not the same stale quote the
+    // trade was born on; (2) a STOCK can't hit target/stop while the market is closed —
+    // its board price is a frozen last close, not a live print.
+    if(Date.now()-(x.opened||0)<60000)return;
+    if(x.asset_class==='stock'&&!stockMarketOpen())return;
     if(x.side==='long'){ if(x.target&&cur>=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur<=x.stop)hit={p:x.stop,w:0}; }
     else { if(x.target&&cur<=x.target)hit={p:x.target,w:1}; else if(x.stop&&cur>=x.stop)hit={p:x.stop,w:0}; }
     if(hit){ const pnl=pnlOf(x,hit.p); x.status='closed'; x.exit=hit.p; x.closed=Date.now(); x.pnl=pnl; x.result=pnl>0?'win':'loss'; p.cash+=posMargin(x)+pnl; changed=true; toast('Auto-closed '+x.symbol+' at '+(hit.w?'target':'stop')+' '+money(hit.p),hit.w?'success':'error'); }
@@ -3112,13 +3146,14 @@ function updateChartNow(){ const svg=document.querySelector('.livechart'); if(!s
 function flashNode(n,up){ const on=n.dataset.f==='1'; n.dataset.f=on?'0':'1';
   n.classList.remove('flg0','flg1','flr0','flr1'); n.classList.add((up?'flg':'flr')+(on?'0':'1')); }
 function tick(){ if(document.hidden) return;
-  // 1) advance EVERY anchored price a step (mean-reverting walk) — independent of
-  // which nodes are visible, so off-screen symbols (e.g. open positions on the
-  // wallet) still move and their P&L updates live.
+  // 1) ease EVERY anchored display price toward the REAL quote. HONEST ticker: no
+  // fabricated movement — a price only moves when the market actually printed a new
+  // one (fresh poll re-anchors a.real). The ease just animates the transition, and
+  // numbers go still when the market is still — exactly like a real terminal.
   for(const sym in PXA){ const a=PXA[sym]; if(a.real==null) continue;
-    const rel=(Math.abs(a.real)>=100?0.0004:0.0012);
-    a._prev=a.disp; a.disp=a.disp+(Math.random()-0.5)*2*rel*a.real+(a.real-a.disp)*0.14;
-    if(a.vol!=null) a.voldisp=a.voldisp+(Math.random()-0.5)*0.03+(a.vol-a.voldisp)*0.16;
+    a._prev=a.disp; a.disp=a.disp+(a.real-a.disp)*0.22;
+    if(Math.abs(a.disp-a.real)/Math.max(Math.abs(a.real),1e-9)<0.00005)a.disp=a.real;   // snap when converged
+    if(a.vol!=null) a.voldisp=(a.voldisp==null?a.vol:a.voldisp+(a.vol-a.voldisp)*0.2);
   }
   // 2) paint the visible nodes
   const px=document.querySelectorAll('[data-px]');
@@ -3136,7 +3171,7 @@ function tick(){ if(document.hidden) return;
   const pn=document.querySelectorAll('[data-pnl]');
   for(let k=0;k<pn.length;k++){ const n=pn[k]; const a=PXA[n.getAttribute('data-psym')]; if(!a||a.real==null) continue;
     const entry=+n.getAttribute('data-entry'), qty=+n.getAttribute('data-qty'), side=n.getAttribute('data-side');
-    const pnl=(side==='long'?(a.disp-entry):(entry-a.disp))*qty;
+    const pnl=(side==='long'?(a.real-entry):(entry-a.real))*qty;   // money math on the REAL quote, never the display ease
     n.textContent=(pnl>=0?'+':'')+pnl.toFixed(2); n.style.color=pnl>=0?GREEN:RED;
   }
   const hd=document.querySelectorAll('[data-held]');   // live "held Xm" timers
@@ -3144,7 +3179,7 @@ function tick(){ if(document.hidden) return;
   // live paper balance: equity + open P&L retick every frame off the MOVING ticker prices
   const eqN=document.querySelector('[data-eq]');
   if(eqN){ try{ const P=paper(); let dep=0,un=0;
-    for(const x of P.positions){ if(x.status!=='open')continue; const a=PXA[x.symbol]; const cur=(a&&a.disp!=null)?a.disp:x.entry;
+    for(const x of P.positions){ if(x.status!=='open')continue; const a=PXA[x.symbol]; const cur=(a&&a.real!=null)?a.real:x.entry;
       un+=pnlOf(x,cur); dep+=posMargin(x); }
     const eq=P.cash+dep+un;
     eqN.textContent='$'+money(eq); eqN.style.color=eq>=10000?GREEN:RED;
