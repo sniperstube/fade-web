@@ -12,6 +12,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -1619,7 +1621,6 @@ function wallet(){
         <div class="bs"><span class="bsk">Open P&amp;L</span><span class="bsv" data-unreal="1" style="color:${s.unreal>=0?GREEN:RED}">${s.unreal>=0?'+':''}${s.unreal.toFixed(2)}</span></div>
         <div class="bs"><span class="bsk">Closed P&amp;L</span><span class="bsv" style="color:${s.realized>=0?GREEN:RED}">${s.realized>=0?'+':''}${s.realized.toFixed(2)}</span></div>
       </div></div>
-    <button class="btn-wide" style="background:var(--void2);color:var(--blue);border:1px solid rgba(46,123,255,.4)" onclick="shareStats()">&#8593; Share my record</button>
     ${liveWalletBlock()}
     <div class="lbl wl-sec">${liveMode()?'PAPER (simulated) &#183; open positions':'Open positions'}${s.opens.length?`<span class="lbl-n live">${s.opens.length}</span>`:''}</div>
     <div class="wl-group">${s.opens.length?s.opens.map(x=>posRow(x,true)).join(''):'<div class="empty">No open positions. Tap a setup &#8594; Long/Short.</div>'}</div>
