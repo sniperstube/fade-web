@@ -10,6 +10,8 @@
 </head><body><script>window.FADE_API="https://fade-app.onrender.com";</script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -381,7 +383,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-hot b{color:#ffb020}
 .sl-real{margin-left:auto;font-size:9px;color:var(--ash);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
-.scan-disc{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
+.scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
 .acls.st{color:#2e7bff;background:rgba(46,123,255,.14)}
 .acls.cr{color:#b57bff;background:rgba(181,123,255,.16)}
@@ -443,7 +445,7 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
 .nav .t{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--ash);font-weight:600;cursor:pointer;flex:1}
 .nav .t.on{color:var(--blue)} .nav .t .i{font-size:18px}
 /* Fade AI orb - rises from the footer, bright solid orange + Pac-Man */
-.fabwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;margin-top:-30px}
+.fabwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;margin-top:-20px}
 .fab{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#ff9a3c,var(--ai) 72%);border:2.5px solid var(--ai2);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(255,106,0,.55),0 0 0 5px rgba(255,106,0,.12);transition:transform .16s ease}
 .fabwrap:active .fab{transform:scale(.93)}
 .fab.on{box-shadow:0 8px 26px rgba(255,106,0,.8),0 0 0 6px rgba(255,106,0,.2)}
@@ -717,6 +719,9 @@ function coachShow(){ const step=COACH[COACHI]; if(step.sc&&S.screen!==step.sc)S
 function coachPlace(){ const step=COACH[COACHI]; const spot=document.getElementById('coachspot'); if(!spot)return;
   const tip=document.getElementById('coachtip');
   const tgt=step.sel?document.querySelector(step.sel):null;
+  // A step whose target isn't on screen (e.g. no live setup during closed hours) would
+  // float a tip pointing at nothing — skip it and advance to the next usable step.
+  if(step.sel&&!tgt){ if(COACHI>=COACH.length-1){ coachEnd(true); } else { COACHI++; coachShow(); } return; }
   let atTop=false;   // where the popup sits, so it never covers the highlighted element
   if(tgt){ try{tgt.scrollIntoView({block:'center'});}catch(e){}
     const r=tgt.getBoundingClientRect(); const pad=6;
@@ -1373,7 +1378,10 @@ function scanReadoutHTML(){
   const inS=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null);
   const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0;   // 0 cold, 1-3 hot
       return {sym:i.symbol,heat,gap:n?n.gap:null,chg:i.change_pct}; })
-    .sort((a,b)=>(b.heat-a.heat)||(Math.abs(b.chg)-Math.abs(a.chg))).slice(0,20);
+    // nearing coins first, ordered by gap ASC so the FIRST tile == the "Closest: X" named
+    // above (they used to disagree — heat/%-ordered tiles vs gap-ordered "closest"); cold last.
+    .sort((a,b)=>{ const ag=a.gap!=null,bg=b.gap!=null; if(ag!==bg)return ag?-1:1;
+      if(ag&&bg)return a.gap-b.gap; return Math.abs(b.chg)-Math.abs(a.chg); }).slice(0,20);
   const tileHTML=tiles.map(t=>`<div class="ht h${t.heat}">${esc(t.sym)}${t.gap!=null?`<em>${t.gap.toFixed(1)}%</em>`:''}</div>`).join('');
   if(closed){
     // Stocks closed: countdown is the hero; crypto never closes so this only shows for stocks scope
@@ -1858,6 +1866,11 @@ function askTrade(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); 
   const q=quote(x.symbol); const cur=q?q.price:x.entry;
   S.chat=[]; S.chatId=null; S.chatProject=null; S.screen='ai'; S.aitab='ask'; S.proj=null; S.sched=null; render();
   sendChat('I have a '+x.side.toUpperCase()+' paper trade on '+x.symbol+' from '+money(x.entry)+', now around '+money(cur)+', with a target near '+money(x.target)+' and a stop near '+money(x.stop)+'. In simple terms, explain what the setup was and what the method says about managing a trade like this. Keep it tight.'); }
+// Chat list headers: server list when signed in, else the localStorage cache (offline/preview).
+function chatHeaders(){
+  if(S.aiChats!=null) return S.aiChats;   // server list [{id,title,updated_at}]
+  return lsGet('fade_chats',[]).map(c=>({id:c.id,title:c.title,updated_at:(c.ts||0)/1000}));  // cache fallback
+}
 function aiChats(){
   const chats=chatHeaders();
   const rows=chats.length?chats.map(c=>`<div class="hcard" onclick="openChat('${escq(c.id)}')"><div class="hi">&#128172;</div><div class="hb"><div class="ht">${esc(c.title||'Chat')}</div><div class="hs">${tsAgo(c.updated_at)}</div></div>`+
@@ -2074,7 +2087,7 @@ function profile(){
       <div class="prow"><span class="k">Paper balance</span><span class="v" style="color:${s.equity>=10000?GREEN:RED}">$${money(s.equity)}</span></div>
       <div class="prow"><span class="k">Win rate</span><span class="v">${s.winrate==null?'--':s.winrate+'%'}</span></div>
       <div class="prow"><span class="k">Closed trades</span><span class="v">${s.graded}</span></div>
-      <div class="prow"><span class="k">Open fades</span><span class="v">${s.opens.length}</span></div>
+      <div class="prow"><span class="k">Open trades</span><span class="v">${s.opens.length}</span></div>
     </div>
     <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:14px" onclick="shareStats()">&#8593; Share my record</button>
     <div class="pcard">
