@@ -380,6 +380,8 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-stat b{color:var(--txt);font-weight:800;font-size:13.5px}
 .sl-hot b{color:#ffb020}
 .sl-real{margin-left:auto;font-size:9px;color:var(--ash);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.sl-games{cursor:pointer;font-size:12px;color:var(--ash);opacity:.25;transition:opacity .2s;margin-left:6px;flex-shrink:0}
+.sl-games:hover{opacity:.7}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
@@ -424,6 +426,27 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .mp-foot{display:flex;align-items:center;gap:7px;color:var(--ash);font-size:11px;font-family:'Space Grotesk';margin-top:12px}
 .mp-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:slpulse 1.5s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.mp-ring,.mp-run,.mp-dot{animation:none}}
+/* Trigger ladder (B) — ranked queue of names nearest a trigger */
+.tlad{padding:2px 14px 0;display:flex;flex-direction:column;gap:11px}
+.tlad-row{}
+.tlad-top{display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Grotesk';font-size:12px;margin-bottom:5px}
+.tlad-sym{color:var(--txt);font-weight:700} .tlad-sym small{color:var(--ash);font-weight:600;font-size:10px;margin-left:4px}
+.tlad-tag{font-family:'Space Grotesk';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.tlad-bar{height:5px;border-radius:3px;background:var(--void2);overflow:hidden;border:1px solid var(--line)}
+.tlad-bar i{display:block;height:100%;border-radius:3px}
+.tlad-empty{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ash);padding:18px 0;text-align:center}
+.tlad-hd{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px;font-family:'Space Grotesk';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ash)}
+/* Scan terminal (C) — live crawl of real scan passes */
+.scterm{margin:2px -14px 0;padding:0;background:radial-gradient(ellipse at 50% 0%,rgba(46,123,255,.05),transparent 70%),var(--void);border-top:1px solid var(--line);overflow:hidden}
+.scterm-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;font-family:'Space Grotesk';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ash)}
+.scterm-hd .st-live{display:inline-flex;align-items:center;gap:6px;color:#3ddc6e}
+.scterm-body{height:180px;overflow:hidden;padding:0 14px;font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.95;-webkit-mask-image:linear-gradient(180deg,transparent,#000 12%,#000 84%,transparent);mask-image:linear-gradient(180deg,transparent,#000 12%,#000 84%,transparent)}
+.scterm-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scterm-line .tt{color:var(--ash);opacity:.7} .scterm-line .sy{color:var(--txt);font-weight:700} .scterm-line .dd{color:var(--line)}
+.scterm-cur{display:inline-block;width:7px;height:12px;background:#3ddc6e;vertical-align:-1px;animation:sctblink 1s step-end infinite}
+@keyframes sctblink{50%{opacity:0}}
+.scterm-foot{padding:6px 14px 12px;font-family:'Space Grotesk';font-size:10.5px;color:var(--ash);text-align:center}
+@media (prefers-reduced-motion:reduce){.scterm-cur{animation:none}}
 .closebox{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:13px 13px 14px;margin-top:4px}
 .scan-hud2 .rt .rt-arc{color:var(--ash)} .scan-hud2 .rt .rt-sub{color:var(--ash);font-size:7px}
 .tetstage{cursor:pointer} .tetstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -1097,9 +1120,10 @@ function scanShow(){ const d=scanData();
   return {scan:scan,near:near}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
+  const gameToggle=gamesOn()?`<span class="sl-games" onclick="event.stopPropagation();lsSet('fade_games',false);render()" title="Disable games">◎</span>`:'';
   return stocksClosedView()
-    ? `<div class="scan-live closed" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
-    : `<div class="scan-live" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span></div>`; }
+    ? `<div class="scan-live closed" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span>${gameToggle}</div>`
+    : `<div class="scan-live" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span>${gameToggle}</div>`; }
 function scanDiscHTML(){ return `<div class="scan-disc">Patience is more profitable than action — wait for real setups</div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
@@ -1366,6 +1390,43 @@ function gamesOn(){ return lsGet('fade_games',false); }   // waiting-room mini-g
 // Games OFF: MARKET PULSE — the no-noise waiting screen (both scopes). HEAT GRID: a tile per
 // asset in scope, heating orange as it nears a trigger; brightest = about to snap. Scope-clear:
 // the header says exactly which market (Stocks / Crypto) we're waiting on.
+// Real per-symbol scan status from board data — qualitative bands only (never the raw
+// threshold). Same gap bands as scanData()'s phases so the ladder, terminal and heat agree.
+function scanStatus(it){ const gap=Math.max(0,(it.threshold||4)-Math.abs(it.change_pct||0));
+  if(it.breached) return {label:'breach — setup live',col:'#3ddc6e',phase:3,tag:'live',tagcol:'#3ddc6e',gap:0};
+  if(gap<=0.5) return {label:'near trigger — watching',col:'#ff3b30',phase:3,tag:'red hot',tagcol:'#ff3b30',gap};
+  if(gap<=1.1) return {label:'pressure building',col:'#ff9f0a',phase:2,tag:'warming',tagcol:'#ff9f0a',gap};
+  if(gap<=1.9) return {label:'approaching threshold',col:'#ffe500',phase:1,tag:'on watch',tagcol:'#ffe500',gap};
+  return {label:'in range',col:'var(--ash)',phase:0,tag:'in range',tagcol:'var(--ash)',gap}; }
+// B — Trigger ladder: the names nearest a trigger, ranked, with a heat bar. Fill = how close
+// (closer to trigger = fuller); exact %-to-trigger shown (parity with the "Closest" line).
+function triggerLadderHTML(){ const near=(scanData().near||[]).slice(0,6);
+  const rows = near.length ? near.map(x=>{ const s=scanStatus({threshold:(x.chg!=null?Math.abs(x.chg)+x.gap:4),change_pct:x.chg,breached:false});
+      const fill=Math.max(8,Math.min(96,Math.round((1.9-x.gap)/1.9*100)));
+      return `<div class="tlad-row"><div class="tlad-top"><span class="tlad-sym">${esc(x.sym)}<small>${x.gap.toFixed(1)}% away</small></span><span class="tlad-tag" style="color:${s.tagcol}">${s.tag}</span></div><div class="tlad-bar"><i style="width:${fill}%;background:${s.tagcol}"></i></div></div>`; }).join('')
+    : `<div class="tlad-empty">All quiet — nothing near a trigger yet.</div>`;
+  return `<div class="tlad-hd"><span>Nearest to trigger</span><span style="color:#3ddc6e">real-time</span></div><div class="tlad">${rows}</div>`; }
+// C — Scan terminal: a live crawl of real scan passes over the in-scope board. Seeds the
+// hottest names first, then scanTermTick() cycles the whole universe with real timestamps.
+function scanTermSeed(){ const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null)
+    .map(i=>({it:i,s:scanStatus(i)})).sort((a,b)=>b.s.phase-a.s.phase||Math.abs(b.it.change_pct)-Math.abs(a.it.change_pct)).slice(0,9);
+  const now=new Date();
+  return items.map((o,idx)=>{ const d=new Date(now.getTime()-idx*1400);
+    const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+    return `<div class="scterm-line" style="color:${o.s.col}"><span class="tt">${t}</span> · <span class="sy">${esc(o.it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${o.s.label}</div>`; }).join(''); }
+function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; const d=scanData();
+  const seed=scanTermSeed() || `<div class="scterm-line" style="color:var(--ash)"><span class="sy">standing by</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> waiting for the market to open</div>`;
+  return `<div class="scterm"><div class="scterm-hd"><span class="st-live"><span class="mp-dot"></span>Scan log</span><span>scanning ${scopeName} <span class="scterm-cur"></span></span></div>
+    <div class="scterm-body" id="scterm-body">${seed}</div>
+    <div class="scterm-foot">Every line is a real pass &#183; ${d.total} ${scopeName} watched &#183; nothing to do until one breaks</div></div>`; }
+let TERM={i:0};
+function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!body)return;
+  const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null); if(!items.length)return;
+  if(TERM.i>=items.length)TERM.i=0; const it=items[TERM.i++]; const s=scanStatus(it);
+  const d=new Date(); const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+  const line=document.createElement('div'); line.className='scterm-line'; line.style.color=s.col;
+  line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> ${s.label}`;
+  body.insertBefore(line,body.firstChild); while(body.childNodes.length>11)body.removeChild(body.lastChild); }
 function scanReadoutHTML(){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
@@ -1394,18 +1455,10 @@ function scanReadoutHTML(){
         <div class="mp-foot"><span class="mp-dot"></span>${d.total} stocks tracked &#183; live at the bell</div>
       </div>`;
   }
-  return `${scanLiveBar()}
-    <div class="mpulse">
-      <div class="mp-hero mp-hero-sm">
-        <div class="mp-wait">Waiting on a <b>${scopeName}</b> setup</div>
-        <div class="mp-big">${sh.near}<span class="mp-ring"></span><span class="mp-ring r2"></span></div>
-        <div class="mp-lab">${scopeName} ${sh.near===1?'name':'names'} nearing a trigger</div>
-        <div class="mp-sub">${closest?`Closest: <b>${esc(closest.sym)}</b> &#8212; ${closest.gap.toFixed(1)}% from a trade.`:'Scanning the extremes.'} The board fires the instant one snaps.</div>
-      </div>
-      <div class="mp-heat">${tileHTML}</div>
-      <div class="mp-leg">cold <span class="lg lg0"></span><span class="lg lg1"></span><span class="lg lg2"></span><span class="lg lg3"></span> about to snap</div>
-      <div class="mp-foot"><span class="mp-dot"></span>${d.total} ${scopeName} scanned &#183; live every ~2 min</div>
-    </div>`;
+  // Games OFF default: sophisticated "what am I waiting for" screens (no algo leaked).
+  // Crypto → trigger ladder (B) on top + scan terminal (C) underneath. Stocks → terminal (C).
+  if(S.scope==='crypto') return `${scanLiveBar()}${triggerLadderHTML()}${scanTermHTML()}`;
+  return `${scanLiveBar()}${scanTermHTML()}`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
 // stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
@@ -2758,6 +2811,7 @@ applyTheme(); pxReanchor(); render(); hydrate(); loadAppConfig(); loadHlCfg(); i
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
+setInterval(scanTermTick,750);   // Scan terminal (C) live crawl — no-ops unless #scterm-body is mounted
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 setInterval(function(){ if(document.getElementById('pmtape'))loadPremarket(true); }, 60000);   // pre-market tape refresh
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
