@@ -24,6 +24,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -431,15 +433,12 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-games:hover{opacity:.7}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
-.sdial{display:flex;flex-direction:column;align-items:center;padding:8px 0 2px}
-.sdial-ring{width:184px;height:184px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
-.sdial-core{width:150px;height:150px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1;gap:2px}
-.sdial-needle{position:absolute;left:50%;top:50%;width:3px;height:80px;background:var(--txt);border-radius:2px;transform-origin:50% 100%;z-index:2;box-shadow:0 0 7px rgba(255,255,255,.4)}
-.sdial-k{font-size:10px;letter-spacing:.09em;font-weight:700}
-.sdial-t{font-family:'Space Grotesk';font-size:27px;font-weight:800;line-height:1.02}
-.sdial-s{font-size:11px;color:var(--ashl);padding:0 10px}
-.sdial-leg{display:flex;gap:14px;font-size:10px;color:var(--ash);margin:11px 0 2px}
-.sdial-leg i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px}
+.sdhead{text-align:center;padding:18px 0 4px}
+.sdh-k{font-size:10px;letter-spacing:.1em;font-weight:700}
+.sdh-t{font-family:'Space Grotesk';font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px}
+.sdh-s{font-size:12px;color:var(--ashl);margin-top:5px}
+.sdsrc{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;background:var(--void2);border:1px solid var(--line);color:var(--ashl);font-size:9px;letter-spacing:.06em;vertical-align:1px}
+.sdfoot{text-align:center;font-size:10.5px;color:var(--ash);margin-top:10px;padding:0 14px}
 .sdlbl{font-size:10px;letter-spacing:.09em;color:var(--ash);margin:16px 0 9px;text-align:center;font-weight:700}
 .sdrow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px}
 .sdrow-top{display:flex;justify-content:space-between;align-items:center}
@@ -476,6 +475,25 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .mp-leg .lg0{background:var(--void2);border:1px solid var(--line)}
 .mp-leg .lg1{background:rgba(255,106,0,.10)} .mp-leg .lg2{background:rgba(255,106,0,.24)} .mp-leg .lg3{background:rgba(255,106,0,.44)}
 @media (prefers-reduced-motion:reduce){.ht.h3{animation:none}}
+/* crypto wait screen — radar grid of coins, each ring fills toward its trigger */
+.crgrid-hd{display:flex;justify-content:space-between;align-items:center;font-family:'Space Grotesk';font-size:11px;color:var(--ash);margin:6px 2px 12px}
+.crhd-live{display:flex;align-items:center;gap:5px;color:#3ddc6e}
+.crgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:13px 8px}
+.crtile{display:flex;flex-direction:column;align-items:center;gap:6px}
+.crring{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;background:conic-gradient(from -90deg,#ff6a00 var(--fill),rgba(255,106,0,.10) var(--fill))}
+.crring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
+.crring span{position:relative;z-index:1;font-family:'Space Grotesk';font-weight:800;font-size:11.5px;color:var(--txt)}
+.crgap{font-family:'Space Grotesk';font-size:9.5px;color:var(--ash)}
+.crtile.h1 .crring{background:conic-gradient(from -90deg,#ff8c33 var(--fill),rgba(255,106,0,.10) var(--fill))}
+.crtile.h2 .crring{background:conic-gradient(from -90deg,#ff6a00 var(--fill),rgba(255,106,0,.13) var(--fill))}
+.crtile.h3 .crring{background:conic-gradient(from -90deg,#ff3b30 var(--fill),rgba(255,59,48,.15) var(--fill));filter:drop-shadow(0 0 7px rgba(255,80,0,.5));animation:htp 1.5s ease-in-out infinite}
+.crtile.h3 .crgap{color:#ff6a00;font-weight:700}
+.crleg{display:flex;align-items:center;justify-content:center;gap:5px;margin:15px 0 2px;font-family:'Space Grotesk';font-size:9.5px;color:var(--ash)}
+.crleg i{width:11px;height:11px;border-radius:50%}
+.crleg .l0{background:rgba(255,106,0,.13)} .crleg .l1{background:rgba(255,140,51,.6)} .crleg .l2{background:#ff6a00} .crleg .l3{background:#ff3b30}
+.crscan-btn{width:100%;margin-top:16px;background:var(--void2);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:13px;font-family:'Space Grotesk';font-weight:700;font-size:13.5px;cursor:pointer}
+.crscan-btn:active{background:var(--void)}
+.scanlog-modal .scterm{margin:0}
 .mp-big{position:relative;display:inline-flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:96px;font-weight:800;letter-spacing:-4px;line-height:1;color:#ffb020;text-shadow:0 0 34px rgba(255,176,32,.4)}
 .mp-big.sm{font-size:44px;letter-spacing:-1px;color:var(--txt);text-shadow:none}
 .mp-ring{position:absolute;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,176,32,.45);animation:mpr 2.6s ease-out infinite;pointer-events:none}
@@ -1193,8 +1211,8 @@ function scanShow(){ const d=scanData();
 function scanLiveBar(){ const sh=scanShow();
   const gameToggle=gamesOn()?`<span class="sl-games" onclick="event.stopPropagation();lsSet('fade_games',false);render()" title="Disable games">◎</span>`:'';
   return stocksClosedView()
-    ? `<div class="scan-live closed" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span>${gameToggle}</div>`
-    : `<div class="scan-live" onclick="lsSet('fade_games',false);render()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span>${gameToggle}</div>`; }
+    ? `<div class="scan-live closed" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span>${gameToggle}</div>`
+    : `<div class="scan-live" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span>${gameToggle}</div>`; }
 function scanDiscHTML(){ return `<div class="scan-disc">Patience is more profitable than action — wait for real setups</div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
@@ -1463,28 +1481,19 @@ function dialProjRows(){ const rows=dialProj().slice(0,4);
       +`<div class="sdrow-bar"><i style="width:${Math.max(6,r.pctTrig)}%;background:${col}"></i></div>`
       +`<div class="sdrow-sub"><span style="color:${col}">${r.pctTrig}% of trigger · ${tag}</span><span style="color:var(--ash)">${r.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 function renderDialProj(){ const el=document.getElementById('dialproj'); if(el)el.innerHTML=dialProjRows();
-  const c=document.getElementById('dialcount'); if(c){ const n=dialProjCount(); c.textContent=n+' projected breach'+(n===1?'':'es'); } }
+  const c=document.getElementById('dialcount'); if(c){ const n=dialProjCount(); c.textContent=n+' projected breach'+(n===1?'':'es')+' at the open'; } }
 function sessionDialHTML(mode){ const ph=marketPhase();
-  let m; try{ const et=etDate(); m=et.getHours()*60+et.getMinutes(); }catch(e){ m=240; }
-  const ang=(Math.max(0,Math.min(1,(m-240)/960))*360).toFixed(1);
-  const open=nextMarketOpen()||'soon';
-  const center = ph==='premarket' ? {k:'BELL IN',t:open,s:dialProjCount()+' projected breach'+(dialProjCount()===1?'':'es'),c:'#ffe500'}
-    : ph==='afterhours' ? {k:'AFTER HOURS',t:open,s:'until the next session opens',c:'#afa9ec'}
-    : ph==='regular' ? {k:'MARKET',t:'OPEN',s:'setups grade live on the board',c:GREEN}
-    : {k:'OPENS IN',t:open,s:'crypto never sleeps',c:'#afa9ec'};
+  const open=nextMarketOpen()||'soon'; const n=dialProjCount();
+  const head = ph==='premarket'
+    ? `<div class="sdhead"><div class="sdh-k" style="color:#ffe500">PRE-MARKET · BELL IN</div><div class="sdh-t">${open}</div><div class="sdh-s" id="dialcount">${n} projected breach${n===1?'':'es'} at the open</div></div>`
+    : ph==='afterhours'
+    ? `<div class="sdhead"><div class="sdh-k" style="color:#afa9ec">AFTER HOURS · NEXT BELL</div><div class="sdh-t">${open}</div><div class="sdh-s">tracking the extended session</div></div>`
+    : `<div class="sdhead"><div class="sdh-k" style="color:#afa9ec">MARKET CLOSED · OPENS IN</div><div class="sdh-t">${open}</div><div class="sdh-s">crypto never sleeps</div></div>`;
   const showProj=(ph==='premarket'||ph==='afterhours');
-  const lbl=ph==='premarket'?'PROJECTED BREACHES AT THE BELL':'AFTER-HOURS MOVERS · VS THEIR TRIGGER';
-  return `<div class="sdial">
-      <div class="sdial-ring" style="background:conic-gradient(#ffe500 0 123.75deg,${GREEN} 123.75deg 270deg,#7f77dd 270deg 360deg)">
-        <div class="sdial-needle" style="transform:translate(-50%,-100%) rotate(${ang}deg)"></div>
-        <div class="sdial-core"><div class="sdial-k" style="color:${center.c}">${center.k}</div>
-          <div class="sdial-t">${center.t}</div>
-          <div class="sdial-s"${ph==='premarket'?' id="dialcount"':''}>${center.s}</div></div>
-      </div>
-      <div class="sdial-leg"><span><i style="background:#ffe500"></i>pre</span><span><i style="background:${GREEN}"></i>open</span><span><i style="background:#7f77dd"></i>after</span></div>
-    </div>
-    ${showProj?`<div class="sdlbl">${lbl}</div><div id="dialproj">${dialProjRows()}</div>`
-      :`<div class="sd-rest">Stocks are resting until the open. Fade <b onclick="setScope('crypto')" style="color:${CYAN};cursor:pointer">Crypto</b> — it never sleeps.</div>`}`;
+  const lbl=ph==='premarket'?`PROJECTED BREACHES AT THE BELL <span class="sdsrc">PRE-MARKET DATA</span>`:`MOVERS VS THEIR TRIGGER <span class="sdsrc">AFTER-HOURS DATA</span>`;
+  const foot=ph==='premarket'?'projected from live pre-market prints — graded for real at 9:30':'after-hours prints vs each name&#39;s trigger — a new session resets the tape';
+  return head+(showProj?`<div class="sdlbl">${lbl}</div><div id="dialproj">${dialProjRows()}</div><div class="sdfoot">${foot}</div>`
+    :`<div class="sd-rest">Stocks are resting until the open. Fade <b onclick="setScope('crypto')" style="color:${CYAN};cursor:pointer">Crypto</b> — it never sleeps.</div>`);
 }
 
 function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['crypto','Crypto']];
@@ -1523,6 +1532,16 @@ function triggerLadderHTML(){ const near=(scanData().near||[]).slice(0,6);
       return `<div class="tlad-row"><div class="tlad-top"><span class="tlad-sym">${esc(x.sym)}<small>${x.gap.toFixed(1)}% away</small></span><span class="tlad-tag" style="color:${s.tagcol}">${s.tag}</span></div><div class="tlad-bar"><i style="width:${fill}%;background:${s.tagcol}"></i></div></div>`; }).join('')
     : `<div class="tlad-empty">All quiet — nothing near a trigger yet.</div>`;
   return `<div class="tlad-hd"><span>Nearest to trigger</span><span style="color:#3ddc6e">real-time</span></div><div class="tlad">${rows}</div>`; }
+// Live trigger cards — near-trigger names as breach-style cards with heat bars (same
+// component as the pre-market projections, fed by the LIVE scan for the current scope).
+function triggerRowsHTML(){ const near=(scanData().near||[]).slice(0,4);
+  if(!near.length) return `<div class="sd-empty">All quiet — nothing near a trigger right now. The scan keeps hunting.</div>`;
+  return near.map(function(x){ const thr=(x.chg!=null?Math.abs(x.chg)+x.gap:4);
+    const pt=Math.min(100,Math.round((1-x.gap/Math.max(thr,0.01))*100));
+    const col=pt>=95?RED:(pt>=80?'#ff9f0a':'#ffe500'); const tag=pt>=95?'red hot':(pt>=80?'warming':'on watch'); const long=(x.chg||0)<0;
+    return `<div class="sdrow"><div class="sdrow-top"><span><span class="sdrow-sym">${esc(x.sym)}</span> <span class="sdrow-side" style="color:${long?GREEN:RED}">${long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${(x.chg>=0?'+':'')}${(x.chg||0).toFixed(1)}% vs ${thr.toFixed(1)}%</span></div>`
+      +`<div class="sdrow-bar"><i style="width:${Math.max(6,pt)}%;background:${col}"></i></div>`
+      +`<div class="sdrow-sub"><span style="color:${col}">${pt}% of trigger · ${tag}</span><span style="color:var(--ash)">${x.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 // C — Scan terminal: a live crawl of real scan passes over the in-scope board. Seeds the
 // hottest names first, then scanTermTick() cycles the whole universe with real timestamps.
 function scanTermSeed(){ const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null)
@@ -1582,6 +1601,29 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
   const s=scanStatus(it); line.style.color=s.col;
   line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(it,s)}`;
   body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); }
+// Crypto wait screen (games-off): a live radar GRID of the in-scope board. Each coin is a tile
+// with an orange ring that fills toward its trigger (fill = |move| / its threshold) and solidifies
+// + heats red as it nears. The scrolling scan LOG is off the page — behind the button below.
+function cryptoGridHTML(){
+  const nd={}; scanData().near.forEach(x=>{ nd[x.sym]=x; });
+  const inS=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null);
+  const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0; const thr=i.threshold||4;
+      const fill=Math.max(4,Math.min(100,Math.round(Math.abs(i.change_pct)/thr*100)));
+      const gap=n?n.gap:Math.max(0,thr-Math.abs(i.change_pct));
+      return {sym:i.symbol,heat,fill,gap,brk:i.breached}; })
+    .sort((a,b)=>(b.brk-a.brk)||(b.fill-a.fill)).slice(0,18);
+  const cells=tiles.length ? tiles.map(t=>`<div class="crtile h${t.brk?3:t.heat}">
+      <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><span>${esc(t.sym)}</span></div>
+      <div class="crgap">${t.brk?'live':(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
+    : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
+  return `<div class="crgrid-hd"><span>Scanning ${scanData().total} coins for a break</span><span class="crhd-live"><span class="mp-dot"></span>real-time</span></div>
+    <div class="crgrid">${cells}</div>
+    <div class="crleg"><span>far</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>at trigger</span></div>
+    `;
+}
+// The time-scroll of scan codes — now opened on demand (not on the main page). scanTermTick's
+// interval already animates #scterm-body wherever it's mounted, so it crawls inside the modal.
+function openScanLog(){ openModal(`<div class="scanlog-modal">${scanTermHTML()}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
 function scanReadoutHTML(mode){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
@@ -1610,18 +1652,23 @@ function scanReadoutHTML(mode){
         <div class="mp-foot"><span class="mp-dot"></span>${d.total} stocks tracked &#183; live at the bell</div>
       </div>`;
   }
-  // Games OFF default: sophisticated "what am I waiting for" screens (no algo leaked).
-  // Crypto → Markets leads with the trigger ladder; Feed is just the scan log, so the two tabs differ.
-  if(S.scope==='crypto') return `${scanLiveBar()}${mode==='markets'?triggerLadderHTML():''}${scanTermHTML()}`;
-  return `${scanLiveBar()}${scanTermHTML()}`;
+  // Games OFF default: breach-style trigger CARDS lead, then the tile grid (crypto).
+  // The raw scan log is hidden — tapping the Live-market-scan banner opens it (openScanLog).
+  if(S.scope==='crypto') return `${scanLiveBar()}<div class="sdlbl">DISTANCE TO TRIGGER <span class="sdsrc">LIVE · 24/7</span></div>${triggerRowsHTML()}${cryptoGridHTML()}`;
+  return `${scanLiveBar()}<div class="sdlbl">NEAREST TO TRIGGER <span class="sdsrc">LIVE SESSION</span></div>${triggerRowsHTML()}`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
 // stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
 function waitingRoomHTML(mode){
-  if(stocksClosedView()) return sessionDialHTML(mode);   // time-aware stocks dial (pre-market / bell / after-hours)
-  if(!gamesOn()) return scanReadoutHTML(mode);
-  if(S.scope==='crypto') return scannerHTML(false);
-  return `${scanLiveBar()}${pmTapeHTML()}${tetrisHTML()}`;   // Fade Blocks — same chrome as the crypto scan
+  // Games ON take precedence — the whole point is to pass the wait with a game, INCLUDING
+  // when the stock market is closed. (Bugfix: the Session Dial was short-circuiting this,
+  // so Tetris vanished whenever the market was shut — i.e. most of the time.)
+  if(gamesOn()){
+    if(S.scope==='crypto') return scannerHTML(false);
+    return `${scanLiveBar()}${pmTapeHTML()}${tetrisHTML()}`;   // Fade Blocks — same chrome as the crypto scan
+  }
+  if(stocksClosedView()) return sessionDialHTML(mode);   // games OFF, stocks closed: time-aware dial
+  return scanReadoutHTML(mode);                          // games OFF: the clean live readout
 }
 function feed(){
   // Live setups always win (trades take priority). No setups in scope → the waiting room.
