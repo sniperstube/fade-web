@@ -342,7 +342,7 @@ input,textarea,select{font-size:16px}
    way down. Class-driven (not :has()/dvh) for reliability across iOS Safari + webviews. */
 body.gamelock{overflow:hidden;overscroll-behavior:none}
 #app.gamefit{min-height:0;overflow:hidden;display:flex;flex-direction:column}   /* height px set by fitGame() */
-#app.gamefit .nav{position:static;max-width:none;width:100%;margin:0}
+#app.gamefit .nav{position:static;width:100%;margin:0 auto}   /* keeps the base max-width so the bar ALWAYS shares edges with the app column — full-bleed nav on iPad/desktop made the center orb look misaligned vs the capped game column */
 .scanner{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;touch-action:none;background:radial-gradient(ellipse at 50% 30%,rgba(46,123,255,.06),transparent 70%),var(--void);z-index:10}
 .tetriswrap{position:relative;flex:1;min-height:280px;margin:2px -14px 0;overflow:hidden;background:radial-gradient(ellipse at 50% 22%,rgba(46,123,255,.05),transparent 70%),#05070d;z-index:10}
 #tetris{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:20}
@@ -415,6 +415,14 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-real{margin-left:auto;font-size:9px;color:var(--ash);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .sl-games{cursor:pointer;font-size:12px;color:var(--ash);opacity:.25;transition:opacity .2s;margin-left:6px;flex-shrink:0}
 .sl-games:hover{opacity:.7}
+.sl-rot{transition:opacity .24s ease;opacity:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Mid-cap radar: coins the scan examines that sit BELOW the fade floor — awareness, never a trade */
+.wstrip{margin:12px 0 4px}
+.wstrip-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--ash);text-transform:uppercase;padding:0 2px;margin-bottom:7px}
+.wstrip-sub{font-weight:600;letter-spacing:.02em;text-transform:none;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wstrip-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);scrollbar-width:none}
+.wstrip-row::-webkit-scrollbar{display:none}
+.wchip{flex:none;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--void2);font-size:11.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .sdhead{text-align:center;padding:18px 0 4px}
@@ -534,13 +542,13 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
 .nav .t{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--ash);font-weight:600;cursor:pointer;flex:1}
 .nav .t.on{color:var(--blue)} .nav .t .i{font-size:18px}
 /* Fade AI orb - rises from the footer, bright solid orange + Pac-Man */
-.fabwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;margin-top:-20px}
-.fab{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#ff9a3c,var(--ai) 72%);border:2.5px solid var(--ai2);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(255,106,0,.55),0 0 0 5px rgba(255,106,0,.12);transition:transform .16s ease}
+.fabwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;margin-top:-12px}
+.fab{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#ff9a3c,var(--ai) 72%);border:2.5px solid var(--ai2);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(255,106,0,.55),0 0 0 5px rgba(255,106,0,.12);transition:transform .16s ease}
 .fabwrap:active .fab{transform:scale(.93)}
 .fab.on{box-shadow:0 8px 26px rgba(255,106,0,.8),0 0 0 6px rgba(255,106,0,.2)}
-.fab .munch{width:38px;height:38px;background:none;border:none;border-radius:0;gap:2px}
-.fab .munch .pac{width:19px;height:19px;background:conic-gradient(#1a0a00 0 54deg,transparent 54deg 126deg,#1a0a00 126deg)}
-.fab .munch .cndl{width:3.5px;height:14px;background:#1a0a00;border-radius:1px}
+.fab .munch{width:35px;height:35px;background:none;border:none;border-radius:0;gap:2px}
+.fab .munch .pac{width:18px;height:18px;background:conic-gradient(#1a0a00 0 54deg,transparent 54deg 126deg,#1a0a00 126deg)}
+.fab .munch .cndl{width:3.5px;height:13px;background:#1a0a00;border-radius:1px}
 .fablbl{font-size:10px;font-weight:700;color:var(--ash)}
 .fablbl.on{color:var(--ai2)}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:210;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
@@ -1188,15 +1196,35 @@ function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
 // Readout for the scan strip. `near` = the REAL count nearing a trigger (capped at 9 so it
 // stays single-digit and matches the dots the user actually sees). `scan` = curated universe size.
 function scanShow(){ const d=scanData();
-  // "scanning" mirrors the REAL in-scope count — the same number the footer shows ("N crypto
-  // watched"). The old fabricated 15+near*4 disagreed with it and looked like a bug.
-  return {scan:d.total,near:Math.min(9,d.nearCount||0)}; }
+  // "scanning" = how many names the backend actually EXAMINED this pass (Board.universe) —
+  // items[] only carries the fade-ELIGIBLE subset, which made the count read broken-small.
+  const uni=(BOARD.universe||{}); const scanned=(S.scope==='crypto'?uni.crypto:uni.stocks)||d.total;
+  return {scan:Math.max(scanned,d.total),eligible:d.total,near:Math.min(9,d.nearCount||0),closest:(d.near||[])[0]||null}; }
 // Shared chrome so BOTH downtime games (Fade Blocks / Pac-Scan) look identical — same live strip + note.
 function scanLiveBar(){ const sh=scanShow();
   const gameToggle=gamesOn()?`<span class="sl-games" onclick="event.stopPropagation();lsSet('fade_games',false);render()" title="Disable games">◎</span>`:'';
   return stocksClosedView()
-    ? `<div class="scan-live closed" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span>${gameToggle}</div>`
-    : `<div class="scan-live" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span>${gameToggle}</div>`; }
+    ? `<div class="scan-live closed" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat sl-rot" id="slrot">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span>${gameToggle}</div>`
+    : `<div class="scan-live" onclick="openScanLog()"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat sl-rot scan-anim" id="slrot">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span>${gameToggle}</div>`; }
+// The live-strip middle stat ROTATES through real numbers so the bar never reads frozen:
+// scanned universe → fade-eligible → closest-to-trigger → biggest watch-radar mover.
+let SLROT={i:0};
+function slRotTick(){ const el=document.getElementById('slrot'); if(!el)return;
+  const sh=scanShow(); const frames=[];
+  if(stocksClosedView()){
+    frames.push(`opens <b>${nextMarketOpen()}</b>`);
+    const pm=(PM.movers||[]).length; if(pm&&(PM.phase==='premarket'||PM.phase==='afterhours'))frames.push(`<b>${pm}</b> ${PM.phase==='premarket'?'pre-mkt':'after-hrs'} movers`);
+    frames.push(`crypto never sleeps`);
+  } else {
+    frames.push(`⚙ <b>${sh.scan}</b> scanning`);
+    if(sh.eligible&&sh.eligible!==sh.scan)frames.push(`<b>${sh.eligible}</b> fade-eligible`);
+    if(sh.closest)frames.push(`closest <b>${esc(sh.closest.sym)}</b> ${sh.closest.gap.toFixed(1)}%`);
+    const w=(S.scope==='crypto'&&(BOARD.watch||[])[0]); if(w&&w.change_pct!=null)frames.push(`radar <b>${esc(w.symbol)} ${w.change_pct>=0?'+':''}${(+w.change_pct).toFixed(1)}%</b>`);
+  }
+  if(!frames.length)return;
+  SLROT.i=(SLROT.i+1)%frames.length;
+  el.style.opacity=0;
+  setTimeout(function(){ const e2=document.getElementById('slrot'); if(!e2)return; e2.innerHTML=frames[SLROT.i]; e2.style.opacity=1; },240); }
 function scanDiscHTML(){ return `<div class="scan-disc">Patience is more profitable than action — wait for real setups</div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
@@ -1528,17 +1556,34 @@ function triggerRowsHTML(){ const near=(scanData().near||[]).slice(0,4);
       +`<div class="sdrow-sub"><span style="color:${col}">${pt}% of trigger · ${tag}</span><span style="color:var(--ash)">${x.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 // C — Scan terminal: a live crawl of real scan passes over the in-scope board. Seeds the
 // hottest names first, then scanTermTick() cycles the whole universe with real timestamps.
-function scanTermSeed(){ const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null)
-    .map(i=>({it:i,s:scanStatus(i)})).sort((a,b)=>b.s.phase-a.s.phase||Math.abs(b.it.change_pct)-Math.abs(a.it.change_pct)).slice(0,9);
+function scanTermSeed(){ let items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null)
+    .map(i=>({it:i,s:scanStatus(i)}));
+  // Stocks in extended hours with the regular board asleep: seed from LIVE pre-market /
+  // after-hours movers so the log is never "standing by" while real prints are coming in.
+  if(!items.length&&S.scope!=='crypto'&&(PM.phase==='premarket'||PM.phase==='afterhours')&&(PM.movers||[]).length){
+    items=(PM.movers||[]).map(m=>{ const bi=(BOARD.items||[]).find(i=>i.symbol===m.symbol);
+      const fake={symbol:m.symbol,threshold:(bi&&bi.threshold)||4,change_pct:m.pct,breached:false,pm:true};
+      return {it:fake,s:scanStatus(fake),pm:true}; });
+  }
+  items=items.sort((a,b)=>b.s.phase-a.s.phase||Math.abs(b.it.change_pct)-Math.abs(a.it.change_pct)).slice(0,9);
   const now=new Date();
   return items.map((o,idx)=>{ const d=new Date(now.getTime()-idx*1400);
     const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
     return `<div class="scterm-line" style="color:${o.s.col}"><span class="tt">${t}</span> · <span class="sy">${esc(o.it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(o.it,o.s,idx)}</div>`; }).join(''); }
-function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; const d=scanData();
+function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; const sh=scanShow();
   const seed=scanTermSeed() || `<div class="scterm-line" style="color:var(--ash)"><span class="sy">standing by</span> <span class="dd">&#183;&#183;&#183;&#183;&#183;</span> waiting for the market to open</div>`;
+  const counts=(!sh.eligible&&S.scope!=='crypto')?`${sh.scan} ${scopeName} scanned &#183; live at the bell`
+    :(sh.scan>sh.eligible?`${sh.scan} ${scopeName} scanned &#183; ${sh.eligible} fade-eligible`:`${sh.scan} ${scopeName} watched`);
   return `<div class="scterm"><div class="scterm-hd"><span class="st-live"><span class="mp-dot"></span>Scan log</span><span>scanning ${scopeName} <span class="scterm-cur"></span></span></div>
     <div class="scterm-body" id="scterm-body">${seed}</div>
-    <div class="scterm-foot">Every line is a real pass &#183; ${d.total} ${scopeName} watched &#183; nothing to do until one breaks</div></div>`; }
+    <div class="scterm-foot">Every line is a real pass &#183; ${counts} &#183; nothing to do until one breaks</div></div>`; }
+// MID-CAP RADAR — the coins the scan examines that sit BELOW the $10B fade floor (framework
+// hard rule). Real 24h prints, watch-only: the app will never grade or trade these; the strip
+// exists so a moving market never looks like a dead app.
+function watchStripHTML(){ const w=(BOARD.watch||[]).filter(x=>x.change_pct!=null).slice(0,10);
+  if(!w.length)return '';
+  const chips=w.map(x=>`<span class="wchip">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
+  return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span><span class="wstrip-sub">below the fade floor &#8212; watched, never traded</span></div><div class="wstrip-row">${chips}</div></div>`; }
 let TERM={i:0,n:0,seen:new Set()};
 // Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
 // at work — advanced-sounding but each names something the algorithm ACTUALLY does (weighting
@@ -1555,6 +1600,14 @@ function scanTermMsg(it,s,idx){
   const chg=(it.change_pct==null?'0.0':(it.change_pct>=0?'+':'')+it.change_pct.toFixed(1))+'%';
   const vol=it.vol_ratio!=null?it.vol_ratio.toFixed(1)+'&#215; vol':'vol scan';
   const gap=(s.gap!=null&&s.gap>0)?s.gap.toFixed(1)+'% to trigger':null;
+  if(it.pm){   // LIVE extended-hours print — projected against the name's real trigger
+    const tag=PM.phase==='afterhours'?'after-hrs':'pre-mkt';
+    const brk=Math.abs(it.change_pct||0)>=(it.threshold||4);
+    return tag+' '+chg+' &#183; '+(brk?'projected breach at the bell':(gap||s.label));
+  }
+  if(it.watch){   // mid-cap radar — examined by the scan, below the fade floor
+    return 'mid-cap '+chg+' &#183; watch-only';
+  }
   const pool=[
     'move '+chg+' &#183; '+vol,
     (gap||s.label)+' &#183; '+chg,
@@ -1563,8 +1616,22 @@ function scanTermMsg(it,s,idx){
   return pool[(idx==null?TERM.n:idx)%pool.length];
 }
 function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!body)return;
-  const items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null); if(!items.length)return;
-  // Keep the visible log SHORTER than the universe so a symbol can always rotate in — a small
+  // The rotation pool blends THREE real sources so the crawl always has fresh names:
+  //  1. the in-scope graded board;  2. LIVE pre-market/after-hours prints (stocks, extended
+  //  hours — tagged, projected vs each name's real trigger);  3. watch-only mid-caps (crypto
+  //  — examined by the scan, below the fade floor, never tradeable).
+  let items=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null);
+  if(S.scope!=='crypto'&&(PM.phase==='premarket'||PM.phase==='afterhours')){
+    const have=new Set(items.map(i=>i.symbol));
+    (PM.movers||[]).forEach(m=>{ if(have.has(m.symbol))return; const bi=(BOARD.items||[]).find(i=>i.symbol===m.symbol);
+      items.push({symbol:m.symbol,threshold:(bi&&bi.threshold)||4,change_pct:m.pct,breached:false,pm:true}); });
+  }
+  if(S.scope==='crypto'){
+    (BOARD.watch||[]).forEach(w=>{ if(w.change_pct==null)return;
+      items.push({symbol:w.symbol,threshold:5,change_pct:w.change_pct,breached:false,watch:true}); });
+  }
+  if(!items.length)return;
+  // Keep the visible log SHORTER than the pool so a symbol can always rotate in — a small
   // universe (9 crypto) used to fill the log and freeze the crawl. Trim first so there's room.
   const cap=Math.max(1,Math.min(12,items.length-1));
   while(body.childNodes.length>cap)body.removeChild(body.lastChild);
@@ -1582,7 +1649,7 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
   const shown=new Set(); document.querySelectorAll('.scterm-line .sy').forEach(el=>shown.add(el.textContent));
   let it=null, tries=0; while(!it && tries<items.length){ if(TERM.i>=items.length)TERM.i=0; it=items[TERM.i++]; if(shown.has(it.symbol)) it=null; tries++; }
   if(!it) return;
-  const s=scanStatus(it); line.style.color=s.col;
+  const s=scanStatus(it); line.style.color=(it.watch&&Math.abs(it.change_pct)<5)?'var(--ash)':s.col;
   line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(it,s)}`;
   body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); }
 // Crypto wait screen (games-off): a live radar GRID of the in-scope board. Each coin is a tile
@@ -1600,14 +1667,16 @@ function cryptoGridHTML(){
       <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><span>${esc(t.sym)}</span></div>
       <div class="crgap">${t.brk?'live':(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
     : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
-  return `<div class="crgrid-hd"><span>Scanning ${scanData().total} coins for a break</span><span class="crhd-live"><span class="mp-dot"></span>real-time</span></div>
+  const sh=scanShow();
+  return `<div class="crgrid-hd"><span>Scanning ${sh.scan} coins${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}</span><span class="crhd-live"><span class="mp-dot"></span>real-time</span></div>
     <div class="crgrid">${cells}</div>
     <div class="crleg"><span>far</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>at trigger</span></div>
-    `;
+    ${watchStripHTML()}`;
 }
 // The time-scroll of scan codes — now opened on demand (not on the main page). scanTermTick's
 // interval already animates #scterm-body wherever it's mounted, so it crawls inside the modal.
-function openScanLog(){ openModal(`<div class="scanlog-modal">${scanTermHTML()}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
+function openScanLog(){ if(S.scope!=='crypto')loadPremarket(true);   // pull live extended-hours prints for the stocks log
+  openModal(`<div class="scanlog-modal">${scanTermHTML()}${S.scope==='crypto'?watchStripHTML():''}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
 function scanReadoutHTML(mode){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
@@ -1649,7 +1718,7 @@ function waitingRoomHTML(mode){
   // so Tetris vanished whenever the market was shut — i.e. most of the time.)
   if(gamesOn()){
     if(S.scope==='crypto') return scannerHTML(false);
-    return `${scanLiveBar()}${pmTapeHTML()}${tetrisHTML()}`;   // Fade Blocks — same chrome as the crypto scan
+    return `${scanLiveBar()}${tetrisHTML()}`;   // Fade Blocks — NO tape here (it squeezed/overlapped the game); pre-market data lives in the scan log + session dial
   }
   if(stocksClosedView()) return sessionDialHTML(mode);   // games OFF, stocks closed: time-aware dial
   return scanReadoutHTML(mode);                          // games OFF: the clean live readout
@@ -3085,14 +3154,18 @@ function tick(){ if(document.hidden) return;
 }
 async function hydrate(){ if(!API) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
-    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; pxReanchor(); render(); } }catch(e){} }
+    if(b&&b.items){ BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup;
+      if(b.universe)BOARD.universe=b.universe; if(b.watch)BOARD.watch=b.watch;
+      pxReanchor(); render(); } }catch(e){} }
 // Live refresh loop: re-pull the graded board so prices, grades, targets and stops
 // track the backend in real time. Skips while a sheet/chat is open or you're typing,
 // and preserves scroll so the update is seamless. Prices/grades all stay server-side.
 async function livePoll(){ if(!API||document.hidden) return;
   try{ const r=await fetch(API+'/api/board?scope=all'); const b=await r.json();
     if(!b||!b.items) return;
-    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup; pxReanchor();
+    BOARD.items=b.items; if(b.top_setup)BOARD.top=b.top_setup;
+    if(b.universe)BOARD.universe=b.universe; if(b.watch)BOARD.watch=b.watch;
+    pxReanchor();
     // "Catch": Pac-Man snags a new setup — fire a toast when a fresh playable setup appears in view.
     try{ const npl=actionableItems().length;
       if(SCAN.prevPlay>=0 && npl>SCAN.prevPlay && (S.screen==='feed'||S.screen==='markets')) toast('⚡ New setup caught — the hunt paid off');
@@ -3148,6 +3221,7 @@ setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidd
 setInterval(scanTermTick,600);   // Scan terminal (C) live crawl — no-ops unless #scterm-body is mounted
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
 setInterval(function(){ if(document.getElementById('pmtape')||document.getElementById('dialproj'))loadPremarket(true); }, 60000);   // pre-market tape + session-dial refresh
+setInterval(slRotTick, 3200);   // live-strip stat rotation (scanned → eligible → closest → radar) — no-ops when the bar isn't mounted
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
