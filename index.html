@@ -22,6 +22,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <meta charset="utf-8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="utf-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @font-face {
   font-family: 'Press Start 2P';
@@ -224,6 +226,39 @@ input,textarea,select{font-size:16px}
 .ufill{height:100%;background:linear-gradient(90deg,var(--ai2),var(--ai));border-radius:3px;transition:width .3s}
 .briefout{background:var(--void2);border:1px solid var(--line);border-radius:13px;padding:14px 15px;font-family:'Space Grotesk';font-size:13.5px;line-height:1.6;color:var(--txt)}
 .qpill{display:inline-block;font-family:'Space Grotesk';font-size:10.5px;font-weight:700;letter-spacing:.3px;color:var(--ai2);background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.3);border-radius:20px;padding:4px 11px;margin:0 auto 7px}
+/* setup card rendered inside an AI chat bubble */
+.scard{background:var(--void);border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin:9px 0 3px}
+.scard-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.scard-sym{font-size:14.5px;font-weight:800}
+.scard-sym small{font-family:'Space Grotesk';font-size:10.5px;font-weight:600;color:var(--ash);margin-left:5px;text-transform:uppercase;letter-spacing:.4px}
+.scard-g{font-family:'Press Start 2P';font-size:11px;border:1.5px solid;border-radius:8px;padding:5px 8px;line-height:1}
+.scard-lad{display:flex;gap:11px;align-items:stretch}
+.scard-bar{width:5px;border-radius:3px;flex-shrink:0;background:linear-gradient(to bottom,var(--green),var(--line) 52%,var(--red))}
+.scard-rows{flex:1}
+.scard-row{display:flex;align-items:baseline;gap:8px;padding:4px 0;font-family:'Space Grotesk';font-size:12px}
+.scard-row>span:first-child{font-weight:600}
+.scard-row b{margin-left:auto;font-size:13px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
+.scard-row small{min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.scard-f{font-family:'Space Grotesk';font-size:10.5px;color:var(--ash);margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.scard-btn{width:100%;margin-top:10px;background:var(--void2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:9px;font-family:'Space Grotesk';font-weight:700;font-size:12.5px;cursor:pointer}
+/* Fade School */
+.lp-bar{display:flex;gap:4px;margin:2px 0 12px}
+.lp-seg{flex:1;height:5px;border-radius:3px;background:var(--void2);border:1px solid var(--line)}
+.lp-seg.done{background:var(--green);border-color:var(--green)}
+.lp-seg.now{background:var(--ai);border-color:var(--ai)}
+.lp-chip{font-family:'Space Grotesk';font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ash);border:1px solid var(--line);border-radius:12px;padding:3px 8px;flex-shrink:0}
+.lp-chip.now{color:var(--ai2);border-color:rgba(255,106,0,.4);background:rgba(255,106,0,.1)}
+.lesson-body{font-family:'Space Grotesk';font-size:14px;line-height:1.62;color:var(--txt);margin:2px 0 12px}
+.lesson-live{background:rgba(46,123,255,.1);border:1px solid rgba(46,123,255,.28);border-radius:11px;padding:10px 12px;font-family:'Space Grotesk';font-size:12.5px;line-height:1.5;color:var(--txt);margin-bottom:14px}
+.lesson-live .ll-k{display:block;font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);margin-bottom:3px}
+.lesson-q{font-size:14.5px;font-weight:700;line-height:1.45;margin:4px 0 10px}
+.lesson-opts{display:flex;flex-direction:column;gap:8px}
+.lopt{text-align:left;background:var(--void2);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:12px 13px;font-family:'Space Grotesk';font-size:13.5px;line-height:1.4;cursor:pointer;transition:.12s}
+.lopt.ok{background:rgba(57,255,20,.13);border-color:var(--green);color:var(--txt)}
+.lopt.no{background:rgba(255,59,48,.12);border-color:var(--red)}
+.lesson-fb{margin-top:11px;font-family:'Space Grotesk';font-size:13px;line-height:1.5;padding:11px 13px;border-radius:11px}
+.lesson-fb.ok{background:rgba(57,255,20,.1);border:1px solid rgba(57,255,20,.3);color:var(--txt)}
+.lesson-fb.no{background:rgba(255,59,48,.09);border:1px solid rgba(255,59,48,.28);color:var(--txt)}
 .move{font-variant-numeric:tabular-nums;font-family:'Space Grotesk';font-size:29px;font-weight:700;margin:15px 0 4px}
 .move small{font-size:12px;color:var(--ash);font-weight:400}
 .chip{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:700;letter-spacing:1px;padding:4px 9px;border-radius:6px;margin-top:4px}
@@ -396,6 +431,25 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-games:hover{opacity:.7}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
+.sdial{display:flex;flex-direction:column;align-items:center;padding:8px 0 2px}
+.sdial-ring{width:184px;height:184px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+.sdial-core{width:150px;height:150px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1;gap:2px}
+.sdial-needle{position:absolute;left:50%;top:50%;width:3px;height:80px;background:var(--txt);border-radius:2px;transform-origin:50% 100%;z-index:2;box-shadow:0 0 7px rgba(255,255,255,.4)}
+.sdial-k{font-size:10px;letter-spacing:.09em;font-weight:700}
+.sdial-t{font-family:'Space Grotesk';font-size:27px;font-weight:800;line-height:1.02}
+.sdial-s{font-size:11px;color:var(--ashl);padding:0 10px}
+.sdial-leg{display:flex;gap:14px;font-size:10px;color:var(--ash);margin:11px 0 2px}
+.sdial-leg i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px}
+.sdlbl{font-size:10px;letter-spacing:.09em;color:var(--ash);margin:16px 0 9px;text-align:center;font-weight:700}
+.sdrow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px}
+.sdrow-top{display:flex;justify-content:space-between;align-items:center}
+.sdrow-sym{font-size:14px;font-weight:800;color:var(--txt)}
+.sdrow-side{font-size:11px;font-weight:700;margin-left:5px}
+.sdrow-pct{font-family:'SF Mono',ui-monospace,monospace;font-size:12px}
+.sdrow-bar{height:5px;background:var(--line);border-radius:3px;margin:8px 0 5px;overflow:hidden}
+.sdrow-bar i{display:block;height:5px;border-radius:3px}
+.sdrow-sub{display:flex;justify-content:space-between;font-size:11px}
+.sd-empty,.sd-rest{text-align:center;color:var(--ash);font-size:12.5px;line-height:1.6;padding:14px 18px}
 .acls{display:inline-block;font-family:'Space Grotesk';font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:4px}
 .acls.st{color:#2e7bff;background:rgba(46,123,255,.14)}
 .acls.cr{color:#b57bff;background:rgba(181,123,255,.16)}
@@ -735,7 +789,8 @@ function logoBadge(a,size){ const s=size||34; const url=logoURL(a); const ini=((
   return `<div class="lbadge" style="width:${s}px;height:${s}px;background:${logoBg(a.symbol||'')};font-size:${Math.round(s*0.42)}px">`+
     `<span>${ini}</span>`+(url?`<img src="${url}" loading="lazy" onload="this.classList.add('on')" onerror="this.remove()" alt="">`:'')+`</div>`; }
 let S={screen:'feed',scope:'stocks',sel:null,faded:{},chat:[],thinking:false,user:null,hlAddr:null,hl:null,aitab:'ask',guest:false,chatId:null,proj:null,sched:null,chatProject:null,coach:false,lb:[],busy:false,
-  aiChats:null,aiProjects:null,aiBriefings:null,aiFiles:null,aiUsage:null,aiOffline:false,briefMax:5,genBusy:null,_aiBoot:false,_genTried:null};
+  aiChats:null,aiProjects:null,aiBriefings:null,aiFiles:null,aiUsage:null,aiOffline:false,briefMax:5,genBusy:null,_aiBoot:false,_genTried:null,
+  lesson:null,lessonAns:null,school:null};
 // Coachmark walkthrough: spotlight real elements in the real app with popups. Guests
 // can look but can't take trades or use the AI (those prompt signup).
 const COACH=[
@@ -801,7 +856,7 @@ async function api(path,opts){ opts=opts||{}; const h=Object.assign({'Content-Ty
   if(r.status===401){ handle401(); throw new Error('unauthorized'); } return r; }
 // Clear the signed-in AI caches (chats/projects/briefings/files) so a different account
 // re-bootstraps from the server instead of showing the previous user's data.
-function resetAiState(){ S.aiChats=null; S.aiProjects=null; S.aiBriefings=null; S.aiFiles=null; S.aiUsage=null; S.aiOffline=false; S._aiBoot=false; S._genTried=null; S.chatProject=null; S.proj=null; S.sched=null; }
+function resetAiState(){ S.aiChats=null; S.aiProjects=null; S.aiBriefings=null; S.aiFiles=null; S.aiUsage=null; S.aiOffline=false; S._aiBoot=false; S._genTried=null; S.chatProject=null; S.proj=null; S.sched=null; S.lesson=null; S.lessonAns=null; S.school=null; }
 function handle401(){ setToken(''); saveUser(null); resetAiState(); AUTHMODE='login'; toast('Session expired — please sign in'); try{render();}catch(e){} }
 async function restoreSession(){ if(!API||!authToken())return; try{ const r=await api('/api/auth/me'); const d=await r.json();
   if(d&&d.ok&&d.user){ saveUser(Object.assign({},d.user,{crm:d.crm}));
@@ -997,10 +1052,6 @@ function toTop(){ try{ const a=document.getElementById('app'); if(a)a.scrollTop=
 // Persist where you are so a refresh reopens the same screen (not home).
 function saveNav(){ try{ localStorage.setItem('fade_nav',JSON.stringify({screen:S.screen,sel:S.sel,scope:S.scope})); }catch(e){} }
 function go(scr,sel){
-  // Closed-hours responsiveness: the stock Feed/Markets is an empty "waiting" screen when the
-  // market's shut, so tapping between them feels dead. Flip to crypto (never closes) so a tap
-  // actually shows something. Stocks-only users and open hours are untouched.
-  if((scr==='feed'||scr==='markets')&&S.scope==='stocks'&&!stocksOnly()&&!stockMarketOpen()){ S.scope='crypto'; }
   if(scr!==S.screen) S.prevScreen=S.screen; S.screen=scr; if(sel!==undefined)S.sel=sel; saveNav(); render();
   toTop();                                   // immediate
   requestAnimationFrame(toTop);              // after layout
@@ -1382,13 +1433,59 @@ function tetrisHTML(){ return `<div class="scanner st tetstage" onclick="tetTapR
 let PM={ts:0};
 function pmTapeHTML(){ return `<div class="pmtape" id="pmtape"></div>`; }
 function loadPremarket(force){ if(!API)return; const now=Date.now(); if(!force&&PM.ts&&now-PM.ts<30000)return; PM.ts=now;
-  fetch(API+'/api/premarket').then(r=>r.json()).then(function(d){ const el=document.getElementById('pmtape'); if(!el)return;
-    const mv=(d&&d.movers)||[]; const ph=d&&d.phase;
+  fetch(API+'/api/premarket').then(r=>r.json()).then(function(d){ PM.movers=(d&&d.movers)||[]; PM.phase=d&&d.phase;
+    renderDialProj();
+    const el=document.getElementById('pmtape'); if(!el)return;
+    const mv=PM.movers, ph=PM.phase;
     if(!mv.length||(ph!=='premarket'&&ph!=='afterhours')){ el.innerHTML=''; return; }
     const items=mv.map(m=>`<span class="${m.pct>=0?'pu':'pd'}">${esc(m.symbol)} ${m.pct>=0?'+':''}${m.pct}%</span>`).join('<span class="sep">  ·  </span>');
     const seq=`<span class="lbl">${ph==='premarket'?'● PRE-MARKET':'● AFTER HOURS'}</span>${items}`;
     el.innerHTML=`<div class="pmtrack">${seq}<span style="display:inline-block;width:30px"></span>${seq}</div>`;
   }).catch(function(){}); }
+
+// ---- Session dial: the time-aware STOCKS module (after-hours / pre-market / bell) ----
+function marketPhase(){ try{ const et=etDate(); const dow=et.getDay();
+  const ymd=et.getFullYear()+'-'+String(et.getMonth()+1).padStart(2,'0')+'-'+String(et.getDate()).padStart(2,'0');
+  if(dow===0||dow===6||US_MKT_HOLIDAYS.has(ymd)) return 'closed';
+  const m=et.getHours()*60+et.getMinutes();
+  if(m>=240&&m<570) return 'premarket'; if(m>=570&&m<960) return 'regular';
+  if(m>=960&&m<1200) return 'afterhours'; return 'closed';
+}catch(e){ return 'closed'; } }
+function dialProj(){ return (PM.movers||[]).map(function(m){
+    const it=(BOARD.items||[]).find(i=>i.symbol===m.symbol); const thr=(it&&it.threshold)||4; const am=Math.abs(m.pct||0);
+    return {sym:m.symbol, pct:m.pct||0, thr, pctTrig:Math.min(100,Math.round(am/thr*100)), gap:Math.max(0,thr-am), long:(m.pct||0)<0}; })
+    .sort((a,b)=>b.pctTrig-a.pctTrig); }
+function dialProjCount(){ return dialProj().filter(r=>r.pctTrig>=80).length; }
+function dialProjRows(){ const rows=dialProj().slice(0,4);
+  if(!rows.length) return `<div class="sd-empty">No overnight movers near a trigger yet — the board wakes at the bell.</div>`;
+  return rows.map(function(r){ const col=r.pctTrig>=95?RED:(r.pctTrig>=80?'#ff9f0a':'#ffe500'); const tag=r.pctTrig>=95?'red hot':(r.pctTrig>=80?'warming':'on watch');
+    return `<div class="sdrow"><div class="sdrow-top"><span><span class="sdrow-sym">${esc(r.sym)}</span> <span class="sdrow-side" style="color:${r.long?GREEN:RED}">${r.long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}% vs ${r.thr}%</span></div>`
+      +`<div class="sdrow-bar"><i style="width:${Math.max(6,r.pctTrig)}%;background:${col}"></i></div>`
+      +`<div class="sdrow-sub"><span style="color:${col}">${r.pctTrig}% of trigger · ${tag}</span><span style="color:var(--ash)">${r.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
+function renderDialProj(){ const el=document.getElementById('dialproj'); if(el)el.innerHTML=dialProjRows();
+  const c=document.getElementById('dialcount'); if(c){ const n=dialProjCount(); c.textContent=n+' projected breach'+(n===1?'':'es'); } }
+function sessionDialHTML(mode){ const ph=marketPhase();
+  let m; try{ const et=etDate(); m=et.getHours()*60+et.getMinutes(); }catch(e){ m=240; }
+  const ang=(Math.max(0,Math.min(1,(m-240)/960))*360).toFixed(1);
+  const open=nextMarketOpen()||'soon';
+  const center = ph==='premarket' ? {k:'BELL IN',t:open,s:dialProjCount()+' projected breach'+(dialProjCount()===1?'':'es'),c:'#ffe500'}
+    : ph==='afterhours' ? {k:'AFTER HOURS',t:open,s:'until the next session opens',c:'#afa9ec'}
+    : ph==='regular' ? {k:'MARKET',t:'OPEN',s:'setups grade live on the board',c:GREEN}
+    : {k:'OPENS IN',t:open,s:'crypto never sleeps',c:'#afa9ec'};
+  const showProj=(ph==='premarket'||ph==='afterhours');
+  const lbl=ph==='premarket'?'PROJECTED BREACHES AT THE BELL':'AFTER-HOURS MOVERS · VS THEIR TRIGGER';
+  return `<div class="sdial">
+      <div class="sdial-ring" style="background:conic-gradient(#ffe500 0 123.75deg,${GREEN} 123.75deg 270deg,#7f77dd 270deg 360deg)">
+        <div class="sdial-needle" style="transform:translate(-50%,-100%) rotate(${ang}deg)"></div>
+        <div class="sdial-core"><div class="sdial-k" style="color:${center.c}">${center.k}</div>
+          <div class="sdial-t">${center.t}</div>
+          <div class="sdial-s"${ph==='premarket'?' id="dialcount"':''}>${center.s}</div></div>
+      </div>
+      <div class="sdial-leg"><span><i style="background:#ffe500"></i>pre</span><span><i style="background:${GREEN}"></i>open</span><span><i style="background:#7f77dd"></i>after</span></div>
+    </div>
+    ${showProj?`<div class="sdlbl">${lbl}</div><div id="dialproj">${dialProjRows()}</div>`
+      :`<div class="sd-rest">Stocks are resting until the open. Fade <b onclick="setScope('crypto')" style="color:${CYAN};cursor:pointer">Crypto</b> — it never sleeps.</div>`}`;
+}
 
 function scopeBar(){ const list=stocksOnly()?[['stocks','Stocks']]:[['stocks','Stocks'],['crypto','Crypto']];
   return `<div class="scope">${list.map(([s,l])=>`<button class="${S.scope===s?'on':''}" onclick="setScope('${s}')">${l}</button>`).join('')}</div>`; }
@@ -1444,13 +1541,9 @@ let TERM={i:0,n:0,seen:new Set()};
 // at work — advanced-sounding but each names something the algorithm ACTUALLY does (weighting
 // move/level/volume, catalyst-candle levels, volume baselines, pattern engine).
 const SCAN_ENGINE=[
-  'neural pass &#183; weighting move &#215; level &#215; volume',
-  'catalyst-level map &#183; weekly &#8250; daily &#8250; 4H',
-  'volume baselines &#183; 30-day average',
-  'cross-market sweep &#183; large-caps only',
-  'liquidity + level cross-check',
-  'pattern engine &#183; stretch / snap-back',
-  're-ranking universe by conviction',
+  'scanning for fresh breaks',
+  'checking levels &amp; volume',
+  'ranking setups by conviction',
 ];
 // A grounded, VARIED one-liner per symbol — real numbers (move, volume, %-to-trigger, threshold)
 // phrased like an engine reading it. Varies by index so repeat passes over the same name read
@@ -1460,11 +1553,9 @@ function scanTermMsg(it,s,idx){
   const vol=it.vol_ratio!=null?it.vol_ratio.toFixed(1)+'&#215; vol':'vol scan';
   const gap=(s.gap!=null&&s.gap>0)?s.gap.toFixed(1)+'% to trigger':null;
   const pool=[
-    'move '+chg+' &#183; '+vol+' &#183; '+s.label,
-    'level + volume cross-check &#183; '+(gap||s.label),
-    chg+' vs '+(it.threshold||4)+'% threshold &#183; '+s.label,
-    'catalyst-candle scan &#183; '+s.tag+(gap?' &#183; '+gap:''),
-    'conviction weighting &#183; '+vol+' &#183; '+s.label,
+    'move '+chg+' &#183; '+vol,
+    (gap||s.label)+' &#183; '+chg,
+    chg+' vs '+(it.threshold||4)+'% threshold',
   ];
   return pool[(idx==null?TERM.n:idx)%pool.length];
 }
@@ -1477,10 +1568,9 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
   TERM.n++;
   const d=new Date(); const t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
   const line=document.createElement('div'); line.className='scterm-line';
-  // Every 4th line: a green engine meta-line (no symbol) for the "AI analyzing" texture.
-  if(TERM.n%4===0){
-    let msg=SCAN_ENGINE[((TERM.n/4)|0)%SCAN_ENGINE.length];
-    if(msg.indexOf('universe')>=0) msg='re-ranking '+items.length+' names by conviction';
+  // Every 6th line: a calm status meta-line (no symbol) — a light touch, not a jargon crawl.
+  if(TERM.n%6===0){
+    let msg=SCAN_ENGINE[((TERM.n/6)|0)%SCAN_ENGINE.length];
     line.style.color='#3ddc6e';
     line.innerHTML=`<span class="tt">${t}</span> <span class="dd">&#9656;</span> ${msg}`;
     body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); return;
@@ -1492,7 +1582,7 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
   const s=scanStatus(it); line.style.color=s.col;
   line.innerHTML=`<span class="tt">${t}</span> &#183; <span class="sy">${esc(it.symbol)}</span> <span class="dd">&#183;&#183;&#183;</span> ${scanTermMsg(it,s)}`;
   body.insertBefore(line,body.firstChild); while(body.childNodes.length>cap)body.removeChild(body.lastChild); }
-function scanReadoutHTML(){
+function scanReadoutHTML(mode){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
   // near-map: symbol -> {gap, phase} for the assets closest to triggering (in scope)
@@ -1521,21 +1611,22 @@ function scanReadoutHTML(){
       </div>`;
   }
   // Games OFF default: sophisticated "what am I waiting for" screens (no algo leaked).
-  // Crypto → trigger ladder (B) on top + scan terminal (C) underneath. Stocks → terminal (C).
-  if(S.scope==='crypto') return `${scanLiveBar()}${triggerLadderHTML()}${scanTermHTML()}`;
+  // Crypto → Markets leads with the trigger ladder; Feed is just the scan log, so the two tabs differ.
+  if(S.scope==='crypto') return `${scanLiveBar()}${mode==='markets'?triggerLadderHTML():''}${scanTermHTML()}`;
   return `${scanLiveBar()}${scanTermHTML()}`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
 // stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
-function waitingRoomHTML(){
-  if(!gamesOn()) return scanReadoutHTML();
+function waitingRoomHTML(mode){
+  if(stocksClosedView()) return sessionDialHTML(mode);   // time-aware stocks dial (pre-market / bell / after-hours)
+  if(!gamesOn()) return scanReadoutHTML(mode);
   if(S.scope==='crypto') return scannerHTML(false);
   return `${scanLiveBar()}${pmTapeHTML()}${tetrisHTML()}`;   // Fade Blocks — same chrome as the crypto scan
 }
 function feed(){
   // Live setups always win (trades take priority). No setups in scope → the waiting room.
   const t=topFor();
-  if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML()}</div>`;
+  if(!t) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML('feed')}</div>`;
   const c=GRADE[t.grade]; const long=isLong(t); const [sg,sgc]=sigTag(t);
   const st=t.setup||{}; const add0=(st.add_ladder||[])[0];
   const nexts=actionableItems().filter(i=>i.symbol!==t.symbol).slice(0,3).map(i=>{
@@ -1575,7 +1666,7 @@ function markets(){
       ${rowHead(i,36,`${esc(i.name||'')} &#183; <b style="color:${long?GREEN:RED};font-weight:800;letter-spacing:.3px">${long?'LONG':'SHORT'}</b>`)}
       <div style="text-align:right;margin-right:2px"><div class="rc-px">$<span data-px="${i.symbol}">${pxFmt(i.price)}</span></div><div class="rc-pct sm" data-pct="${i.symbol}" style="color:${moveCol(i.change_pct)}">${sign(i.change_pct)}</div></div>${gradeChip(i)}</div>`; }).join('');
   const nb=items.length, scanned=BOARD.items.length;
-  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML()}</div>`;   // no setups → waiting room (game or readout per the Games toggle)
+  if(!nb) return `<div class="screen scan-screen">${topbar()}${scopeBar()}${waitingRoomHTML('markets')}</div>`;   // no setups → distinct waiting room per tab (feed=log, markets=ladder+log)
   return `<div class="screen">${topbar()}
     ${scopeBar()}
     ${scanStrip()}
@@ -1860,7 +1951,7 @@ function ai(){
       <button onclick="sendFromInput()">&#8593;</button></div>
   </div>`;
 }
-function setAiTab(t){ S.aitab=t; S.proj=null; S.sched=null; S._genTried=null; render(); if(t==='ask')scrollChat(); refreshAiTab(); }
+function setAiTab(t){ S.aitab=t; S.proj=null; S.sched=null; S.lesson=null; S.lessonAns=null; S._genTried=null; render(); if(t==='ask')scrollChat(); refreshAiTab(); }
 // Keep the input bar above the iOS keyboard (visualViewport shrinks when the keyboard opens).
 function pinChatInput(){ const bar=document.getElementById('inbar'); if(!bar)return; if(!window.visualViewport){ bar.style.transform=''; return; }
   const vv=window.visualViewport; const kb=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
@@ -1871,6 +1962,7 @@ if(window.visualViewport){ window.visualViewport.addEventListener('resize',pinCh
 function backFromAI(){
   if(S.proj){ S.proj=null; render(); return; }
   if(S.sched){ S.sched=null; render(); return; }
+  if(S.lesson){ S.lesson=null; S.lessonAns=null; render(); return; }
   if((S.aitab||'ask')!=='ask'){ S.aitab='ask'; render(); return; }
   go(S.prevScreen&&S.prevScreen!=='ai'?S.prevScreen:'feed');
 }
@@ -1911,6 +2003,7 @@ function refreshAiTab(){ if(!aiOnline())return; const t=S.aitab||'ask';
   if(t==='chats')loadAiChats();
   else if(t==='projects'){ loadAiProjects(); loadAiFiles(); }
   else if(t==='scheduled')loadAiBriefings();
+  else if(t==='learn')loadSchool();
   loadAiUsage(); }
 // One-time: migrate any localStorage chats/projects/scheduled up to the server, then the
 // server is authoritative. Flag in localStorage so it only ever runs once per device.
@@ -2146,6 +2239,148 @@ function schedDetail(id){ const b=briefGet(id); if(!b)return aiScheduled(); cons
 }
 function quotaPill(){ const u=S.aiUsage; if(!u||!u.msgs_limit)return''; if((u.msgs_used||0)/u.msgs_limit<0.8)return'';
   return `<div style="text-align:center;margin-top:9px"><span class="qpill">${u.msgs_used||0}/${u.msgs_limit} messages today</span></div>`; }
+
+// ---------- Setup cards in chat (AI emits [[card:SYM]] for a live board setup) ----------
+function setupCard(sym){
+  const a=quote(sym); if(!a||!a.setup) return '';
+  if(!(a.signal==='fade_long'||a.signal==='fade_short')) return '';
+  const e=a.price, t=a.setup.target, s=a.setup.mental_stop; if(e==null||t==null||s==null) return '';
+  const long=isLong(a);
+  // ABSOLUTE grade (matches what Fade AI states in prose) — not the client relative re-grade.
+  const gl=a.grade_label||gLet(a.grade,true), gc=GRADE[a.grade]||ASH;
+  const tp=(t-e)/e*100, sp=(s-e)/e*100; const rr=Math.abs((t-e)/((e-s)||1e-9));
+  return `<div class="scard">
+    <div class="scard-h"><span class="scard-sym">${esc(sym)} <small>fade ${long?'long':'short'}</small></span><span class="scard-g" style="color:${gc};border-color:${gc}">${gl}</span></div>
+    <div class="scard-lad"><div class="scard-bar"></div><div class="scard-rows">
+      <div class="scard-row"><span style="color:var(--green)">Target</span><b>${money(t)}</b><small style="color:var(--green)">${(tp>=0?'+':'')+tp.toFixed(1)}%</small></div>
+      <div class="scard-row"><span style="color:var(--ash)">Entry &#183; now</span><b>${money(e)}</b><small style="color:var(--ash)">&#8212;</small></div>
+      <div class="scard-row"><span style="color:var(--red)">Mental stop</span><b>${money(s)}</b><small style="color:var(--red)">${sp.toFixed(1)}%</small></div>
+    </div></div>
+    <div class="scard-f">Risk $1 to make $${rr.toFixed(1)} &#183; paper only, not advice</div>
+    <button class="scard-btn" onclick="askSetup('${escq(sym)}')">Open ${esc(sym)} &#8594;</button></div>`;
+}
+// Render an assistant message: interleave escaped prose with any [[card:SYM]] setup cards.
+function renderAiText(txt){
+  const parts=String(txt==null?'':txt).split(/\[\[card:([A-Za-z0-9.\-]{1,12})\]\]/g);
+  let out='';
+  for(let i=0;i<parts.length;i++){
+    if(i%2===0){ if(parts[i]) out+=esc(parts[i]); }
+    else { out+=setupCard(parts[i].toUpperCase()); }   // unknown/inactive symbol -> '' (marker dropped)
+  }
+  return out;
+}
+
+// ============================ Fade School (learn the method) ============================
+// Content is static (below); PROGRESS syncs to the server (loadSchool/completeLesson).
+const LESSONS=[
+  {id:'l1',t:'The rubber band',teaches:'What a fade actually is',
+    body:"Fading means betting on a snap-back. When a big, liquid asset moves way too far, too fast, it usually bounces back toward where it came from — like a stretched rubber band letting go. You are NOT chasing the move; you are betting it went too far. That's the whole game: a big overshoot, then the snap back.",
+    q:"A large stock drops 8% in a few hours on no huge news. Fading it means…",
+    opts:[{a:"Betting it bounces back toward where it fell from",ok:true},{a:"Shorting it because it's falling",ok:false},{a:"Buying and holding it for years",ok:false}],
+    why:"Right — a fast overshoot in a big name tends to snap back. That bounce is the fade."},
+  {id:'l2',t:'The three conditions',teaches:'What every fade needs',live:true,
+    body:"A fade needs three things together: (1) a BIG move — bigger than the asset's normal day; (2) at a real LEVEL — a price it reacted to before; (3) on VOLUME — heavier than usual, meaning big players are active. Miss one and the grade drops. A headline is NOT one of the three.",
+    q:"Which of these is NOT required for a valid fade?",
+    opts:[{a:"A big move beyond the normal range",ok:false},{a:"A dramatic news headline",ok:true},{a:"A real prior level to snap back to",ok:false}],
+    why:"Correct — you need move + level + volume. A headline isn't a condition; the tape is."},
+  {id:'l3',t:'Grades and the No',teaches:'Why most setups are a pass',
+    body:"Every setup gets a letter, A to F. A is a table-pounder — everything lines up. F is no setup at all. Here's the secret most traders miss: your edge is the NO. The grades exist so you can reject almost everything and only act on the A's and B's. Being flat and patient isn't missing out — it IS the strategy.",
+    q:"The board shows a D-grade setup. The disciplined move is…",
+    opts:[{a:"Skip it — a D means the edge isn't there",ok:true},{a:"Take it, but with small size",ok:false},{a:"Take it with high leverage since it's cheap",ok:false}],
+    why:"Exactly. The grade already told you no. Patience on the low grades is the whole edge."},
+  {id:'l4',t:'Reading levels',teaches:'Where the snap-back aims',live:true,
+    body:"A level isn't a line someone drew — it's the high or low of a candle where something real happened on huge volume: a Fed decision, an earnings gap, a liquidation flush. Big players acted there once, so they watch it again. Levels rank top-down: a weekly level beats a daily beats an hourly.",
+    q:"A level is STRONGEST when it comes from…",
+    opts:[{a:"A weekly candle with a real catalyst and heavy volume",ok:true},{a:"A round number like $100",ok:false},{a:"A quiet 5-minute candle",ok:false}],
+    why:"Yes — event + volume + higher timeframe = the strongest level. Round numbers alone aren't levels."},
+  {id:'l5',t:'Entry, target, stop',teaches:'The three prices, decided up front',
+    body:"Every setup has exactly three prices. ENTRY is NOW — a setup only exists if it's live. TARGET is where it's expected to snap back to (take profit). MENTAL STOP is the price that proves you wrong — decided BEFORE you enter, while you're calm. It's 'mental' because you act on it yourself, not a resting order. No stop, no trade.",
+    q:"The mental stop is…",
+    opts:[{a:"The price that proves the idea wrong, chosen before entry",ok:true},{a:"Where you take your profit",ok:false},{a:"Something you figure out after you're losing",ok:false}],
+    why:"Right. You pick the stop calmly, before entry — then you honor it. That discipline is everything."},
+  {id:'l6',t:'Never fade new highs',teaches:'The price-discovery rule',
+    body:"Never short something making brand-new all-time highs. Why? There's no ceiling above it — no prior level for it to snap back FROM. 'Overbought' is not a level. Fighting a strong uptrend just because it looks stretched is how shorts get run over for years. No level above = no fade.",
+    q:"A large stock is at fresh all-time highs and looks overbought. Short it?",
+    opts:[{a:"No — there's no level above for it to snap back from",ok:true},{a:"Yes, overbought means it must drop",ok:false},{a:"Yes, with a tight stop",ok:false}],
+    why:"Correct. New highs = open sky above = nothing to fade against. Popularity alone is never a short."},
+  {id:'l7',t:'Large-caps, not collapses',teaches:'Two hard eligibility gates',
+    body:"Two hard rules keep you out of trouble. First: large-caps only — never fade small, illiquid names; their extremes extend violently with no structure. Second: a fade is an OVERSHOOT, not a COLLAPSE. A move past ~30% in a day (far less for stocks) is a crash, rug, or blow-off — that's a falling knife, not a rubber band.",
+    q:"A coin is down 60% today. Is it a fade?",
+    opts:[{a:"No — that's a collapse, not an overshoot",ok:true},{a:"Yes, it's maximally oversold",ok:false},{a:"Yes, as long as it's a big coin",ok:false}],
+    why:"Right — past the collapse ceiling it's a knife. Extreme does not mean opportunity."},
+  {id:'l8',t:'Three portfolios',teaches:'Where leverage is allowed',
+    body:"The method runs three separate books. Day-fade: in and out fast, flat overnight — and leverage lives ONLY here. Swing: staged accumulation at big dislocations, no leverage. Long-term: boring, diversified, held for years. The same asset can live in two books at once — different venues, different rules. Never let them blur.",
+    q:"Leverage belongs in which portfolio?",
+    opts:[{a:"The day-fade book only",ok:true},{a:"The swing book",ok:false},{a:"The long-term book",ok:false}],
+    why:"Correct. Leverage is for fast, always-flat day-fades — never for swings or long-term holds."},
+  {id:'l9',t:'Exit doctrine',teaches:'Each book exits differently',
+    body:"Exits aren't one rule. A day-fade exits by SPEED — take what the fast move gives and get flat; never let a fast trade become a slow one. A swing exits by STRUCTURE — scale out into euphoria and over-extension. The long-term book basically doesn't trim. The most common way traders lose is cutting winners early and holding losers — honor your target and stop.",
+    q:"You're in a leveraged day-fade and it snaps your way. You should…",
+    opts:[{a:"Take the snap-back and get flat — exit by speed",ok:true},{a:"Hold for a much bigger target",ok:false},{a:"Add leverage and let it ride",ok:false}],
+    why:"Yes. Day-fades exit by speed. Lingering with leverage is how a good trade becomes a bad one."},
+  {id:'l10',t:'Forgotten vs dead',teaches:'The survivorship test',
+    body:"'Buy the dip' is a lie for anything that can go to zero — and many do. Before treating a beaten-down name as an opportunity, it must pass three tests: (1) can its balance sheet survive the wait? (2) does it have a moat nobody can replace? (3) is the SECTOR alive while THIS name is ignored? Fail any one and it's not forgotten — it's dead.",
+    q:"A famous company is down 70% over two years. Accumulate it?",
+    opts:[{a:"Only if it passes the survivor test — balance sheet, moat, live sector",ok:true},{a:"Yes — it's famous, it'll come back",ok:false},{a:"Yes — it's cheap now",ok:false}],
+    why:"Right. Fame and a big drop qualify nothing. A forgotten survivor is a buy; a forgotten corpse is not."}
+];
+function schoolProgress(){ return S.school || lsGet('fade_school',{completed:[],streak:0,last_day:'',total:LESSONS.length}); }
+function lessonDone(id){ return (schoolProgress().completed||[]).indexOf(id)>=0; }
+function lessonUnlocked(i){ return i===0 || lessonDone(LESSONS[i-1].id); }
+async function loadSchool(){ if(!aiOnline())return; try{ const r=await api('/api/ai/school'); const d=await r.json();
+  if(d.ok){ const loc=schoolProgress();
+    // Don't let a slow initial GET erase a completion that just landed (POST is authoritative).
+    // Server usually has >= completions; apply only when it's not staler than local.
+    if((d.progress.completed||[]).length>=((loc.completed||[]).length)){ S.school=d.progress; lsSet('fade_school',d.progress); }
+    S.aiOffline=false; if(S.screen==='ai')render(); } }catch(e){ S.aiOffline=true; if(S.screen==='ai')render(); } }
+async function completeLesson(id){
+  const p=schoolProgress(); if((p.completed||[]).indexOf(id)<0){ p.completed=(p.completed||[]).concat([id]); lsSet('fade_school',p); if(!S.school)S.school=p; else S.school.completed=p.completed; }
+  if(aiOnline()){ try{ const r=await api('/api/ai/school',{method:'POST',body:JSON.stringify({lesson_id:id})}); const d=await r.json(); if(d.ok){ S.school=d.progress; lsSet('fade_school',d.progress); } }catch(e){} }
+}
+function topSetup(){ try{ const a=BOARD.items.filter(i=>i.signal==='fade_long'||i.signal==='fade_short').sort((x,y)=>(x.grade||9)-(y.grade||9))[0]; return a||null; }catch(e){ return null; } }
+function aiLearn(){
+  const p=schoolProgress(); const done=(p.completed||[]).length, total=LESSONS.length; const streak=p.streak||0;
+  const grad=done>=total;
+  const segs=LESSONS.map((L,i)=>`<span class="lp-seg ${lessonDone(L.id)?'done':(lessonUnlocked(i)?'now':'')}"></span>`).join('');
+  const rows=LESSONS.map((L,i)=>{ const dn=lessonDone(L.id), lock=!lessonUnlocked(i);
+    return `<div class="hcard ${lock?'lp-lock':''}" ${lock?'':`onclick="openLesson('${L.id}')"`} style="${lock?'opacity:.5;cursor:default':''}">
+      <div class="hi" style="${dn?'background:rgba(57,255,20,.14);color:var(--green)':''}">${dn?'&#10003;':(lock?'&#128274;':(i+1))}</div>
+      <div class="hb"><div class="ht">${esc(L.t)}</div><div class="hs">${esc(L.teaches)}</div></div>
+      ${dn?'<span class="lp-chip">Done</span>':(lock?'':'<span class="lp-chip now">Start</span>')}</div>`; }).join('');
+  return `<div class="aihub">
+    <div class="hubh" style="display:flex;align-items:center;justify-content:space-between"><span>${grad?'Fade School &#183; graduated &#127891;':'Learn the fade'}${offlinePill()}</span><span style="font-family:'Space Grotesk';font-size:11px;color:var(--ash)">${done} of ${total}${streak>0?' &#183; '+streak+' day streak &#128293;':''}</span></div>
+    <div class="lp-bar">${segs}</div>
+    ${grad?'<div class="hubnote" style="padding:8px 10px 12px">You’ve finished every lesson. Revisit any of them anytime — or put it to work on a live setup.</div>':''}
+    ${rows}
+    <div class="hubnote">One short lesson taught on the live board &#183; your progress syncs across devices.</div></div>`;
+}
+function openLesson(id){ S.lesson=id; S.lessonAns=null; S.screen='ai'; S.aitab='learn'; render(); }
+function closeLesson(){ S.lesson=null; S.lessonAns=null; render(); }
+function answerLesson(id,idx){ const L=LESSONS.find(x=>x.id===id); if(!L)return; const ok=!!(L.opts[idx]&&L.opts[idx].ok);
+  S.lessonAns={picked:idx,ok:ok}; if(ok)completeLesson(id); render(); if(ok)toast('Lesson complete','success'); }
+function lessonView(id){ const idx=LESSONS.findIndex(x=>x.id===id); const L=LESSONS[idx]; if(!L)return aiLearn();
+  const done=lessonDone(id); const ans=S.lessonAns;
+  // Revisiting a completed lesson reveals the answer; a wrong pick stays tappable so you can retry.
+  const solved=(ans&&ans.ok)||(done&&!ans);
+  let live='';
+  if(L.live){ const t=topSetup(); if(t)live=`<div class="lesson-live"><span class="ll-k">On the board now</span> ${esc(t.symbol)} is ${sign(t.change_pct)} today — grade ${t.grade_label||gLet(t.grade,true)}. ${t.signal==='fade_long'?'A fade long':'A fade short'} candidate. Ask Fade AI to break it down.</div>`; }
+  const optHtml=L.opts.map((o,i)=>{ let cls='lopt';
+    if(solved&&o.ok)cls+=' ok';
+    else if(ans&&!ans.ok&&ans.picked===i)cls+=' no';
+    return `<button class="${cls}" ${solved?'disabled':''} onclick="answerLesson('${id}',${i})">${esc(o.a)}</button>`; }).join('');
+  const nextIdx=idx+1<LESSONS.length?idx+1:-1;
+  const feedback = solved ? `<div class="lesson-fb ok">&#10003; ${esc(L.why)}</div>`
+    : (ans&&!ans.ok ? `<div class="lesson-fb no">&#10007; Not quite — give it another go.</div>` : '');
+  const nextBtn = solved ? (nextIdx>=0
+      ? `<button class="newbtn" style="margin-top:10px;background:linear-gradient(135deg,#ff6a00,#ff3b30);color:#1a0a00;border:none" onclick="openLesson('${LESSONS[nextIdx].id}')">Next lesson &#8594;</button>`
+      : `<button class="newbtn" style="margin-top:10px" onclick="closeLesson()">Finish &#8594;</button>`) : '';
+  return `<div class="aihub"><div class="back" onclick="closeLesson()" style="margin:0 0 10px"><span class="a">&#8592;</span> Fade School</div>
+    <div class="hubh">Lesson ${idx+1} &#183; ${esc(L.t)}${done?' <span class="lp-chip" style="vertical-align:2px">Done</span>':''}</div>
+    <div class="lesson-body">${esc(L.body)}</div>${live}
+    <div class="lesson-q">${esc(L.q)}</div>
+    <div class="lesson-opts">${optHtml}</div>${feedback}${nextBtn}
+    <div class="hubnote">Answer to complete the lesson &#183; it builds your streak.</div></div>`;
+}
 function scrollChat(){ setTimeout(()=>{ const b=document.getElementById('chatbody'); if(b)b.scrollTop=b.scrollHeight; },30); }
 function sendFromInput(){ const el=document.getElementById('chatin'); if(!el)return; const t=el.value.trim(); if(t)sendChat(t); }
 async function sendChat(text){
@@ -2881,7 +3116,7 @@ setInterval(tick,550);   // live price flash (client-side, anchored to real quot
 setInterval(scanTick,55); scanInputInit();   // Pac-Man Hunt scanner loop + hidden swipe/arrow controls
 setInterval(scanTermTick,600);   // Scan terminal (C) live crawl — no-ops unless #scterm-body is mounted
 tetLoop(); tetInputInit();   // Fade Blocks (Tetris) — the Stocks-tab game (loop no-ops when not mounted)
-setInterval(function(){ if(document.getElementById('pmtape'))loadPremarket(true); }, 60000);   // pre-market tape refresh
+setInterval(function(){ if(document.getElementById('pmtape')||document.getElementById('dialproj'))loadPremarket(true); }, 60000);   // pre-market tape + session-dial refresh
 if(API){ setInterval(livePoll,45000); document.addEventListener('visibilitychange',function(){ if(!document.hidden) livePoll(); }); }
 if(API){ try{ fetch(API+'/api/track?event=session',{method:'POST'}).catch(function(){}); }catch(e){} }
 // Trap the browser back-swipe (edge swipe / left-to-right) so it navigates WITHIN the app
