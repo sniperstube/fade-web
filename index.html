@@ -87,7 +87,7 @@
  --herobd:rgba(20,30,50,.5); --heroglow:rgba(46,123,255,.28); --herotint:#f5f7fb;
 }
 *{margin:0;padding:0;box-sizing:border-box;touch-action:manipulation}
-html{overflow-anchor:none;touch-action:none;overscroll-behavior:none;overscroll-behavior-x:none}   /* no double-tap zoom, no horizontal swipe-nav, block vertical swipe-to-close */
+html{overflow-anchor:none;touch-action:manipulation;overscroll-behavior:none;overscroll-behavior-x:none}   /* no double-tap zoom, no horizontal swipe-nav; overscroll-none tames bounce without blocking scroll */
 body{overscroll-behavior:none;overscroll-behavior-x:none}
 body{background:var(--bg);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;justify-content:center;overflow-anchor:none}
 .mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',monospace} .px{font-family:'Press Start 2P',monospace}
@@ -2664,6 +2664,10 @@ function tgBoot(){ const w=tg(); if(!w)return;
   document.documentElement.classList.add('tg');
   try{ w.ready(); }catch(e){}
   try{ w.expand(); }catch(e){}
+  // Stop Telegram's swipe-down-to-close gesture WITHOUT blocking in-app scrolling
+  // (Bot API 7.7+; no-ops/throws harmlessly on older clients). This replaces the old
+  // blunt touch-action:none + document touchmove preventDefault that killed all scroll.
+  try{ w.disableVerticalSwipes(); }catch(e){}
   tgApplyTheme();
   try{ w.onEvent('themeChanged',function(){ tgApplyTheme(); try{render();}catch(e){} }); }catch(e){}
   try{ w.BackButton.onClick(tgBack); }catch(e){}
@@ -2805,8 +2809,6 @@ if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live fe
 else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same SCREEN (scope stays market-driven above)
   if(nv&&['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } }catch(e){} }
 if(isTWA())tgBoot();   // Telegram Mini App: expand + theme + auto-auth via initData (no-op on web)
-// Block Telegram swipe-to-close globally (prevent vertical overscroll/bounce)
-document.addEventListener('touchmove',function(e){ if(e.cancelable) e.preventDefault(); },{passive:false});
 applyTheme(); pxReanchor(); render(); hydrate(); loadAppConfig(); loadHlCfg(); if(S.hlAddr) loadHL(); restoreSession();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
 setInterval(tick,550);   // live price flash (client-side, anchored to real quotes)
