@@ -1100,7 +1100,7 @@ function scanLiveBar(){ const sh=scanShow();
   return stocksClosedView()
     ? `<div class="scan-live closed"><span class="sl-badge"><span class="sl-dot"></span> Market closed</span><span class="sl-stat">opens <b id="scanopen">${nextMarketOpen()}</b></span><span class="sl-real">real-time</span></div>`
     : `<div class="scan-live"><span class="sl-badge"><span class="sl-dot"></span> Live market scan</span><span class="sl-stat scan-anim">⚙ <b>${sh.scan}</b> scanning</span><span class="sl-stat sl-hot"><b>${sh.near}</b> nearing</span><span class="sl-real">real-time</span></div>`; }
-function scanDiscHTML(){ return `<div class="scan-disc">Pass the wait with mini-games — doesn&#39;t affect live scan</div>`; }
+function scanDiscHTML(){ return `<div class="scan-disc">Patience is more profitable than action — wait for real setups</div>`; }
 function buildScanField(){ const items=(BOARD.items||[]); const n=items.length;
   const nd={}; scanData().near.forEach((x)=>nd[x.sym]=x);
   const cols=Math.max(4,Math.ceil(Math.sqrt(n*1.8))), rows=Math.max(1,Math.ceil(n/cols));
