@@ -368,7 +368,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .scan-strip .ss-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-strip .ss-n{color:var(--ashl);font-weight:700;flex-shrink:0}
 /* LIVE MARKET SCAN readout — real data, deliberately OUTSIDE the arcade (own font + green live dot) */
-.scan-live{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;height:40px;padding:0 12px;margin-bottom:9px;overflow:hidden;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
+.scan-live{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;height:40px;flex-shrink:0;padding:0 12px;margin-bottom:9px;overflow:hidden;background:linear-gradient(90deg,rgba(61,220,110,.10),transparent 82%);border:1px solid rgba(61,220,110,.26);border-radius:12px;font-family:'Space Grotesk';font-variant-numeric:tabular-nums}
 .scan-live.closed{background:linear-gradient(90deg,rgba(255,59,48,.10),transparent 82%);border-color:rgba(255,59,48,.26)}
 .sl-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3ddc6e;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .scan-live.closed .sl-badge{color:#ff3b30}
