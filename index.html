@@ -495,6 +495,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .crgrid-hd{display:flex;justify-content:space-between;align-items:center;font-family:'Space Grotesk';font-size:11px;color:var(--ash);margin:6px 2px 12px}
 .crhd-live{display:flex;align-items:center;gap:5px;color:#3ddc6e}
 .crgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:13px 8px}
+.crgrid .tlad-empty{grid-column:1/-1;text-align:center}
 .crtile{display:flex;flex-direction:column;align-items:center;gap:6px}
 .crring{width:58px;height:58px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;background:conic-gradient(from -90deg,#ff6a00 var(--fill),rgba(255,106,0,.10) var(--fill))}
 .crring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
@@ -1756,6 +1757,7 @@ function cryptoGridHTML(frozen){
       <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" data-sym="${esc(t.sym)}" src="${isCry?CRYPTO_ICONS+t.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(t.sym)+'?format=png'}" loading="lazy" onerror="imgFB(this)" alt=""><span>${esc(t.sym)}</span></div>
       <div class="crgap">${t.brk?(frozen?'breached':'live'):(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
     : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
+  if(frozen&&!tiles.length) return '';
   const sh=scanShow();
   const live=!frozen;
   return `<div class="crgrid-hd"><span>${live?`Scanning ${sh.scan} ${isCry?'coins':'stocks'}${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}`:`Last session · ${inS.length} ${isCry?'coins':'stocks'}`}</span><span class="crhd-live"${live?'':' style="color:var(--ash)"'}>${live?'<span class="mp-dot"></span>real-time':'frozen at last close'}</span></div>
