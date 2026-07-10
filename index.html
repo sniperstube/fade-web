@@ -555,7 +555,7 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .lrow.me{background:rgba(46,123,255,.07);border-color:rgba(46,123,255,.35)}
 .lrank{font-family:'Press Start 2P';font-size:11px;color:var(--ash);width:26px;text-align:center}
 /* nav + toast */
-.nav{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:var(--void);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-end;padding:10px 0 13px}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:var(--void);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-end;padding:10px 0 calc(13px + env(safe-area-inset-bottom,0px));z-index:30}
 /* Telegram Mini App (TWA): size the column to Telegram's usable viewport and keep the fixed
    nav clear of the device / Telegram safe area. Gated on html.tg (set only inside Telegram),
    so normal web is byte-for-byte untouched. */
@@ -574,6 +574,8 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
 .fablbl{font-size:10px;font-weight:700;color:var(--ash)}
 .fablbl.on{color:var(--ai2)}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);color:var(--txt);border:1px solid var(--blue);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;opacity:0;transition:.3s;z-index:210;max-width:380px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.tp-lvl{width:76px;background:var(--void);border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:12px;text-align:right}
+.tp-lvl:focus{outline:none;border-color:var(--blue)}
 .levtag{font-family:'Space Grotesk';font-size:10px;font-weight:800;letter-spacing:.3px;color:var(--yellow);background:rgba(255,229,0,.14);border:1px solid rgba(255,229,0,.4);padding:1px 5px;border-radius:5px;vertical-align:1px}
 /* ---------- neon big-bang: the platform "powers up" when a live wallet connects ---------- */
 .bang{position:fixed;inset:0;z-index:120;pointer-events:none;display:none;align-items:center;justify-content:center}
@@ -917,7 +919,12 @@ function paper(){ let p; try{p=JSON.parse(localStorage.getItem('fade_paper'))}ca
 // this account is logged into stays in sync. The server holds the master copy (last-write-wins).
 // Only a REAL mutation (trade/deposit/close) calls save(), so only real activity stamps a ts.
 let SYNCT=null;
-function save(p){ localStorage.setItem('fade_paper',JSON.stringify(p)); localStorage.setItem('fade_paper_ts',String(Date.now())); pushPaper(); }
+function save(p){
+  try{ p.prefs={games:gamesOn(), autoclose:lsGet('fade_autoclose',ACFG.autoclose!==false)}; }catch(e){}
+  localStorage.setItem('fade_paper',JSON.stringify(p)); localStorage.setItem('fade_paper_ts',String(Date.now())); pushPaper(); }
+function applyPrefs(prefs){ if(!prefs)return;
+  if(typeof prefs.games==='boolean')lsSet('fade_games',prefs.games);
+  if(typeof prefs.autoclose==='boolean')lsSet('fade_autoclose',prefs.autoclose); }
 function pushPaper(){ if(!(API&&authToken()))return; clearTimeout(SYNCT);
   SYNCT=setTimeout(function(){ try{ const p=paper(); const ts=Number(localStorage.getItem('fade_paper_ts'))||Date.now();
     api('/api/paper/sync',{method:'POST',body:JSON.stringify({state:p,updated:ts})}).catch(function(){}); }catch(e){} },800); }
@@ -928,7 +935,7 @@ function hydratePaper(cb){ if(!(API&&authToken())){ if(cb)cb(); return; }
     try{ const localTs=Number(localStorage.getItem('fade_paper_ts'))||0;
       if(d&&d.ok&&d.state){
         // server has a wallet — newer-or-equal server copy wins (another device traded)
-        if((d.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(d.state)); localStorage.setItem('fade_paper_ts',String(d.updated||Date.now())); }
+        if((d.updated||0)>=localTs){ localStorage.setItem('fade_paper',JSON.stringify(d.state)); localStorage.setItem('fade_paper_ts',String(d.updated||Date.now())); applyPrefs(d.state.prefs); }
         else { pushPaper(); }   // our local copy is newer — push it up
       } else { // server has NO wallet yet — seed it from local IF there's real activity (open/closed trades or moved cash), even for pre-sync accounts with no ts
         const lp=paper(); const hasActivity=(lp.positions&&lp.positions.length>0)||lp.cash!==10000;
@@ -960,13 +967,17 @@ function liqPrice(entry,side,lev){ if(!lev||lev<=1)return null; return side==='l
 function openTradePanel(sym){
   if(!requireAccount()) return;
   const a=quote(sym); if(!a) return;
-  if(a.signal==='skip'||a.signal==='no_breach'){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
   const p=paper();
   const existing=p.positions.find(x=>x.status==='open'&&x.symbol===sym);
+  // Holding an open position ALWAYS allows managing/adding — the breach decaying off
+  // the board must never lock you out of your own trade (bugfix).
+  if(!existing&&(a.signal==='skip'||a.signal==='no_breach')){ toast('No fade here \u2014 grade '+gLet(a.grade,false)+' / '+a.signal.replace('_',' ')); return; }
   // default allocation + leverage come from Settings (Trading defaults)
   const dpct=lsGet('fade_default_pct',ACFG.default_pct||25);
   const start=existing?Math.min(p.cash,1000):Math.min(p.cash, Math.max(50, Math.round(p.cash*dpct/100)));
-  TRADE={sym:sym, side:isLong(a)?'long':'short', amt:Math.max(0,start), lev:existing?posLev(existing):lsGet('fade_default_lev',ACFG.default_lev||1), add:!!existing};
+  const st0=a.setup||{};
+  TRADE={sym:sym, side:isLong(a)?'long':'short', amt:Math.max(0,start), lev:existing?posLev(existing):lsGet('fade_default_lev',ACFG.default_lev||1), add:!!existing,
+    tgt:(st0.target!=null?String(st0.target):''), stp:(st0.mental_stop!=null?String(st0.mental_stop):'')};
   openModal(tradePanel());
 }
 function tradeAmt(){ const p=paper(); return Math.max(0,Math.min(TRADE.amt||0, p.cash)); }
@@ -1018,7 +1029,10 @@ function tradePanel(){
       <div class="tp-row"><span>Position size</span><span id="tp_notional" class="mono" style="color:var(--txt)">$${money(notional)}</span></div>
       <div class="tp-row"><span>Margin (cash used)</span><span id="tp_margin" class="mono">$${money(margin)}</span></div>
       <div class="tp-row"><span>Quantity</span><span id="tp_qty" class="mono">${qty?qty.toPrecision(5):'--'} ${a.symbol}</span></div>
-      <div class="tp-row"><span>Entry &#183; Target &#183; Stop</span><span class="mono">${money(a.price)} &#183; <b style="color:${GREEN}">${money(st.target)}</b> &#183; <b style="color:${RED}">${money(st.mental_stop)}</b></span></div>
+      <div class="tp-row"><span>Take profit / Stop loss</span><span class="mono" style="display:flex;gap:6px;align-items:center">
+        <input id="tp_tgt" class="tp-lvl mono" inputmode="decimal" placeholder="none" value="${esc(TRADE.tgt)}" oninput="TRADE.tgt=this.value" style="color:${GREEN}">
+        <input id="tp_stp" class="tp-lvl mono" inputmode="decimal" placeholder="none" value="${esc(TRADE.stp)}" oninput="TRADE.stp=this.value" style="color:${RED}"></span></div>
+      <div class="tp-row" style="border:none;padding-top:0"><span></span><span style="font-size:9.5px;color:var(--ash)">${lsGet('fade_autoclose',ACFG.autoclose!==false)?'auto-closes at these levels — edit or blank them':'auto TP/SL is OFF — these levels are reference only'}</span></div>
       <div class="tp-row" id="tp_liqrow" style="${liq?'':'display:none'}"><span>Est. liquidation</span><span id="tp_liq" class="mono" style="color:${RED}">${liq?'$'+money(liq):'--'}</span></div>
     </div>
 
@@ -1053,14 +1067,21 @@ async function confirmTrade(){
   // moves. If the CURRENT price has already crossed the setup's target or stop, the
   // position would be born pre-won/pre-lost and auto-close instantly — a fake trade.
   // Refuse it honestly instead of booking a phantom win.
+  // Chosen (editable) levels: blank = no level. Wrong-side values are rejected honestly.
+  const numOr=function(v){ const n=parseFloat(String(v).replace(/[^0-9.]/g,'')); return (n>0)?n:null; };
+  let tgt=numOr(TRADE.tgt), stp=numOr(TRADE.stp);
+  if(tgt!=null&&((long&&tgt<=fill)||(!long&&tgt>=fill))){ toast('Take profit must be on the PROFIT side of $'+pxFmt(fill)+'.','error'); return; }
+  if(stp!=null&&((long&&stp>=fill)||(!long&&stp<=fill))){ toast('Stop loss must be on the LOSS side of $'+pxFmt(fill)+'.','error'); return; }
+  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===TRADE.sym);
+  // Born-crossed guard (NEW positions only — adds are a manual decision on a trade you
+  // already own): a stale card whose levels are already crossed books a phantom result.
   const st0=a.setup||{};
-  if(st0.target!=null&&st0.mental_stop!=null){
+  if(!existing&&TRADE.tgt===String(st0.target)&&TRADE.stp===String(st0.mental_stop)&&st0.target!=null&&st0.mental_stop!=null){
     const crossed=long?(fill>=st0.target||fill<=st0.mental_stop)
                       :(fill<=st0.target||fill>=st0.mental_stop);
     if(crossed){ closeModal(); toast(TRADE.sym+' already moved through this setup&#39;s target/stop — it&#39;s gone. Wait for a fresh one.','error'); render(); return; }
   }
   const notional=margin*lev; const addQty=notional/fill;
-  const existing=p.positions.find(x=>x.status==='open'&&x.symbol===TRADE.sym);
   if(existing){
     // add to the open position \u2014 blend entry, sum margin/qty (keep the higher leverage)
     const nq=existing.qty+addQty; existing.entry=(existing.entry*existing.qty+fill*addQty)/nq; existing.qty=nq;
@@ -1071,7 +1092,7 @@ async function confirmTrade(){
   p.cash-=margin;
   const g=relGrade(a).l;
   p.positions.push({id:Math.random().toString(36).slice(2,10),symbol:TRADE.sym,name:a.name,side:long?'long':'short',
-    entry:fill,qty:addQty,margin:margin,lev:lev,target:a.setup.target,stop:a.setup.mental_stop,asset_class:a.asset_class,
+    entry:fill,qty:addQty,margin:margin,lev:lev,target:tgt,stop:stp,asset_class:a.asset_class,
     grade:a.grade,gradeEntry:g,opened:Date.now(),status:'open'});
   save(p); S.faded[TRADE.sym]=1;
   if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:TRADE.sym,side:long?'long':'short',notional:margin,lev:lev})}).catch(function(){}); }
@@ -1540,7 +1561,7 @@ function dialProjCount(){ return dialProj().filter(r=>r.pctTrig>=80).length; }
 function dialProjRows(){ const rows=dialProj().slice(0,4);
   if(!rows.length) return `<div class="sd-empty">No overnight movers near a trigger yet — the board wakes at the bell.</div>`;
   return rows.map(function(r){ const col=r.pctTrig>=95?RED:(r.pctTrig>=80?'#ff9f0a':'#ffe500'); const tag=r.pctTrig>=95?'red hot':(r.pctTrig>=80?'warming':'on watch');
-    return `<div class="sdrow"><div class="sdrow-top"><span><span class="sdrow-sym">${esc(r.sym)}</span> <span class="sdrow-side" style="color:${r.long?GREEN:RED}">${r.long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}% vs ${r.thr}%</span></div>`
+    return `<div class="sdrow" onclick="openChartPop('${r.sym}')"><div class="sdrow-top"><span><img class="sdlogo" src="https://assets.parqet.com/logos/symbol/${encodeURIComponent(r.sym)}?format=png" loading="lazy" onerror="this.remove()" alt=""><span class="sdrow-sym">${esc(r.sym)}</span> <span class="sdrow-side" style="color:${r.long?GREEN:RED}">${r.long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}% vs ${r.thr}%</span></div>`
       +`<div class="sdrow-bar"><i style="width:${Math.max(6,r.pctTrig)}%;background:${col}"></i></div>`
       +`<div class="sdrow-sub"><span style="color:${col}">${r.pctTrig}% of trigger · ${tag}</span><span style="color:var(--ash)">${r.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 function renderDialProj(){ const el=document.getElementById('dialproj'); if(el)el.innerHTML=dialProjRows();
@@ -2927,6 +2948,7 @@ async function doLogin(){
       S.busy=false; setToken(d.token);
       if(d.needs_password){ DRAFT.who=(d.user&&d.user.username)||identifier; DRAFT.setid=identifier; DRAFT.pw=''; AUTHMODE='setpw'; render(); return; }   // grandfather flow
       saveUser(d.user); loadHlCfg();
+      hydrate();   // fresh board immediately — logging in after idling must not leave a stale, untradeable feed
       hydratePaper(function(){ go('profile'); render(); });   // pull this account's wallet from the server (cross-device)
       toast('Welcome back, @'+d.user.username);
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
@@ -3041,8 +3063,8 @@ function applyTheme(){ const t=getTheme();
     GRADE={1:GREEN,2:'#a3e635',3:'#fde047',4:'#eab308',5:ASH};   // neon grade colors on dark
   } }
 function setTheme(t){ lsSet('fade_theme',t); TG_THEME_LOCK=true; applyTheme(); render(); if(isTWA())tgSyncColors(); toast(t==='light'?'Light mode':'Dark mode'); }
-function toggleAutoClose(){ const v=!lsGet('fade_autoclose',ACFG.autoclose!==false); lsSet('fade_autoclose',v); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
-function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
+function toggleAutoClose(){ const v=!lsGet('fade_autoclose',ACFG.autoclose!==false); lsSet('fade_autoclose',v); save(paper()); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
+function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v); save(paper()); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
 // Auto-close open positions at their target/stop when enabled. Checked on each live poll
 // against the REAL board price (not the jittered ticker).
 function autoCloseCheck(){ if(!lsGet('fade_autoclose',ACFG.autoclose!==false)) return;
@@ -3117,7 +3139,7 @@ function fitGame(){
   // A GAME is a scan-screen with a canvas. The games-off readouts (radar grid, session
   // dial, trigger rows) share the wrapper but must scroll like a normal page — keying
   // gamefit off the wrapper alone was what froze/clipped the wait screens.
-  const isGame=!!app.querySelector('.scan-screen canvas');
+  const isGame=!!app.querySelector('.scan-screen .scanner, .scan-screen canvas');
   if(isGame){
     const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
     app.style.height=Math.round(h)+'px';
