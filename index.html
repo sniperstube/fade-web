@@ -424,7 +424,11 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .wstrip-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);scrollbar-width:none}
 .wstrip-row::-webkit-scrollbar{display:none}
 .wchip{flex:none;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--void2);font-size:11.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
-.wchip img{width:14px;height:14px;border-radius:50%;vertical-align:-2.5px;margin-right:4px}
+.wchip .wlogo{width:14px;height:14px;border-radius:50%;vertical-align:-2.5px;margin-right:4px}
+.lgif{display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:'Space Grotesk';border-radius:50%}
+.crlogo.lgif{width:20px;height:20px;font-size:10px;position:relative;z-index:1}
+.sdlogo.lgif{width:17px;height:17px;font-size:8.5px}
+.wchip .wlogo.lgif{display:inline-flex;font-size:7.5px}
 .sdlogo{width:17px;height:17px;border-radius:50%;vertical-align:-3.5px;margin-right:5px}
 .crtile,.sdrow,.wchip{cursor:pointer}
 .crtile:active .crring,.wchip:active{opacity:.75}
@@ -816,6 +820,8 @@ const WINPROB={1:.92,2:.85,3:.77,4:.68,5:.62};  // demo skews to winning more th
 const _LOGOBG=['#1f2a44','#2a1f44','#44341f','#1f4438','#44202e','#2e3a1f','#3a1f44','#1f3a44'];
 const CRYPTO_ICONS='https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/';
 function logoBg(sym){ let h=0; for(let i=0;i<sym.length;i++)h=(h*31+sym.charCodeAt(i))>>>0; return _LOGOBG[h%_LOGOBG.length]; }
+function imgFB(el){ const s=el.getAttribute('data-sym')||'?'; const sp=document.createElement('span');
+  sp.className=el.className+' lgif'; sp.textContent=s[0]; sp.style.background=logoBg(s); el.replaceWith(sp); }
 function logoURL(a){ if(!a||!a.symbol)return'';
   if(a.asset_class==='crypto') return CRYPTO_ICONS+a.symbol.toLowerCase()+'.png';
   return 'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(a.symbol)+'?format=png'; }
@@ -1561,7 +1567,7 @@ function dialProjCount(){ return dialProj().filter(r=>r.pctTrig>=80).length; }
 function dialProjRows(){ const rows=dialProj().slice(0,4);
   if(!rows.length) return `<div class="sd-empty">No overnight movers near a trigger yet — the board wakes at the bell.</div>`;
   return rows.map(function(r){ const col=r.pctTrig>=95?RED:(r.pctTrig>=80?'#ff9f0a':'#ffe500'); const tag=r.pctTrig>=95?'red hot':(r.pctTrig>=80?'warming':'on watch');
-    return `<div class="sdrow" onclick="openChartPop('${r.sym}')"><div class="sdrow-top"><span><img class="sdlogo" src="https://assets.parqet.com/logos/symbol/${encodeURIComponent(r.sym)}?format=png" loading="lazy" onerror="this.remove()" alt=""><span class="sdrow-sym">${esc(r.sym)}</span> <span class="sdrow-side" style="color:${r.long?GREEN:RED}">${r.long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}% vs ${r.thr}%</span></div>`
+    return `<div class="sdrow" onclick="openChartPop('${r.sym}')"><div class="sdrow-top"><span><img class="sdlogo" data-sym="${esc(r.sym)}" src="https://assets.parqet.com/logos/symbol/${encodeURIComponent(r.sym)}?format=png" loading="lazy" onerror="imgFB(this)" alt=""><span class="sdrow-sym">${esc(r.sym)}</span> <span class="sdrow-side" style="color:${r.long?GREEN:RED}">${r.long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}% vs ${r.thr}%</span></div>`
       +`<div class="sdrow-bar"><i style="width:${Math.max(6,r.pctTrig)}%;background:${col}"></i></div>`
       +`<div class="sdrow-sub"><span style="color:${col}">${r.pctTrig}% of trigger · ${tag}</span><span style="color:var(--ash)">${r.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 function renderDialProj(){ const el=document.getElementById('dialproj'); if(el)el.innerHTML=dialProjRows();
@@ -1623,7 +1629,7 @@ function triggerRowsHTML(){ const near=(scanData().near||[]).slice(0,4);
   return near.map(function(x){ const thr=(x.chg!=null?Math.abs(x.chg)+x.gap:4);
     const pt=Math.min(100,Math.round((1-x.gap/Math.max(thr,0.01))*100));
     const col=pt>=95?RED:(pt>=80?'#ff9f0a':'#ffe500'); const tag=pt>=95?'red hot':(pt>=80?'warming':'on watch'); const long=(x.chg||0)<0;
-    const lg=`<img class="sdlogo" src="${S.scope==='crypto'?CRYPTO_ICONS+x.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(x.sym)+'?format=png'}" loading="lazy" onerror="this.remove()" alt="">`;
+    const lg=`<img class="sdlogo" data-sym="${esc(x.sym)}" src="${S.scope==='crypto'?CRYPTO_ICONS+x.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(x.sym)+'?format=png'}" loading="lazy" onerror="imgFB(this)" alt="">`;
     return `<div class="sdrow" onclick="openChartPop('${x.sym}')"><div class="sdrow-top"><span>${lg}<span class="sdrow-sym">${esc(x.sym)}</span> <span class="sdrow-side" style="color:${long?GREEN:RED}">${long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${(x.chg>=0?'+':'')}${(x.chg||0).toFixed(1)}% vs ${thr.toFixed(1)}%</span></div>`
       +`<div class="sdrow-bar"><i style="width:${Math.max(6,pt)}%;background:${col}"></i></div>`
       +`<div class="sdrow-sub"><span style="color:${col}">${pt}% of trigger · ${tag}</span><span style="color:var(--ash)">${x.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
@@ -1655,7 +1661,7 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
 // exists so a moving market never looks like a dead app.
 function watchStripHTML(){ const w=(BOARD.watch||[]).filter(x=>x.change_pct!=null).slice(0,10);
   if(!w.length)return '';
-  const chips=w.map(x=>`<span class="wchip" onclick="openChartPop('${x.symbol}')"><img src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="this.remove()" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
+  const chips=w.map(x=>`<span class="wchip" onclick="openChartPop('${x.symbol}')"><img class="wlogo" data-sym="${esc(x.symbol)}" src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="imgFB(this)" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
   return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span><span class="wstrip-sub">below the fade floor &#8212; watched, never traded</span></div><div class="wstrip-row">${chips}</div></div>`; }
 let TERM={i:0,n:0,seen:new Set()};
 // Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
@@ -1733,7 +1739,9 @@ function cryptoGridHTML(frozen){
   // frozen (stocks closed): show the last session's board by CLASS — inScope() hides
   // all stocks when the market is shut (right for trading, wrong for a recap grid).
   const wantAC=S.scope==='crypto'?'crypto':'stock';
-  const inS=(BOARD.items||[]).filter(i=>(frozen?i.asset_class===wantAC:inScope(i))&&i.change_pct!=null);
+  // the trigger cards above already spotlight the 4 nearest — don't repeat them in the grid
+  const featured=frozen?{}:Object.fromEntries((scanData().near||[]).slice(0,4).map(x=>[x.sym,1]));
+  const inS=(BOARD.items||[]).filter(i=>(frozen?i.asset_class===wantAC:inScope(i))&&i.change_pct!=null&&!featured[i.symbol]);
   const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0; const thr=i.threshold||4;
       const fill=Math.max(4,Math.min(100,Math.round(Math.abs(i.change_pct)/thr*100)));
       const gap=n?n.gap:Math.max(0,thr-Math.abs(i.change_pct));
@@ -1741,7 +1749,7 @@ function cryptoGridHTML(frozen){
     .sort((a,b)=>(b.brk-a.brk)||(b.fill-a.fill)).slice(0,18);
   const isCry=S.scope==='crypto';
   const cells=tiles.length ? tiles.map(t=>`<div class="crtile h${t.brk?3:t.heat}" onclick="openChartPop('${t.sym}')">
-      <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" src="${isCry?CRYPTO_ICONS+t.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(t.sym)+'?format=png'}" loading="lazy" onerror="this.remove()" alt=""><span>${esc(t.sym)}</span></div>
+      <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" data-sym="${esc(t.sym)}" src="${isCry?CRYPTO_ICONS+t.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(t.sym)+'?format=png'}" loading="lazy" onerror="imgFB(this)" alt=""><span>${esc(t.sym)}</span></div>
       <div class="crgap">${t.brk?'live':(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
     : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
   const sh=scanShow();
