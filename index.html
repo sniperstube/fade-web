@@ -3011,7 +3011,7 @@ function settings(){
     ${setrow('Auto take-profit &amp; stop-loss','Automatically close a position the moment its price hits the target (win) or the mental stop (loss). On by default.',ac,'toggleAutoClose()')}
 
     <div class="lbl" style="margin-top:16px">Waiting room</div>
-    ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto). Off by default — turn on to pass the wait with a game.',lsGet('fade_games',false),'toggleGames()')}
+    ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto) instead of the live readout.',gamesOn(),'toggleGames()')}
 
     <div class="lbl" style="margin-top:16px">Alerts</div>
     ${setrow('After-hours crypto alerts','Get a phone notification when a fresh high-grade crypto fade sets up while the stock market is closed. Needs notification permission.',alertsOn(),'toggleAlerts()')}
@@ -3064,7 +3064,7 @@ function applyTheme(){ const t=getTheme();
   } }
 function setTheme(t){ lsSet('fade_theme',t); TG_THEME_LOCK=true; applyTheme(); render(); if(isTWA())tgSyncColors(); toast(t==='light'?'Light mode':'Dark mode'); }
 function toggleAutoClose(){ const v=!lsGet('fade_autoclose',ACFG.autoclose!==false); lsSet('fade_autoclose',v); save(paper()); render(); toast(v?'Auto TP/SL is ON':'Auto TP/SL is OFF'); if(v)autoCloseCheck(); }
-function toggleGames(){ const v=!lsGet('fade_games',false); lsSet('fade_games',v); save(paper()); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
+function toggleGames(){ const v=!gamesOn(); lsSet('fade_games',v); save(paper()); render(); toast(v?'Waiting-room games ON':'Games off — live readout'); }
 // Auto-close open positions at their target/stop when enabled. Checked on each live poll
 // against the REAL board price (not the jittered ticker).
 function autoCloseCheck(){ if(!lsGet('fade_autoclose',ACFG.autoclose!==false)) return;
