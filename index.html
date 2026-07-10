@@ -335,7 +335,8 @@ input,textarea,select{font-size:16px}
 .wl-group{display:flex;flex-direction:column}
 .empty{text-align:center;color:var(--ash);font-family:'Space Grotesk';font-size:12px;padding:26px 10px;border:1px dashed var(--line);border-radius:14px}
 /* ---------- Pac-Man Hunt: the game (full-bleed, ghosts, combos, high score) ---------- */
-.scan-screen{display:flex;flex-direction:column;padding:14px 14px 0;flex:1;min-height:0;overflow:hidden;overscroll-behavior:none}
+.scan-screen{display:flex;flex-direction:column;padding:14px 14px 96px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#app.gamefit .scan-screen{overflow:hidden;padding-bottom:0;overscroll-behavior:none}
 /* Game screen: JS (fitGame) sets #app to the EXACT visible height via visualViewport, so
    the iOS Safari toolbar can't leave a dead strip below the field. The tab bar joins the
    flex column (not fixed) so the field fills right to the buttons and is swipeable all the
@@ -425,6 +426,23 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .wchip{flex:none;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--void2);font-size:11.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
 .wchip img{width:14px;height:14px;border-radius:50%;vertical-align:-2.5px;margin-right:4px}
 .sdlogo{width:17px;height:17px;border-radius:50%;vertical-align:-3.5px;margin-right:5px}
+.crtile,.sdrow,.wchip{cursor:pointer}
+.crtile:active .crring,.wchip:active{opacity:.75}
+/* chart popup + trade recap */
+.chpop-hd{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;margin-bottom:10px}
+.chpop-sig{margin-left:auto;font-size:11px;color:var(--ash);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.chpop-body{min-height:110px;color:var(--ash);font-size:12.5px}
+.chpop-body svg{width:100%;border-radius:12px;background:var(--void2);display:block}
+.chpop-ft{font-size:9.5px;color:var(--ash);font-family:'Space Grotesk';margin-top:7px;text-align:center}
+.trecap .tr-hd{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.tr-sym{font-size:17px;font-weight:800}
+.tr-sub{font-size:11px;color:var(--ash);margin-top:2px}
+.tr-pnl{margin-left:auto;font-size:21px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.tr-pnl small{display:block;font-size:10px;font-weight:700;opacity:.8;margin-top:1px}
+.tr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tr-grid>div{background:var(--void2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.tr-grid span{display:block;font-size:8.5px;color:var(--ash);letter-spacing:.07em;margin-bottom:3px;font-weight:700}
+.tr-grid b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .scan-anim{animation:scananim 1.8s ease-in-out infinite}
 .scan-disc{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:'Space Grotesk';font-size:9.5px;line-height:1.4;color:var(--ash);z-index:6;pointer-events:none;padding:0 12px;word-break:break-word}
 .sdhead{text-align:center;padding:18px 0 4px}
@@ -1584,8 +1602,8 @@ function triggerRowsHTML(){ const near=(scanData().near||[]).slice(0,4);
   return near.map(function(x){ const thr=(x.chg!=null?Math.abs(x.chg)+x.gap:4);
     const pt=Math.min(100,Math.round((1-x.gap/Math.max(thr,0.01))*100));
     const col=pt>=95?RED:(pt>=80?'#ff9f0a':'#ffe500'); const tag=pt>=95?'red hot':(pt>=80?'warming':'on watch'); const long=(x.chg||0)<0;
-    const lg=S.scope==='crypto'?`<img class="sdlogo" src="${CRYPTO_ICONS}${x.sym.toLowerCase()}.png" loading="lazy" onerror="this.remove()" alt="">`:'';
-    return `<div class="sdrow"><div class="sdrow-top"><span>${lg}<span class="sdrow-sym">${esc(x.sym)}</span> <span class="sdrow-side" style="color:${long?GREEN:RED}">${long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${(x.chg>=0?'+':'')}${(x.chg||0).toFixed(1)}% vs ${thr.toFixed(1)}%</span></div>`
+    const lg=`<img class="sdlogo" src="${S.scope==='crypto'?CRYPTO_ICONS+x.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(x.sym)+'?format=png'}" loading="lazy" onerror="this.remove()" alt="">`;
+    return `<div class="sdrow" onclick="openChartPop('${x.sym}')"><div class="sdrow-top"><span>${lg}<span class="sdrow-sym">${esc(x.sym)}</span> <span class="sdrow-side" style="color:${long?GREEN:RED}">${long?'LONG side':'SHORT side'}</span></span><span class="sdrow-pct" style="color:${col}">${(x.chg>=0?'+':'')}${(x.chg||0).toFixed(1)}% vs ${thr.toFixed(1)}%</span></div>`
       +`<div class="sdrow-bar"><i style="width:${Math.max(6,pt)}%;background:${col}"></i></div>`
       +`<div class="sdrow-sub"><span style="color:${col}">${pt}% of trigger · ${tag}</span><span style="color:var(--ash)">${x.gap.toFixed(1)}% to go</span></div></div>`; }).join(''); }
 // C — Scan terminal: a live crawl of real scan passes over the in-scope board. Seeds the
@@ -1616,7 +1634,7 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
 // exists so a moving market never looks like a dead app.
 function watchStripHTML(){ const w=(BOARD.watch||[]).filter(x=>x.change_pct!=null).slice(0,10);
   if(!w.length)return '';
-  const chips=w.map(x=>`<span class="wchip"><img src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="this.remove()" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
+  const chips=w.map(x=>`<span class="wchip" onclick="openChartPop('${x.symbol}')"><img src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="this.remove()" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
   return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span><span class="wstrip-sub">below the fade floor &#8212; watched, never traded</span></div><div class="wstrip-row">${chips}</div></div>`; }
 let TERM={i:0,n:0,seen:new Set()};
 // Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
@@ -1689,28 +1707,81 @@ function scanTermTick(){ const body=document.getElementById('scterm-body'); if(!
 // Crypto wait screen (games-off): a live radar GRID of the in-scope board. Each coin is a tile
 // with an orange ring that fills toward its trigger (fill = |move| / its threshold) and solidifies
 // + heats red as it nears. The scrolling scan LOG is off the page — behind the button below.
-function cryptoGridHTML(){
+function cryptoGridHTML(frozen){
   const nd={}; scanData().near.forEach(x=>{ nd[x.sym]=x; });
-  const inS=(BOARD.items||[]).filter(i=>inScope(i)&&i.change_pct!=null);
+  // frozen (stocks closed): show the last session's board by CLASS — inScope() hides
+  // all stocks when the market is shut (right for trading, wrong for a recap grid).
+  const wantAC=S.scope==='crypto'?'crypto':'stock';
+  const inS=(BOARD.items||[]).filter(i=>(frozen?i.asset_class===wantAC:inScope(i))&&i.change_pct!=null);
   const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0; const thr=i.threshold||4;
       const fill=Math.max(4,Math.min(100,Math.round(Math.abs(i.change_pct)/thr*100)));
       const gap=n?n.gap:Math.max(0,thr-Math.abs(i.change_pct));
       return {sym:i.symbol,heat,fill,gap,brk:i.breached}; })
     .sort((a,b)=>(b.brk-a.brk)||(b.fill-a.fill)).slice(0,18);
-  const cells=tiles.length ? tiles.map(t=>`<div class="crtile h${t.brk?3:t.heat}">
-      <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" src="${CRYPTO_ICONS}${t.sym.toLowerCase()}.png" loading="lazy" onerror="this.remove()" alt=""><span>${esc(t.sym)}</span></div>
+  const isCry=S.scope==='crypto';
+  const cells=tiles.length ? tiles.map(t=>`<div class="crtile h${t.brk?3:t.heat}" onclick="openChartPop('${t.sym}')">
+      <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" src="${isCry?CRYPTO_ICONS+t.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(t.sym)+'?format=png'}" loading="lazy" onerror="this.remove()" alt=""><span>${esc(t.sym)}</span></div>
       <div class="crgap">${t.brk?'live':(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
     : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
   const sh=scanShow();
-  return `<div class="crgrid-hd"><span>Scanning ${sh.scan} coins${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}</span><span class="crhd-live"><span class="mp-dot"></span>real-time</span></div>
+  const live=!frozen;
+  return `<div class="crgrid-hd"><span>Scanning ${sh.scan} ${isCry?'coins':'stocks'}${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}</span><span class="crhd-live"${live?'':' style="color:var(--ash)"'}>${live?'<span class="mp-dot"></span>real-time':'frozen at last close'}</span></div>
     <div class="crgrid">${cells}</div>
     <div class="crleg"><span>far</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>at trigger</span></div>
-    ${watchStripHTML()}`;
+    ${isCry?watchStripHTML():''}`;
 }
 // The time-scroll of scan codes — now opened on demand (not on the main page). scanTermTick's
 // interval already animates #scterm-body wherever it's mounted, so it crawls inside the modal.
 function openScanLog(){ if(S.scope!=='crypto')loadPremarket(true);   // pull live extended-hours prints for the stocks log
   openModal(`<div class="scanlog-modal">${scanTermHTML()}${S.scope==='crypto'?watchStripHTML():''}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
+// ---- Chart popup: real daily candles for ANY scanned name (wait-screen tiles, trigger
+// rows, mid-cap chips, trade history). Candles come from /api/chart (server cache).
+function candleSVG(c,refs){ refs=refs||{};
+  const W=600,H=250,P=8; let lo=Infinity,hi=-Infinity;
+  c.forEach(k=>{ lo=Math.min(lo,k[3]); hi=Math.max(hi,k[2]); });
+  ['target','stop','entry','exit'].forEach(k=>{ if(refs[k]!=null){ lo=Math.min(lo,refs[k]); hi=Math.max(hi,refs[k]); } });
+  const rng=(hi-lo)||1, Y=v=>P+(hi-v)/rng*(H-2*P), bw=(W-2*P)/c.length;
+  let svg='';
+  c.forEach((k,i)=>{ const x=P+i*bw+bw/2, up=k[4]>=k[1], col=up?GREEN:RED;
+    svg+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(k[2]).toFixed(1)}" y2="${Y(k[3]).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+    svg+=`<rect x="${(x-bw*0.3).toFixed(1)}" width="${(bw*0.6).toFixed(1)}" y="${Y(Math.max(k[1],k[4])).toFixed(1)}" height="${Math.max(1,Math.abs(Y(k[1])-Y(k[4]))).toFixed(1)}" fill="${col}"/>`; });
+  const ref=(v,col,l)=>{ if(v==null)return ''; const y=Y(v);
+    return `<line x1="0" x2="${W}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${col}" stroke-dasharray="4 4" opacity=".75"/><text x="5" y="${(y-4).toFixed(1)}" fill="${col}" font-size="10" font-family="monospace">${l} ${pxFmt(v)}</text>`; };
+  svg+=ref(refs.target,GREEN,'target')+ref(refs.stop,RED,'stop')+ref(refs.entry,BLUE,'entry')+ref(refs.exit,'#b57bff','exit');
+  return `<svg viewBox="0 0 ${W} ${H}">${svg}</svg><div class="chpop-ft">${esc(String(c[0][0]))} &#8594; ${esc(String(c[c.length-1][0]))} &#183; ${c.length} daily candles</div>`;
+}
+function loadChartInto(id,sym,refs){ const body=document.getElementById(id); if(!body)return;
+  if(!API){ body.textContent='Charts need the live backend.'; return; }
+  fetch(`${API}/api/chart/${encodeURIComponent(sym)}`).then(r=>r.json()).then(d=>{
+    const el=document.getElementById(id); if(!el)return;
+    if(!d.ok||!(d.candles||[]).length){ el.textContent=(d&&d.error)||`No chart history cached for ${sym} yet.`; return; }
+    const sig=document.getElementById('chpop-sig'); if(sig&&!refs)sig.textContent=`${(d.signal||'').replace('_',' ')}${d.price?' · $'+pxFmt(d.price):''}`;
+    el.innerHTML=candleSVG(d.candles, refs||{target:d.target,stop:d.stop});
+  }).catch(()=>{ const el=document.getElementById(id); if(el)el.textContent='Chart unavailable — check connection.'; });
+}
+function openChartPop(sym){ const q=quote(sym)||{};
+  const a={symbol:sym,asset_class:q.asset_class||(S.scope==='crypto'?'crypto':'stock')};
+  openModal(`<div class="chpop"><div class="chpop-hd">${logoBadge(a,28)}<b>${esc(sym)}</b><span class="chpop-sig" id="chpop-sig"></span></div>
+    <div class="chpop-body" id="chpop-body">Loading chart&hellip;</div>
+    <button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`);
+  loadChartInto('chpop-body',sym);
+}
+// ---- Trade recap: tap any HISTORY row → the full story of that trade + its chart.
+function tradeRecap(id){ const p=paper(); const x=p.positions.find(y=>y.id===id&&y.status==='closed'); if(!x)return;
+  const pc=(x.pnl||0)>=0, retPct=posMargin(x)?100*(x.pnl||0)/posMargin(x):null;
+  const rr=(x.target!=null&&x.stop!=null&&x.entry!==x.stop)?Math.abs(x.target-x.entry)/Math.abs(x.entry-x.stop):null;
+  const dt=t=>t?new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'&#8212;';
+  openModal(`<div class="trecap"><div class="tr-hd">${logoBadge(x,40)}
+      <div><div class="tr-sym">${esc(x.symbol)} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}</div>
+      <div class="tr-sub">${(x.result||'').toUpperCase()} &#183; held ${heldFor(x)}${x.grade?` &#183; grade ${gLet(x.grade,true)} at entry`:''}</div></div>
+      <div class="tr-pnl" style="color:${pc?GREEN:RED}">${pc?'+':''}${(x.pnl||0).toFixed(2)}${retPct!=null?`<small>${pc?'+':''}${retPct.toFixed(1)}% on margin</small>`:''}</div></div>
+    <div class="tr-grid">
+      <div><span>ENTRY</span><b>$${pxFmt(x.entry)}</b></div><div><span>EXIT</span><b>$${pxFmt(x.exit)}</b></div><div><span>SIZE</span><b>$${money(posMargin(x))}</b></div>
+      <div><span>OPENED</span><b>${dt(x.opened)}</b></div><div><span>CLOSED</span><b>${dt(x.closed)}</b></div><div><span>PLAN R:R</span><b>${rr?rr.toFixed(1)+':1':'&#8212;'}</b></div></div>
+    <div class="chpop-body" id="tr-chart" style="margin-top:12px">Loading chart&hellip;</div>
+    <button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`);
+  loadChartInto('tr-chart',x.symbol,{entry:x.entry,exit:x.exit,target:x.target,stop:x.stop});
+}
 function scanReadoutHTML(mode){
   const d=scanData(), closed=stocksClosedView(), sh=scanShow();
   const scopeName=S.scope==='crypto'?'crypto':'stocks';
@@ -1737,12 +1808,13 @@ function scanReadoutHTML(mode){
           <div class="mp-sub">The stock board wakes at the open. Switch to <b>Crypto</b> &#8212; it never sleeps.</div>
         </div>
         <div class="mp-foot"><span class="mp-dot"></span>${d.total} stocks tracked &#183; live at the bell</div>
-      </div>`;
+      </div>
+      <div class="sdlbl" style="margin-top:16px">LAST SESSION <span class="sdsrc">TAP A STOCK FOR ITS CHART</span></div>${cryptoGridHTML(true)}`;
   }
-  // Games OFF default: breach-style trigger CARDS lead, then the tile grid (crypto).
-  // The raw scan log is hidden — tapping the Live-market-scan banner opens it (openScanLog).
+  // Games OFF default: breach-style trigger CARDS lead, then the tile grid (both scopes —
+  // the stock wait page used to end after the cards, which read as a dead screen).
   if(S.scope==='crypto') return `${scanLiveBar()}<div class="sdlbl">DISTANCE TO TRIGGER <span class="sdsrc">LIVE · 24/7</span></div>${triggerRowsHTML()}${cryptoGridHTML()}`;
-  return `${scanLiveBar()}<div class="sdlbl">NEAREST TO TRIGGER <span class="sdsrc">LIVE SESSION</span></div>${triggerRowsHTML()}`;
+  return `${scanLiveBar()}<div class="sdlbl">NEAREST TO TRIGGER <span class="sdsrc">LIVE SESSION</span></div>${triggerRowsHTML()}${cryptoGridHTML()}`;
 }
 // Shown when the current scope has NO actionable setups. Games ON (default): Fade Blocks for
 // stocks, Pac-Man scan for crypto. Games OFF: the clean readout for both.
@@ -1754,7 +1826,8 @@ function waitingRoomHTML(mode){
     if(S.scope==='crypto') return scannerHTML(false);
     return `${scanLiveBar()}${tetrisHTML()}`;   // Fade Blocks — NO tape here (it squeezed/overlapped the game); pre-market data lives in the scan log + session dial
   }
-  if(stocksClosedView()) return sessionDialHTML(mode);   // games OFF, stocks closed: time-aware dial
+  if(stocksClosedView()) return sessionDialHTML(mode)+   // games OFF, stocks closed: dial + last-session board (was ending at the dial — read as a dead page)
+    `<div class="sdlbl" style="margin-top:16px">LAST SESSION <span class="sdsrc">TAP A STOCK FOR ITS CHART</span></div>${cryptoGridHTML(true)}`;
   return scanReadoutHTML(mode);                          // games OFF: the clean live readout
 }
 function feed(){
@@ -1882,7 +1955,7 @@ function wallet(){
   const posRow=(x,open)=>{ const c=GRADE[x.grade]; const q=quote(x.symbol); const cur=q?q.price:x.entry;
     const pnl=open?pnlOf(x,cur):x.pnl;
     const pc=pnl>=0?GREEN:RED;
-    return `<div class="pos ${open?'pos-open':'pos-closed'}"${open?` onclick="openPos('${x.id}')" style="cursor:pointer"`:''}>${logoBadge(x,34)}
+    return `<div class="pos ${open?'pos-open':'pos-closed'}" onclick="${open?`openPos('${x.id}')`:`tradeRecap('${x.id}')`}" style="cursor:pointer">${logoBadge(x,34)}
       <div class="rc-info"><div class="rc-nm">${x.symbol} <small style="color:${x.side==='long'?GREEN:RED}">${x.side.toUpperCase()}</small>${posLev(x)>1?` <small class="levtag">${posLev(x)}x</small>`:''}${x.adds?` <small style="color:var(--ash)">+${x.adds}</small>`:''}</div>
       <div class="rc-d">${open?'held <span data-held="'+(x.opened||0)+'">'+elapsed(x.opened)+'</span>':x.result.toUpperCase()+' &#183; '+money(x.entry)+' &#8594; '+money(x.exit)+' &#183; held '+heldFor(x)}</div></div>
       <div class="rc-pct" ${open?`data-pnl="1" data-psym="${x.symbol}" data-entry="${x.entry}" data-qty="${x.qty}" data-side="${x.side}"`:''} style="color:${pc}">${pnl>=0?'+':''}${pnl.toFixed(2)}</div>
@@ -3041,7 +3114,10 @@ function render(){ try{ computeRel(); }catch(e){ RELG={}; }
 // column (see .gamefit CSS) so the field reaches right down to the buttons.
 function fitGame(){
   const app=document.getElementById('app'); if(!app) return;
-  const isGame=!!app.querySelector('.scan-screen');
+  // A GAME is a scan-screen with a canvas. The games-off readouts (radar grid, session
+  // dial, trigger rows) share the wrapper but must scroll like a normal page — keying
+  // gamefit off the wrapper alone was what froze/clipped the wait screens.
+  const isGame=!!app.querySelector('.scan-screen canvas');
   if(isGame){
     const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
     app.style.height=Math.round(h)+'px';
