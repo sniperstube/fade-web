@@ -418,21 +418,13 @@ body.gamelock{overflow:hidden;overscroll-behavior:none}
 .sl-games:hover{opacity:.7}
 .sl-rot{transition:opacity .24s ease;opacity:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* Mid-cap radar: coins the scan examines that sit BELOW the fade floor — awareness, never a trade */
-.wstrip{margin:12px 0 4px}
-.wstrip-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--ash);text-transform:uppercase;padding:0 2px;margin-bottom:7px}
-.wstrip-sub{font-weight:600;letter-spacing:.02em;text-transform:none;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wstrip-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);scrollbar-width:none}
 .wstrip-row::-webkit-scrollbar{display:none}
-.wchip{flex:none;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--void2);font-size:11.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
-.wchip .wlogo{width:14px;height:14px;border-radius:50%;vertical-align:-2.5px;margin-right:4px}
 .lgif{display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:'Space Grotesk';border-radius:50%}
 .crlogo.lgif{width:20px;height:20px;font-size:10px;position:relative;z-index:1}
 .sdlogo.lgif{width:17px;height:17px;font-size:8.5px}
-.wchip .wlogo.lgif{display:inline-flex;font-size:7.5px}
 .sdlogo{width:17px;height:17px;border-radius:50%;vertical-align:-3.5px;margin-right:5px}
-.crtile,.sdrow,.wchip{cursor:pointer}
-.crtile:active .crring,.wchip:active{opacity:.75}
-/* chart popup + trade recap */
+.crtile,.sdrow{cursor:pointer}
+.crtile:active .crring,/* chart popup + trade recap */
 .chpop-hd{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;margin-bottom:10px}
 .chpop-sig{margin-left:auto;font-size:11px;color:var(--ash);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .chpop-body{min-height:110px;color:var(--ash);font-size:12.5px}
@@ -1657,13 +1649,6 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
   return `<div class="scterm"><div class="scterm-hd"><span class="st-live"><span class="mp-dot"></span>Scan log</span><span>scanning ${scopeName} <span class="scterm-cur"></span></span></div>
     <div class="scterm-body" id="scterm-body">${seed}</div>
     <div class="scterm-foot">Every line is a real pass &#183; ${counts} &#183; nothing to do until one breaks</div></div>`; }
-// MID-CAP RADAR — the coins the scan examines that sit BELOW the $10B fade floor (framework
-// hard rule). Real 24h prints, watch-only: the app will never grade or trade these; the strip
-// exists so a moving market never looks like a dead app.
-function watchStripHTML(){ const w=(BOARD.watch||[]).filter(x=>x.change_pct!=null).slice(0,10);
-  if(!w.length)return '';
-  const chips=w.map(x=>`<span class="wchip" onclick="openChartPop('${x.symbol}')"><img class="wlogo" data-sym="${esc(x.symbol)}" src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="imgFB(this)" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
-  return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span></div><div class="wstrip-row">${chips}</div></div>`; }
 let TERM={i:0,n:0,seen:new Set()};
 // Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
 // at work — advanced-sounding but each names something the algorithm ACTUALLY does (weighting
@@ -1773,12 +1758,12 @@ function cryptoGridHTML(frozen){
   return `${secLbl}<div class="crgrid-hd"><span>${live?`Scanning ${sh.scan} ${isCry?'coins':'stocks'}${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}`:(pmOn?`${ph==='premarket'?'Pre-market':'After hours'} · ${Object.keys(pmMap).length} live prints · rest at last close`:`Last session · ${inS.length} ${isCry?'coins':'stocks'}`)}</span><span class="crhd-live"${live?'':' style="color:var(--ash)"'}>${live?'<span class="mp-dot"></span>real-time':(pmOn?'projected — grades for real at 9:30':'frozen at last close')}</span></div>
     <div class="crgrid">${cells}</div>
     <div class="crleg"><span>far</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>at trigger</span></div>
-    ${isCry?watchStripHTML():''}`;
+    `;
 }
 // The time-scroll of scan codes — now opened on demand (not on the main page). scanTermTick's
 // interval already animates #scterm-body wherever it's mounted, so it crawls inside the modal.
 function openScanLog(){ if(S.scope!=='crypto')loadPremarket(true);   // pull live extended-hours prints for the stocks log
-  openModal(`<div class="scanlog-modal">${scanTermHTML()}${S.scope==='crypto'?watchStripHTML():''}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
+  openModal(`<div class="scanlog-modal">${scanTermHTML()}<button class="mbtn" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:12px" onclick="closeModal()">Close</button></div>`); }
 // ---- Chart popup: real daily candles for ANY scanned name (wait-screen tiles, trigger
 // rows, mid-cap chips, trade history). Candles come from /api/chart (server cache).
 function candleSVG(c,refs){ refs=refs||{};
