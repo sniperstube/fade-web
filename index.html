@@ -149,8 +149,13 @@ input,textarea,select{font-size:16px}
   .dk-wm{font-size:23px;font-weight:700;letter-spacing:-.5px} .dk-wm b{color:var(--txt)} .dk-wm i{color:var(--blue);font-style:normal}
   .dk-hl{font-size:clamp(46px,5.4vw,80px);font-weight:700;line-height:.94;letter-spacing:-2.5px;color:var(--txt)}
   .dk-sub{font-size:17px;color:var(--ash);margin-top:20px;line-height:1.5;max-width:30ch}
-  .dk-right{width:340px;display:flex;justify-content:flex-end}
+  .dk-right{width:min(320px,calc((100vw - 430px)/2 - 90px));flex:none;display:flex;flex-direction:column;justify-content:center;align-items:stretch}
   .dk-card{background:rgba(20,16,25,.5);border:1px solid var(--line);border-radius:18px;padding:22px 22px 20px;backdrop-filter:blur(6px)}
+  .dk-get{margin-top:14px;pointer-events:auto;padding:18px 18px 14px}
+  .dk-btn{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;background:var(--void2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;color:var(--txt);font:inherit;font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;transition:border-color .15s}
+  .dk-btn:hover{border-color:var(--blue)}
+  .dk-bi{font-size:15px} .dk-ba{margin-left:auto;color:var(--ash)}
+  :root[data-theme="light"] .dk-card{background:rgba(255,255,255,.72)}
   .dk-ct{font-family:'Space Grotesk';font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ash);margin-bottom:15px}
   .dk-pt{font-size:14.5px;color:var(--txt);line-height:1.5;margin-bottom:13px;display:flex;gap:10px;align-items:baseline}
   .dk-pt:last-child{margin-bottom:0}
@@ -776,8 +781,8 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
 .sharelink{color:var(--blue);cursor:pointer;font-weight:700}
 </style>
 
-<div class="deskbg" id="deskbg" aria-hidden="true">
-  <div class="dk-left">
+<div class="deskbg" id="deskbg">
+  <div class="dk-left" aria-hidden="true">
     <div class="dk-brand"><span class="dk-pac"></span><span class="dk-wm"><b>fade</b><i>.markets</i></span></div>
     <div class="dk-hl">TRADE THE<br>EXTREME.</div>
     <div class="dk-sub">The one trade worth taking. One graded setup at a time.</div>
@@ -787,6 +792,12 @@ html.tg .nav{padding-bottom:calc(13px + var(--tg-safe-area-inset-bottom,env(safe
       <div class="dk-pt"><b>1</b> Every extreme move gets graded <span class="dk-gr">A&#8202;B&#8202;C&#8202;D&#8202;F</span></div>
       <div class="dk-pt"><b>2</b> Fade AI breaks down any setup in plain English</div>
       <div class="dk-pt"><b>3</b> Start with $10,000 paper &#183; compete on the leaderboard</div>
+      <div class="dk-pt"><b>4</b><span>Bring a friend &#8212; every signup is a <b style="color:var(--green)">1UP</b> &#183; rank up for perks</span></div>
+    </div>
+    <div class="dk-card dk-get">
+      <div class="dk-ct">Take Fade with you</div>
+      <a class="dk-btn" href="https://t.me/Fade_aiBot" target="_blank" rel="noopener"><span class="dk-bi">&#9993;</span> Open in Telegram <span class="dk-ba">&#8594;</span></a>
+      <button class="dk-btn" onclick="addHomeHelp()"><span class="dk-bi">&#10133;</span> Add to home screen <span class="dk-ba">&#8594;</span></button>
     </div>
   </div>
 </div>
@@ -2055,6 +2066,23 @@ function closePos(id,frac){ const p=paper(); const x=p.positions.find(y=>y.id===
   CLFRAC[id]=1; save(p); toast('Closed '+Math.round(frac*100)+'% of '+x.symbol+' · '+(pnl>=0?'+':'')+pnl.toFixed(2)+' realized',pnl>=0?'success':'error');
   if(MODALPOS===id) openModal(posModal(id)); else render(); }
 // --- Position modal: open a position to see + modify it (add to it, close it) ---
+function addHomeHelp(){
+  const ua=navigator.userAgent||'';
+  const ios=/iPhone|iPad|iPod/.test(ua), android=/Android/.test(ua);
+  const iosHow='<div class="prow"><span class="k">1</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Open <b>fade.markets</b> in Safari</span></div>'+
+    '<div class="prow"><span class="k">2</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Tap the <b>Share</b> button <span style="color:var(--blue)">&#9099;</span></span></div>'+
+    '<div class="prow"><span class="k">3</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Tap <b>Add to Home Screen</b></span></div>';
+  const andHow='<div class="prow"><span class="k">1</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Open <b>fade.markets</b> in Chrome</span></div>'+
+    '<div class="prow"><span class="k">2</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Tap the <b>&#8942;</b> menu (top right)</span></div>'+
+    '<div class="prow"><span class="k">3</span><span class="v" style="text-align:left;flex:1;margin-left:10px">Tap <b>Add to Home screen</b></span></div>';
+  const body=ios?iosHow:android?andHow:
+    '<div class="disc" style="text-align:left;margin-bottom:10px">Open <b>fade.markets</b> on your phone, then:</div>'+
+    '<div class="lbl">iPhone &#183; Safari</div>'+iosHow+'<div class="lbl" style="margin-top:12px">Android &#183; Chrome</div>'+andHow;
+  openModal('<div class="h1" style="margin:2px 0 4px;font-size:19px">Add Fade to your home screen</div>'+
+    '<div class="disc" style="text-align:left;margin-bottom:10px">One tap from your home screen &#8212; full screen, no browser bars.</div>'+
+    body+
+    '<button class="mbtn" style="background:none;color:var(--ash);margin-top:12px" onclick="closeModal()">Done</button>');
+}
 function openModal(html){ document.getElementById('modalbody').innerHTML=html; document.getElementById('modal').classList.add('show'); }
 function closeModal(){ const m=document.getElementById('modal'); if(m)m.classList.remove('show'); MODALPOS=null; }
 function posModal(id){ const p=paper(); const x=p.positions.find(y=>y.id===id); if(!x)return '';
@@ -3056,6 +3084,10 @@ function settings(){
 
     <div class="lbl" style="margin-top:16px">Waiting room</div>
     ${setrow('Downtime mini-games','When there are no live setups, show a mini-game (Fade Blocks for stocks, Pac-Scan for crypto) instead of the live readout.',gamesOn(),'toggleGames()')}
+
+    <div class="lbl" style="margin-top:16px">Get the app</div>
+    ${linkrow('Open in Telegram','Trade and chat with Fade AI inside Telegram \u2014 same account, same board.',"window.open('https://t.me/Fade_aiBot','_blank')")}
+    ${linkrow('Add to home screen','One tap from your home screen \u2014 full screen, no browser bars.','addHomeHelp()')}
 
     <div class="lbl" style="margin-top:16px">Alerts</div>
     ${setrow('After-hours crypto alerts','Get a phone notification when a fresh high-grade crypto fade sets up while the stock market is closed. Needs notification permission.',alertsOn(),'toggleAlerts()')}
