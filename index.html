@@ -1830,7 +1830,7 @@ function scanReadoutHTML(mode){
         </div>
         <div class="mp-foot"><span class="mp-dot"></span>${d.total} stocks tracked &#183; live at the bell</div>
       </div>
-      <div class="sdlbl" style="margin-top:16px">LAST SESSION <span class="sdsrc">TAP A STOCK FOR ITS CHART</span></div>${cryptoGridHTML(true)}`;
+      <div class="sdlbl" style="margin-top:16px">LAST SESSION</div>${cryptoGridHTML(true)}`;
   }
   // Games OFF default: breach-style trigger CARDS lead, then the tile grid (both scopes —
   // the stock wait page used to end after the cards, which read as a dead screen).
@@ -1848,7 +1848,7 @@ function waitingRoomHTML(mode){
     return `${scanLiveBar()}${tetrisHTML()}`;   // Fade Blocks — NO tape here (it squeezed/overlapped the game); pre-market data lives in the scan log + session dial
   }
   if(stocksClosedView()) return sessionDialHTML(mode)+   // games OFF, stocks closed: dial + last-session board (was ending at the dial — read as a dead page)
-    `<div class="sdlbl" style="margin-top:16px">LAST SESSION <span class="sdsrc">TAP A STOCK FOR ITS CHART</span></div>${cryptoGridHTML(true)}`;
+    `<div class="sdlbl" style="margin-top:16px">LAST SESSION</div>${cryptoGridHTML(true)}`;
   return scanReadoutHTML(mode);                          // games OFF: the clean live readout
 }
 function feed(){
