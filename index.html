@@ -2725,7 +2725,8 @@ function profile(){
     </div>
     <div class="lbl" style="margin-top:16px">Hyperliquid &#183; connect live account</div>
     ${hlBlock()}
-    <button class="btn-wide" style="background:var(--void2);color:var(--txt);border:1px solid var(--line);margin-top:16px" onclick="go('settings')">&#9881;&#65039; Settings</button>
+    <button class="btn-wide" style="background:rgba(57,255,20,.08);color:var(--txt);border:1px solid rgba(57,255,20,.35);margin-top:16px" onclick="go('oneup')">&#128377;&#65039; 1UP &#8212; invite friends, earn perks</button>
+    <button class="btn-wide" style="background:var(--void2);color:var(--txt);border:1px solid var(--line);margin-top:9px" onclick="go('settings')">&#9881;&#65039; Settings</button>
     <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:9px" onclick="signOut()">Sign out</button>
     <div class="disc">${API?'Live account':'Preview account &#183; saved on this device'} &#183; paper only &#183; no real money</div>
   </div>`;
@@ -2971,9 +2972,9 @@ async function doSignup(){
   if(password.length<8){ autherr('Password must be at least 8 characters.'); return; }
   if(API){
     S.busy=true; render();   // disable + show "Creating…" so nobody double-taps
-    try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone,password,non_us:!!DRAFT.nonus})});
+    try{ const r=await fetch(API+'/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,phone,password,non_us:!!DRAFT.nonus,ref:(localStorage.getItem('fade_ref')||'')})});
       const d=await r.json(); if(!d.ok){ S.busy=false; render(); autherr(d.error||'Could not create account'); return; }
-      S.busy=false; DRAFT={user:'',contact:'',pw:''}; setToken(d.token); saveUser(Object.assign({},d.user,{crm:d.crm})); loadHlCfg(); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
+      S.busy=false; DRAFT={user:'',contact:'',pw:''}; setToken(d.token); try{localStorage.removeItem('fade_ref');}catch(e){} saveUser(Object.assign({},d.user,{crm:d.crm})); loadHlCfg(); go('feed'); toast('Welcome, @'+d.user.username+' — tap "Take the tour" to learn the app');
     }catch(e){ S.busy=false; render(); autherr('Server is waking up \u2014 give it a few seconds and tap again.'); }
   } else {
     DRAFT={user:'',contact:''}; saveUser({username,email,phone,created:today(),id:'local'}); go('feed'); toast('Welcome, @'+username+' — tap "Take the tour" to learn the app');
@@ -3167,8 +3168,97 @@ function closeShare(){ document.getElementById('shwrap').classList.remove('show'
 function shareNative(){ const url='https://fade.markets'; if(navigator.share){ navigator.share({title:'fade.markets — trade the fade',url:url}).catch(()=>{}); } else { copyCap(); } }
 function copyCap(){ try{ navigator.clipboard.writeText('https://fade.markets'); toast('Link copied \u2014 it opens as a card wherever you paste it'); }catch(e){ toast('Screenshot the card to share'); } }
 
+/* ================= 1UP — invite friends, earn perks ================= */
+const TIERCOL={Bronze:'#C7C9D1',Silver:'#8AB4FF',Gold:'#FFE500',Platinum:'#2E7BFF',Diamond:'#00E5FF'};
+const TIERCOL_L={Bronze:'#6b7280',Silver:'#3b6fd4',Gold:'#a07800',Platinum:'#2E7BFF',Diamond:'#0e8aa8'};
+function tierCol(n){ const light=document.documentElement.getAttribute('data-theme')==='light';
+  return (light?TIERCOL_L:TIERCOL)[n]||ASH; }
+async function loadOneUp(){
+  if(!API||!authToken()) return;
+  try{
+    const h={Authorization:'Bearer '+authToken()};
+    const [r,l]=await Promise.all([
+      fetch(API+'/api/referral',{headers:h}),
+      fetch(API+'/api/referral/leaderboard',{headers:h})]);
+    S.ouTs=Date.now();
+    if(r.ok) S.oneup=await r.json();
+    if(l.ok) S.ouLB=((await l.json())||{}).leaders||[];
+    if(S.screen==='oneup') render();
+  }catch(e){}
+}
+function copyRef(){
+  const link=(S.oneup||{}).link||''; if(!link) return;
+  const done=()=>toast('Link copied — send it to a friend','light');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(done).catch(()=>{}); }
+  else{ const t=document.createElement('textarea'); t.value=link; document.body.appendChild(t); t.select(); try{document.execCommand('copy');done();}catch(e){} t.remove(); }
+}
+function shareRef(){
+  const o=S.oneup||{}; if(!o.link) return;
+  const msg='Every big move that goes too far snaps back \u2014 this app grades them A\u2013F and you trade the snap-back with paper money. Beat me on it: '+o.link;
+  if(navigator.share){ navigator.share({title:'fade.markets',text:msg,url:o.link}).catch(()=>{}); }
+  else copyRef();
+}
+function oneup(){
+  if(!S.user) return authScreen();
+  if(!API) return `<div class="screen">${topbar()}
+    <div class="lbl" style="margin-top:14px">1UP &#183; invite friends</div>
+    <div class="pcard" style="text-align:center;padding:26px 18px">
+      <div style="font-size:30px;margin-bottom:8px">&#128377;&#65039;</div>
+      <div style="font-weight:700;margin-bottom:6px">Every friend you bring is a 1UP</div>
+      <div class="disc" style="text-align:center">Your invite link and rank live on the deployed app.</div>
+    </div></div>`;
+  const o=S.oneup;
+  if(!o){ loadOneUp(); return `<div class="screen">${topbar()}
+    <div class="lbl" style="margin-top:14px">1UP &#183; invite friends</div>
+    <div class="pcard" style="text-align:center;padding:32px"><span class="cspin" style="width:20px;height:20px"></span></div></div>`; }
+  if(Date.now()-(S.ouTs||0)>60000){ S.ouTs=Date.now(); loadOneUp(); }   // background refresh, loop-safe
+  const t=o.tier, nx=o.next, tn=t?t.name:null, tc=tierCol(tn||'Bronze');
+  const ladder=(o.tiers||[]).map(x=>{
+    const on=tn===x.name, c=tierCol(x.name);
+    const perks=[x.ai_bonus?('+'+x.ai_bonus+' Fade AI msgs/day'):null,
+                 x.name==='Bronze'?'recruiter badge + leaderboard':null,
+                 x.name==='Gold'?'gold name flair':null,
+                 x.name==='Platinum'?'new features first':null,
+                 x.name==='Diamond'?'top billing, permanent':null,
+                 (x.future_cut_pct?x.future_cut_pct+'% rev-share when paid tiers launch':null)].filter(Boolean).join(' \u00b7 ');
+    return `<div class="prow" style="${on?'background:rgba(46,123,255,.07);border-radius:10px;padding:10px 8px':''}">
+      <span class="k"><b class="px" style="font-size:9px;color:${c}">${esc(x.name.toUpperCase())}</b><br><span style="font-size:11px;color:var(--ash)">${x.need} player${x.need>1?'s':''}</span></span>
+      <span class="v" style="font-size:11px;color:var(--ashl);text-align:right;max-width:60%">${perks}</span></div>`;
+  }).join('');
+  const prog=nx&&t?Math.min(100,Math.round(100*o.players/(o.players+nx.need))):(t?100:(o.players>0?100:0));
+  const lb=(S.ouLB||[]).slice(0,5).map((r,i)=>{
+    const me=(r.username||'').toLowerCase()===(S.user.username||'').toLowerCase();
+    return `<div class="prow" style="${me?'background:rgba(46,123,255,.08);border-radius:10px;padding:10px 8px':''}">
+      <span class="k"><b class="px" style="font-size:9px;color:${i===0?'#FFE500':i===1?'#8AB4FF':i===2?GREEN:ASH}">${i+1}</b>&nbsp; @${esc(r.username)}${me?' (you)':''}</span>
+      <span class="v"><span style="color:${tierCol(r.tier)};font-size:10px" class="px">${esc((r.tier||'').toUpperCase())}</span>&nbsp; ${r.n}</span></div>`; }).join('');
+  return `<div class="screen">${topbar()}
+    <div class="lbl" style="margin-top:14px">1UP &#183; every friend is an extra life</div>
+    <div class="pcard" style="text-align:center;padding:22px 16px;background:linear-gradient(160deg,rgba(46,123,255,.12),rgba(0,229,255,.05)),var(--panel)">
+      ${t?`<div class="px" style="font-size:13px;color:${tc};text-shadow:0 0 16px ${tc}55">&#9670; ${esc(tn.toUpperCase())} RANK</div>`
+         :`<div class="px" style="font-size:11px;color:var(--ash)">NO RANK YET</div>`}
+      <div class="px" style="font-size:24px;margin:14px 0 4px">${o.players}</div>
+      <div class="disc" style="text-align:center;margin:0 0 12px">player${o.players===1?'':'s'} brought${o.rank?' \u00b7 you\u2019re #'+o.rank:''}${o.week_new?' \u00b7 +'+o.week_new+' this week':''}</div>
+      <div style="height:9px;border-radius:6px;background:var(--line);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,${tc},${BLUE})"></div></div>
+      <div class="disc" style="text-align:center;margin-top:8px">${nx?`<b style="color:var(--txt)">${nx.need} more</b> \u2192 ${esc(nx.name)}`:(t?'max rank \u2014 legend':'bring 1 friend \u2192 Bronze')}</div>
+    </div>
+    <div class="lbl" style="margin-top:16px">Your link</div>
+    <div class="pcard" style="padding:14px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="mono" style="flex:1;background:var(--void2);border:1px dashed rgba(46,123,255,.5);border-radius:11px;padding:11px 12px;font-size:12px;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">fade.markets/?ref=<b style="color:var(--txt)">${esc(o.code)}</b></div>
+        <button class="btn-wide" style="width:auto;margin:0;padding:11px 15px;background:${BLUE};color:#04122b" onclick="copyRef()">Copy</button>
+      </div>
+      <button class="btn-wide" style="background:rgba(57,255,20,.1);border:1px solid rgba(57,255,20,.4);color:${GREEN};margin-top:10px" onclick="shareRef()">Share &#8594; a friend signs up, you rank up</button>
+      <div class="disc" style="text-align:left;margin-top:8px">Counts when they create a verified account (email or phone).</div>
+    </div>
+    <div class="lbl" style="margin-top:16px">The ladder</div>
+    <div class="pcard">${ladder}</div>
+    ${lb?`<div class="lbl" style="margin-top:16px">Top recruiters</div><div class="pcard">${lb}</div>`:''}
+    <div class="disc">Perks are live now &#183; the rev-share % switches on with paid tiers &#183; paper only, no real money</div>
+  </div>`;
+}
+
 function render(){ try{ computeRel(); }catch(e){ RELG={}; }
-  const scr={feed,markets,detail,wallet,social,ai,profile,settings}[S.screen]||feed;
+  const scr={feed,markets,detail,wallet,social,ai,profile,settings,oneup}[S.screen]||feed;
   let body; try{ body=scr(); }catch(e){ body=`<div class="screen">${topbar()}<div class="empty" style="padding:48px 24px;text-align:center;line-height:1.6">This view hit a snag rendering.<br><button class="btn-wide" style="margin-top:14px;background:${BLUE};color:#0a0a0f" onclick="render()">Retry</button></div></div>`; }
   document.getElementById('app').innerHTML = body + nav();
   fitGame(); tgSyncBackButton(); if(S.screen==='ai')pinChatInput(); if(S.screen==='feed'&&S.scope==='stocks')loadPremarket(); }
@@ -3406,6 +3496,10 @@ try{ S.scope = stocksOnly() ? 'stocks' : (stockMarketOpen() ? defView() : 'crypt
 if(!S.user){ AUTHMODE='signup'; S.screen='feed'; }  // guests browse the live feed; the coach starts below
 else { try{ const nv=JSON.parse(localStorage.getItem('fade_nav')||'null');   // refresh reopens the same SCREEN (scope stays market-driven above)
   if(nv&&['feed','markets','wallet','social','profile','settings','detail'].indexOf(nv.screen)>=0){ S.screen=nv.screen; if(nv.screen==='detail')S.sel=nv.sel; } }catch(e){} }
+// 1UP: capture ?ref=CODE from a shared link, keep it for signup, clean the URL.
+try{ const _rp=new URLSearchParams(location.search).get('ref');
+  if(_rp){ localStorage.setItem('fade_ref',_rp.toUpperCase().slice(0,24));
+    history.replaceState(null,'',location.pathname+location.hash); } }catch(e){}
 if(isTWA())tgBoot();   // Telegram Mini App: expand + theme + auto-auth via initData (no-op on web)
 applyTheme(); pxReanchor(); render(); hydrate(); loadAppConfig(); loadHlCfg(); if(S.hlAddr) loadHL(); restoreSession();
 // Tutorial is opt-in now (a "Take the tour" banner on the feed), not auto-started.
