@@ -1742,8 +1742,12 @@ function cryptoGridHTML(frozen){
   // the trigger cards above already spotlight the 4 nearest — don't repeat them in the grid
   const featured=frozen?{}:Object.fromEntries((scanData().near||[]).slice(0,4).map(x=>[x.sym,1]));
   const inS=(BOARD.items||[]).filter(i=>(frozen?i.asset_class===wantAC:inScope(i))&&i.change_pct!=null&&!featured[i.symbol]);
-  const tiles=inS.map(i=>{ const n=nd[i.symbol]; const heat=n?n.phase:0; const thr=i.threshold||4;
+  const tiles=inS.map(i=>{ const thr=i.threshold||4; const n=nd[i.symbol];
       const fill=Math.max(4,Math.min(100,Math.round(Math.abs(i.change_pct)/thr*100)));
+      // heat = the SAME scale the ring fill shows (% of trigger) — color and fullness
+      // always agree, so a redder ring is ALWAYS a fuller ring (was: internal scanner
+      // phase vs displayed gap%, which read as random orange between reds).
+      const heat=fill>=95?3:(fill>=80?2:(fill>=55?1:0));
       const gap=n?n.gap:Math.max(0,thr-Math.abs(i.change_pct));
       return {sym:i.symbol,heat,fill,gap,brk:i.breached}; })
     .sort((a,b)=>(b.brk-a.brk)||(b.fill-a.fill)).slice(0,18);
