@@ -1662,7 +1662,7 @@ function scanTermHTML(){ const scopeName=S.scope==='crypto'?'crypto':'stocks'; c
 function watchStripHTML(){ const w=(BOARD.watch||[]).filter(x=>x.change_pct!=null).slice(0,10);
   if(!w.length)return '';
   const chips=w.map(x=>`<span class="wchip" onclick="openChartPop('${x.symbol}')"><img class="wlogo" data-sym="${esc(x.symbol)}" src="${CRYPTO_ICONS}${x.symbol.toLowerCase()}.png" loading="lazy" onerror="imgFB(this)" alt="">${esc(x.symbol)} <span style="color:${x.change_pct>=0?GREEN:RED}">${x.change_pct>=0?'+':''}${(+x.change_pct).toFixed(1)}%</span></span>`).join('');
-  return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span><span class="wstrip-sub">below the fade floor &#8212; watched, never traded</span></div><div class="wstrip-row">${chips}</div></div>`; }
+  return `<div class="wstrip"><div class="wstrip-hd"><span>Mid-cap radar</span></div><div class="wstrip-row">${chips}</div></div>`; }
 let TERM={i:0,n:0,seen:new Set()};
 // Engine / "neural pass" meta-lines woven into the scan log so it reads like an analysis engine
 // at work — advanced-sounding but each names something the algorithm ACTUALLY does (weighting
@@ -1754,11 +1754,11 @@ function cryptoGridHTML(frozen){
   const isCry=S.scope==='crypto';
   const cells=tiles.length ? tiles.map(t=>`<div class="crtile h${t.brk?3:t.heat}" onclick="openChartPop('${t.sym}')">
       <div class="crring" style="--fill:${(t.fill*3.6).toFixed(0)}deg"><img class="crlogo" data-sym="${esc(t.sym)}" src="${isCry?CRYPTO_ICONS+t.sym.toLowerCase()+'.png':'https://assets.parqet.com/logos/symbol/'+encodeURIComponent(t.sym)+'?format=png'}" loading="lazy" onerror="imgFB(this)" alt=""><span>${esc(t.sym)}</span></div>
-      <div class="crgap">${t.brk?'live':(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
+      <div class="crgap">${t.brk?(frozen?'breached':'live'):(t.gap<=1.9?t.gap.toFixed(1)+'%':'in range')}</div></div>`).join('')
     : `<div class="tlad-empty">Standing by — nothing in scope right now.</div>`;
   const sh=scanShow();
   const live=!frozen;
-  return `<div class="crgrid-hd"><span>Scanning ${sh.scan} ${isCry?'coins':'stocks'}${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}</span><span class="crhd-live"${live?'':' style="color:var(--ash)"'}>${live?'<span class="mp-dot"></span>real-time':'frozen at last close'}</span></div>
+  return `<div class="crgrid-hd"><span>${live?`Scanning ${sh.scan} ${isCry?'coins':'stocks'}${sh.scan>sh.eligible?` · ${sh.eligible} fade-eligible`:''}`:`Last session · ${inS.length} ${isCry?'coins':'stocks'}`}</span><span class="crhd-live"${live?'':' style="color:var(--ash)"'}>${live?'<span class="mp-dot"></span>real-time':'frozen at last close'}</span></div>
     <div class="crgrid">${cells}</div>
     <div class="crleg"><span>far</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>at trigger</span></div>
     ${isCry?watchStripHTML():''}`;
