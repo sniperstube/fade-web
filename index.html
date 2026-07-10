@@ -1127,7 +1127,7 @@ async function confirmTrade(){
   save(p); S.faded[TRADE.sym]=1;
   if(API&&authToken()){ api('/api/paper/open',{method:'POST',body:JSON.stringify({symbol:TRADE.sym,side:long?'long':'short',notional:margin,lev:lev})}).catch(function(){}); }
   closeModal();
-  toast((long?'Long ':'Short ')+TRADE.sym+' \u00b7 $'+money(margin)+(lev>1?' at '+lev+'x':'')+' \u2014 live in your wallet','success');
+  toast((long?'Long ':'Short ')+TRADE.sym+' \u00b7 $'+money(margin)+(lev>1?' at '+lev+'x':'')+' \u2014 in your paper wallet','success');
   if(S.screen==='detail'){ go('feed'); } else { render(); }
   }finally{ TRADE.busy=false; }
 }
@@ -1289,7 +1289,7 @@ try{ let hs=+(localStorage.getItem('fade_hiscore')||0)||0; const pp=paper()||{};
 const GHOST_DEFS=[{c:'#ff3b30',s:0.52},{c:'#ff6ac1',s:0.72},{c:'#00e5ff',s:0.40}];   // chasers at different speeds
 const HEAT={1:'#ffe500',2:'#ff9f0a',3:'#ff3b30'};   // cool -> warm -> red-hot as it nears trigger
 function scanData(){ const items=(BOARD.items||[]).filter(i=>inScope(i));
-  // "Almost there" coins = within 1.9% of triggering. Exact %-to-trigger IS shown (Naeem's call);
+  // "Almost there" coins = within 1.9% of triggering. Exact %-to-trigger IS shown by design;
   // phase 1/2/3 drives the heat colour, ring fill and run speed.
   const near=items.filter(i=>!i.breached&&i.change_pct!=null)
     .map(i=>{ const gap=Math.max(0,(i.threshold||4)-Math.abs(i.change_pct||0)); return {sym:i.symbol,gap,chg:i.change_pct,phase:gap<=0.5?3:(gap<=1.1?2:1)}; })
@@ -2757,12 +2757,12 @@ function profile(){
       ${u.email?`<div class="prow"><span class="k">Email</span><span class="v">${u.email}</span></div>`:''}
       ${u.phone?`<div class="prow"><span class="k">Phone</span><span class="v">${u.phone}</span></div>`:''}
     </div>
-    <div class="lbl" style="margin-top:16px">Hyperliquid &#183; connect live account</div>
-    ${hlBlock()}
+    ${HLCFG.ui&&HLCFG.eligible?`<div class="lbl" style="margin-top:16px">Hyperliquid &#183; connect live account</div>
+    ${hlBlock()}`:''}
     <button class="btn-wide" style="background:rgba(57,255,20,.08);color:var(--txt);border:1px solid rgba(57,255,20,.35);margin-top:16px" onclick="go('oneup')">&#128377;&#65039; 1UP &#8212; invite friends, earn perks</button>
     <button class="btn-wide" style="background:var(--void2);color:var(--txt);border:1px solid var(--line);margin-top:9px" onclick="go('settings')">&#9881;&#65039; Settings</button>
     <button class="btn-wide" style="background:var(--void2);color:var(--ash);border:1px solid var(--line);margin-top:9px" onclick="signOut()">Sign out</button>
-    <div class="disc">${API?'Live account':'Preview account &#183; saved on this device'} &#183; paper only &#183; no real money</div>
+    <div class="disc">${API?'Synced account':'Preview account &#183; saved on this device'} &#183; paper only &#183; no real money</div>
   </div>`;
 }
 function hlBlock(){
@@ -2972,7 +2972,7 @@ function authScreen(){
         <div class="seg"><button class="${CONTACT==='email'?'on':''}" onclick="setContact('email')">Email</button><button class="${CONTACT==='phone'?'on':''}" onclick="setContact('phone')">Phone</button></div>
         <div class="fld"><input id="a_contact" value="${DRAFT.contact}" oninput="DRAFT.contact=this.value" placeholder="${CONTACT==='email'?'you@email.com':'+1 555 123 4567'}" type="${CONTACT==='email'?'email':'tel'}" autocapitalize="off"></div>
         <div class="fld"><label>Password</label><input id="a_pw" type="password" value="${DRAFT.pw||''}" oninput="DRAFT.pw=this.value" placeholder="at least 8 characters" autocapitalize="off"></div>
-        <label style="display:flex;gap:9px;align-items:flex-start;margin:2px 2px 6px;color:var(--ash);font-size:12px;line-height:1.5;cursor:pointer"><input type="checkbox" ${DRAFT.nonus?'checked':''} onchange="DRAFT.nonus=this.checked" style="margin-top:2px"><span>I am not a US person and am not accessing from the US <small style="color:var(--ash)">(optional &#8212; only needed later for live trading; paper trading is open to everyone)</small></span></label>
+        ${HLCFG.ui?`<label style="display:flex;gap:9px;align-items:flex-start;margin:2px 2px 6px;color:var(--ash);font-size:12px;line-height:1.5;cursor:pointer"><input type="checkbox" ${DRAFT.nonus?'checked':''} onchange="DRAFT.nonus=this.checked" style="margin-top:2px"><span>I am not a US person and am not accessing from the US <small style="color:var(--ash)">(optional &#8212; only needed later for live trading; paper trading is open to everyone)</small></span></label>`:''}
         <button class="btn-wide" style="background:${BLUE};color:#04122b;margin-top:4px${S.busy?';opacity:.65':''}" ${S.busy?'disabled':''} onclick="doSignup()">${S.busy?'Creating account…':'Create account &#8594;'}</button>
         <div class="authlink">Already have one? <b onclick="setAuth('login')">Sign in</b></div>
       `:`
@@ -3128,7 +3128,7 @@ function openGlossary(){ openModal(`<div style="font-size:19px;font-weight:800;m
 function openLegal(){ openModal(`<div style="font-size:19px;font-weight:800;margin-bottom:10px">Terms, privacy &amp; risk</div>
   <div style="color:var(--ashl);font-size:13px;line-height:1.65">
   <p style="margin-bottom:10px"><b>Paper only.</b> Fade is education and paper trading. No real money moves, no orders are placed, nothing here is financial advice.</p>
-  <p style="margin-bottom:10px"><b>Your data.</b> Your account (username, and email or phone) is stored to run the app and the leaderboard. Your paper trades live on your device. We never sell your data. A connected Hyperliquid wallet is read-only by public address — no keys, no custody.</p>
+  <p style="margin-bottom:10px"><b>Your data.</b> Your account (username, and email or phone) is stored to run the app and the leaderboard. Your paper trades live on your device. We never sell your data.</p>
   <p style="margin-bottom:10px"><b>Risk.</b> Trading real assets carries substantial risk of loss, especially with leverage. Grades are educational signals, not recommendations. Past performance never guarantees future results. Do your own research.</p>
   </div>
   <button class="mbtn" style="background:none;color:var(--ash);margin-top:12px" onclick="closeModal()">Done</button>`); }
